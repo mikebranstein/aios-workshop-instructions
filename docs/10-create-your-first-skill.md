@@ -1,4 +1,4 @@
-# 08 - Create Your First Skill (Hands-On)
+# 10 - Create Your First Skill (Hands-On)
 
 This module teaches you exactly how to create and use "skills" in your Agentic OS.
 
@@ -183,4 +183,4 @@ Fallback procedure:
 
 ## Next step
 
-Use this skill immediately in 05 step 2 and 14 live workshop intake flow.
+Continue to docs/11-first-7-days-checklist.md.

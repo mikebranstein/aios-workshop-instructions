@@ -16,11 +16,7 @@ Read this once, then move into execution.
 
 If you have not completed setup yet, run docs/00-prerequisites-and-tooling.md first.
 
-Choose one learner path:
-
-- Understand first: go to 02-foundations.
-- Build first: go to 16-zero-to-hero-live-workshop.
-- Control model first: go to 03-reference-architecture, then 04-github-as-state.
+Follow the workshop in strict order from docs/02-foundations.md through docs/24-style-audit-and-migration.md.
 
 ## Quick checkpoint before moving on
 
@@ -169,16 +165,7 @@ You complete this program when all are true:
 4. Retry and escalation policy is honored.
 5. Your capstone score meets the rubric threshold.
 
-## How to start right now
+## How to start right now`r`n`r`n1. Complete docs/02-foundations.md.`r`n2. Continue sequentially through each numbered file in order.`r`n3. Do not skip ahead. Finish each checkpoint before moving on.`r`n`r`n## Next step
 
-1. Read 02 foundations carefully once.
-2. Run Day 1 and Day 2 in 16 zero-to-hero workshop.
-3. Use 17 copy-paste pack during execution.
-4. Validate with 18 answer keys.
-5. Score with 19 rubric after your first full issue.
+Continue to docs/02-foundations.md.
 
-If you do this sequence exactly, you will have real traction within your first two sessions.
-
-## Next step
-
-Open 02 foundations and complete the first two labs before attempting full live execution.

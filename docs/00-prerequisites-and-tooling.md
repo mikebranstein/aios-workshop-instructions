@@ -207,4 +207,4 @@ You are ready only when all are true:
 
 ## Next step
 
-Continue to 01-overview, then 02-foundations, then 16-zero-to-hero-live-workshop.
+Continue to docs/01-overview.md.

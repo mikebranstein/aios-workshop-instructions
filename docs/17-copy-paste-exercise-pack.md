@@ -1,10 +1,10 @@
-# 16 - Copy-Paste Exercise Pack
+# 17 - Copy-Paste Exercise Pack
 
 Use this as your exact text source during live exercises.
 
 ## Before You Start
 
-14 tells you when to run a step.
+16 tells you when to run a step.
 
 This file gives the exact input text for that step so output quality is consistent while you learn.
 
@@ -12,7 +12,7 @@ This file gives the exact input text for that step so output quality is consiste
 
 For each live exercise:
 
-1. read the step in 14
+1. read the step in 16
 2. copy matching block from this file
 3. run it unchanged first
 4. log the output in issue timeline
@@ -21,7 +21,7 @@ For each live exercise:
 
 You should see JSON outputs for structured prompts and complete templates for decision or closure logs.
 
-If outputs drift to prose, use the recovery guidance in 15.
+If outputs drift to prose, use the recovery guidance in 18.
 
 ## A) Seed issue text (feature)
 
@@ -131,4 +131,4 @@ Decision Log
 
 ## Next step
 
-Return to 14 for the next execution step and validate with 15 after each gate.
+Continue to docs/18-live-lab-answer-keys.md.

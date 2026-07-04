@@ -1,4 +1,4 @@
-# 20 - Style Audit and Migration
+# 24 - Style Audit and Migration
 
 This audit captures the updated direction:
 
@@ -117,4 +117,4 @@ Current state keeps your preferred structure and preserves the upgraded workshop
 
 ## Next step
 
-Return to 19 curriculum map for reading order, then execute 14 with 16 and validate through 15 and 17.
+You have completed the full workshop sequence.

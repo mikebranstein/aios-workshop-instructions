@@ -1,4 +1,4 @@
-# 14 - Zero-to-Hero Live Workshop (Fully Scripted)
+# 16 - Zero-to-Hero Live Workshop (Fully Scripted)
 
 This is your end-to-end live workshop.
 
@@ -10,11 +10,11 @@ If you complete this workshop, you will have a working AIOS for coding delivery 
 
 ## Before You Start
 
-This workshop applies the concepts and control rules from 00 through 13 in one continuous execution path.
+This workshop applies the concepts and control rules from 00 through 15 in one continuous execution path.
 
 ## How to apply this file
 
-Run one step at a time, record evidence at each gate, and use 16 for exact prompt text and 15 for output recovery.
+Run one step at a time, record evidence at each gate, and use 17 for exact prompt text and 18 for output recovery.
 
 ## Copilot Chat quickstart (required before Day 1)
 
@@ -508,3 +508,9 @@ You are hero-ready when all are true:
 5. You can run a feature from issue to Done in one controlled pass.
 
 If one is false, repeat the relevant day until true.
+
+
+## Next step
+
+Continue to docs/17-copy-paste-exercise-pack.md.
+

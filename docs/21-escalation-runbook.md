@@ -1,4 +1,4 @@
-# Escalation Runbook
+# 21 - Escalation Runbook
 
 Use this runbook when a gate cannot be resolved inside normal retry limits.
 
@@ -78,4 +78,4 @@ Every escalation must have:
 
 ## Next step
 
-Return to the relevant runbook step in 05 or 14 and continue execution.
+Continue to docs/22-troubleshooting-flowchart.md.

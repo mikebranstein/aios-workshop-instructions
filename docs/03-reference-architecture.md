@@ -1,4 +1,4 @@
-# 02 - Reference Architecture (Copilot-First, Explained)
+# 03 - Reference Architecture (Copilot-First, Explained)
 
 This file explains the architecture decisions behind your workshop system.
 
@@ -31,7 +31,7 @@ Before moving on, you should be able to explain:
 
 ## Next step
 
-Continue to 03 github-as-state and map this architecture to concrete GitHub fields and artifacts.
+Continue to docs/04-github-as-state.md.
 
 ## 1) System boundary
 

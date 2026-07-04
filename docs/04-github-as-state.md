@@ -1,4 +1,4 @@
-# 03 - Using GitHub as State and Memory (Operational Model)
+# 04 - Using GitHub as State and Memory (Operational Model)
 
 This file explains how GitHub becomes your AIOS control plane, not just your code host.
 
@@ -47,7 +47,7 @@ For a click-by-click setup walkthrough, run docs/13-github-projects-click-by-cli
 
 ## Next step
 
-Run 11 github-projects-click-by-click to implement this model in your board, then return to 04 and 14 for execution.
+Continue to docs/05-training-regimen.md.
 
 ## 1) Why GitHub is a strong first state layer
 

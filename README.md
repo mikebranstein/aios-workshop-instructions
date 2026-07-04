@@ -9,10 +9,9 @@ If you want to start immediately, open and follow these in order:
 1. docs/00-prerequisites-and-tooling.md
 2. docs/01-overview.md
 3. docs/02-foundations.md
-4. docs/16-zero-to-hero-live-workshop.md
-5. docs/17-copy-paste-exercise-pack.md
-6. docs/18-live-lab-answer-keys.md
-7. docs/19-capstone-evaluator-rubric.md
+4. docs/03-reference-architecture.md
+5. docs/04-github-as-state.md
+6. docs/05-training-regimen.md
 
 ## Full Reading Order
 
@@ -68,3 +67,4 @@ At each step, you should have either:
 - or an issue/PR field updated.
 
 If a step does not produce one of those, treat it as incomplete.
+

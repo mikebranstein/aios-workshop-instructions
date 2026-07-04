@@ -1,4 +1,4 @@
-# 01 - Foundations Workshop (From Zero to Operational)
+# 02 - Foundations Workshop (From Zero to Operational)
 
 This is the foundation module rewritten as a real workshop.
 
@@ -36,7 +36,7 @@ If any item is missing, complete labs before moving on.
 
 ## Next step
 
-Continue to 02 reference architecture and map each foundation concept to an explicit control in your pipeline.
+Continue to docs/03-reference-architecture.md.
 
 ---
 

@@ -1,4 +1,4 @@
-# 18 - Lab File-by-File Solutions (Exact Text)
+# 20 - Lab File-by-File Solutions (Exact Text)
 
 This file gives exact solution content for the first foundation labs.
 
@@ -112,4 +112,4 @@ Merge Gate objective criteria:
 
 ## Next step
 
-After alignment, rerun one issue step and validate with 15 answer keys before continuing.
+Continue to docs/21-escalation-runbook.md.

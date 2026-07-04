@@ -1,4 +1,4 @@
-# 15 - Live Lab Answer Keys and Failure Recovery
+# 18 - Live Lab Answer Keys and Failure Recovery
 
 Use this file while running labs.
 
@@ -114,4 +114,4 @@ If the workshop gets stuck, run this reset sequence:
 
 ## Next step
 
-When lab outputs are stable, score the full run with 17 capstone evaluator rubric.
+Continue to docs/19-capstone-evaluator-rubric.md.

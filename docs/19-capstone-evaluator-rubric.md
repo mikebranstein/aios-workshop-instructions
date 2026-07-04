@@ -1,4 +1,4 @@
-# 17 - Capstone Evaluator Rubric
+# 19 - Capstone Evaluator Rubric
 
 Use this rubric to score yourself objectively.
 
@@ -33,7 +33,7 @@ If any hard condition fails, return to the matching module and run one more cont
 
 ## Next step
 
-After passing, move to 07 implementation blueprint and promote your process from workshop mode to operational mode.
+Continue to docs/20-lab-file-by-file-solutions.md.
 
 ## Category 1 - State discipline
 

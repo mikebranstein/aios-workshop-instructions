@@ -1,4 +1,4 @@
-# 04 - Step-by-Step Training Regimen (Hands-On Bootcamp)
+# 05 - Step-by-Step Training Regimen (Hands-On Bootcamp)
 
 This is the exact follow-along version. Open this file during each session and execute line by line.
 
@@ -35,7 +35,7 @@ If none happened, that day was not complete.
 
 ## Next step
 
-Run the current day plan, then validate outputs with 15 answer keys and score weekly progress with 17 rubric.
+Continue to docs/06-build-first-vertical-slice.md.
 
 ## Operating Assumptions
 

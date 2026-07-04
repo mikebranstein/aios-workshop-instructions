@@ -1,4 +1,4 @@
-# 06 - ESS Guide (Executable System Spec, Full Walkthrough)
+# 07 - ESS Guide (Executable System Spec, Full Walkthrough)
 
 You asked for detailed guidance, so this module is intentionally literal.
 
@@ -221,4 +221,4 @@ If total < 15, revise ESS before coding.
 
 You are done with this module when your ESS can pass Design Gate without manual reinterpretation.
 
-Then continue with 05 step 4 or 14 live workshop design phase.
+Continue to docs/08-ess-example-gallery.md.

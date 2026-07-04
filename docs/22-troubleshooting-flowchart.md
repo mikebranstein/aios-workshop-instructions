@@ -1,4 +1,4 @@
-# Troubleshooting Flowchart (Workshop Recovery)
+# 22 - Troubleshooting Flowchart (Workshop Recovery)
 
 Use this file when a step fails and you are unsure what to do next.
 
@@ -75,4 +75,4 @@ If response is still invalid after two retries:
 
 ## Next step
 
-After recovery, resume exactly from the failed gate in 14. Do not skip forward.
+Continue to docs/23-curriculum-map-and-file-intent.md.

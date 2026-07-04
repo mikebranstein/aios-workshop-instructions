@@ -1,4 +1,4 @@
-# 09 - First 7 Days Plan (Guided)
+# 11 - First 7 Days Plan (Guided)
 
 This file is your short operational launch plan.
 
@@ -175,4 +175,4 @@ If any item fails, rerun the failed day before moving forward.
 
 ## Next step
 
-After day 7 succeeds, run 17 capstone rubric and identify the lowest-scoring category to improve next.
+Continue to docs/12-dotnet-command-pack.md.

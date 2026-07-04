@@ -1,4 +1,4 @@
-# 19 - Curriculum Map and File Intent
+# 23 - Curriculum Map and File Intent
 
 This document explains what every major file is for.
 
@@ -97,4 +97,4 @@ If any answer is unclear, revisit the corresponding teaching guide before contin
 
 ## Next step
 
-After this map check, resume execution in 14 with 16 and validate every gate output in 15.
+Continue to docs/24-style-audit-and-migration.md.

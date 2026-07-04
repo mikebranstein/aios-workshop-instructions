@@ -1,4 +1,4 @@
-# 07 - Implementation Blueprint (From Workshop To Real System)
+# 09 - Implementation Blueprint (From Workshop To Real System)
 
 This file tells you how to convert training artifacts into an operational AIOS.
 
@@ -228,4 +228,4 @@ If one item is false, you are still in implementation mode, not operational mode
 
 ## Next step
 
-After identifying your stage, run one issue in 14 and measure it using the metrics in this file before adding new automation.
+Continue to docs/10-create-your-first-skill.md.

@@ -1,4 +1,4 @@
-# 11 - GitHub Projects Setup (Click-by-Click, With Context)
+# 13 - GitHub Projects Setup (Click-by-Click, With Context)
 
 This guide is written for developers who are comfortable with Git and pull requests but new to GitHub Projects as an operations layer.
 
@@ -180,4 +180,4 @@ Once these are true, proceed to live workshop execution.
 
 ## Next step
 
-Continue to 14 live workshop and use this board as your single operational state surface.
+Continue to docs/14-what-you-are-missing.md.

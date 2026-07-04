@@ -1,4 +1,4 @@
-# 10 - .NET Command Pack (Operational Edition)
+# 12 - .NET Command Pack (Operational Edition)
 
 This file is your single source for .NET verification commands in local runs, gate checks, and CI workflows.
 
@@ -199,4 +199,4 @@ When flaky behavior is detected:
 
 ## Next step
 
-Use this command pack directly in 05 step 6 and in 14 workshop verification sessions.
+Continue to docs/13-github-projects-click-by-click.md.

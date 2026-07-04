@@ -1,4 +1,4 @@
-# 13 - Industry Synthesis: Frontier Guidance Applied To Your AIOS
+# 15 - Industry Synthesis: Frontier Guidance Applied To Your AIOS
 
 This module translates frontier agent guidance into practical decisions for your coding system.
 
@@ -34,7 +34,7 @@ You should be able to state:
 
 ## Next step
 
-Use 07 implementation blueprint to schedule the changes you decided above, then execute in 14 live workshop.
+Continue to docs/16-zero-to-hero-live-workshop.md.
 
 ## 1) The shared consensus across leading guidance
 

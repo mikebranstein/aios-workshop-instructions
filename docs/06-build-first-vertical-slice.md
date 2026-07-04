@@ -1,4 +1,4 @@
-# 05 - Build Your First Vertical Slice (Exact Runbook)
+# 06 - Build Your First Vertical Slice (Exact Runbook)
 
 Use this file as your live checklist while executing a real feature from issue to close.
 
@@ -241,7 +241,7 @@ Your vertical slice is successful when:
 
 ## Final checkpoint and next step
 
-If this vertical slice passes, run a second issue with the same discipline and then score yourself using 17 capstone evaluator rubric.
+Continue to docs/07-ess-guide.md.
 
 ## Troubleshooting
 

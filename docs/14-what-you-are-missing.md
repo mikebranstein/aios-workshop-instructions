@@ -1,4 +1,4 @@
-# 12 - What You Are Missing (Diagnostic + Recovery Guide)
+# 14 - What You Are Missing (Diagnostic + Recovery Guide)
 
 This file is the answer to the question most builders ask after first success:
 
@@ -235,7 +235,7 @@ If time is limited, implement controls in this order:
 
 You are ready for broader automation only when critical controls are present and operational tests pass.
 
-Then continue with 07 implementation blueprint Phase B.
+Continue to docs/15-industry-synthesis-agentic-os.md.
 
 These five controls create the minimum reliable operating core.
 
