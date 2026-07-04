@@ -25,6 +25,8 @@ Verification and QA together reduce regressions and subjective release calls.
 
 ## Build exercise
 
+Use `templates/skills/verification-agent.md` as your verification contract.
+
 Run:
 
 ```powershell
@@ -35,7 +37,7 @@ dotnet test --configuration Release --logger "trx;LogFileName=test-results.trx"
 
 Then:
 - post verification summary in issue
-- create `docs/qa-report-issue-001.md`
+- copy `templates/qa-checklist.md` to `docs/qa-report-issue-001.md`
 - execute QA scenarios and record outcomes
 
 ## Micro checks
