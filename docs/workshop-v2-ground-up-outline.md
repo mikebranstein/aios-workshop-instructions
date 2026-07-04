@@ -129,7 +129,7 @@ Micro checks:
 - at minute 40: issue has complete acceptance criteria
 
 Artifact:
-- .github/ISSUE_TEMPLATE/feature.yml + one valid issue
+- .github/ISSUE_TEMPLATE/feature_request.md + one valid issue
 
 Checkpoint:
 - template enforces required fields and issue has testable acceptance criteria
