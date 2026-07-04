@@ -116,6 +116,12 @@ Constraints:
 - Do not use minimal API style.
 - Do not place application logic in Program.cs.
 
+Output format:
+- Return markdown only.
+- Include a "File Tree" section with a fenced code block.
+- Include a "Run Commands" section with a fenced `powershell` code block.
+- Include a "Files Created" checklist.
+
 When done, show a file tree and list the exact terminal commands I should run next.
 ```
 

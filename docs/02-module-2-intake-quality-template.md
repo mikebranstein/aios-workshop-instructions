@@ -10,9 +10,10 @@ Target: 70 minutes
 
 Suggested pacing:
 - 10 min: understand what a good issue template does
-- 25 min: create or refine the template in GitHub
-- 20 min: create and test one real issue from the template
-- 10 min: quality-check acceptance criteria
+- 20 min: create or refine the template in GitHub
+- 15 min: use Copilot to draft a feature request body
+- 15 min: create and test one real issue from the template
+- 5 min: quality-check acceptance criteria
 - 5 min: capture scorecard and handoff
 
 ## Why this matters
@@ -26,15 +27,17 @@ This module makes that problem visible and fixable.
 ## What you will build
 
 - one structured feature issue template in `.github/ISSUE_TEMPLATE/feature_request.md`
+- one Copilot-generated feature request body based on your template fields
 - one real issue created from the template
 - one intake-quality check note proving the issue is ready for ESS
 
 ## Required tasks
 
 1. Create or refine a feature issue template.
-2. Make key fields required.
-3. Create one issue from the template.
-4. Validate that acceptance criteria are binary and testable.
+2. Use GitHub Copilot to draft a complete feature request body.
+3. Make key fields required.
+4. Create one issue from the template.
+5. Validate that acceptance criteria are binary and testable.
 
 ## Stretch tasks
 
@@ -53,7 +56,7 @@ If it exists, skim it and answer:
 
 If any answer is no, you will refine it in Step 2.
 
-### Step 2 (25 minutes): create or refine the template
+### Step 2 (20 minutes): create or refine the template
 
 Use one of these two paths. Path A is the most reliable and recommended for this workshop.
 
@@ -114,21 +117,91 @@ List blockers, linked issues, or external dependencies.
 Any additional context, constraints, or references.
 ```
 
-### Step 3 (20 minutes): create one real issue from template
+### Step 3 (15 minutes): use Copilot to draft the feature request body
 
-Create a new issue using the feature template.
+Before opening your issue, use Copilot Chat to generate the body text so you start from a complete draft instead of a blank form.
 
 Use a tiny, concrete feature so you can carry it into Module 3.
 
-Example topic:
-"Add input validation for empty customer email in checkout form"
+Example prompt you can paste into Copilot Chat:
 
-Write acceptance criteria in pass/fail style, for example:
+```text
+Create a complete GitHub feature request draft using this structure:
+- Problem Statement
+- Scope
+- Non-Goals
+- Acceptance Criteria (3 binary pass/fail criteria)
+- Test Scenarios (happy path + failure path)
+- Risk Level (Low/Medium/High with one-line reason)
+- Dependencies
+- Notes
+
+Feature idea: Add input validation for empty customer email in checkout form.
+Context: Web checkout form currently allows blank email submission in some flows.
+Constraints:
+- Keep scope small enough for one pull request.
+- Keep the feature tiny and concrete so it can be implemented in Module 3.
+- Acceptance criteria must be observable and testable.
+- Write acceptance criteria in PASS/FAIL style.
+- Include at least one explicit PASS and one explicit FAIL acceptance criterion.
+- Include at least one explicit FAIL case.
+
+Acceptance criteria style example:
 - PASS: submitting empty email shows validation message
 - PASS: valid email allows submission
 - FAIL: form submits when email is empty
 
-### Step 4 (10 minutes): run intake quality check
+Return only markdown content for the issue body.
+Do not include commentary before or after the markdown.
+```
+
+After Copilot generates the draft, refine it using one of these options:
+
+Option A (manual):
+- remove vague words like "improve," "better," or "as needed"
+- make every acceptance criterion binary and observable
+- keep non-goals explicit so scope does not drift
+
+Option B (Copilot-assisted):
+Paste your draft into Copilot Chat with this prompt:
+
+```text
+Rewrite this feature request draft to make it execution-ready.
+
+Requirements:
+- Keep the same feature intent and scope.
+- Remove vague wording.
+- Make all acceptance criteria binary pass/fail and observable.
+- Keep acceptance criteria written in explicit PASS/FAIL style.
+- Keep non-goals explicit and specific.
+- Keep risk level and dependencies concise.
+
+Output format:
+- Return markdown only (copy/paste ready).
+- Return clean markdown using these sections only:
+	- Problem Statement
+	- Scope
+	- Non-Goals
+	- Acceptance Criteria
+	- Test Scenarios
+	- Risk Level
+	- Dependencies
+	- Notes
+- Do not include any extra explanation outside those sections.
+
+Here is the draft to improve:
+<paste draft here>
+```
+
+### Step 4 (15 minutes): create one real issue from template
+
+Create a new issue using the feature template.
+
+Paste the finalized feature text you generated in Step 3 into the template sections.
+
+Do a quick final pass only if needed to fix weak or ambiguous lines.
+
+### Step 5 (5 minutes): run intake quality check
 
 Before you leave this module, verify your issue has all required fields completed and no ambiguous acceptance criteria.
 
@@ -137,14 +210,15 @@ Add one comment in the issue titled `Intake Quality Check` summarizing:
 - acceptance criteria testable: yes or no
 - ready for ESS: yes or no
 
-### Step 5 (5 minutes): capture module scorecard
+### Step 6 (5 minutes): capture module scorecard
 
 Post your module scorecard and prepare to continue to ESS creation.
 
 ## Micro checks
 
 By minute 20 you should see template structure drafted.
-By minute 40 you should see one issue created from template.
+By minute 35 you should see a Copilot-generated draft ready for review.
+By minute 50 you should see one issue created from template.
 By minute 60 you should see intake-quality check comment posted.
 
 ## You should see
@@ -162,6 +236,7 @@ If issue scope is too broad, split into a smaller first issue and move the rest 
 Module 2 is complete when all are true:
 
 - template enforces required intake fields
+- one Copilot-generated draft was reviewed and used to create a real issue
 - one real issue is created from that template
 - acceptance criteria are binary and testable
 - intake-quality check comment is posted

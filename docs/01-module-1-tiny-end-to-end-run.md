@@ -171,8 +171,10 @@ Requirements:
 6. Keep changes small and localized to list flow only.
 
 Output format:
+- Return markdown only so the output is copy/paste ready.
 - List files to edit.
-- Show minimal code edits per file.
+- Show minimal code edits per file in fenced code blocks.
+- End with a short "Apply order" checklist.
 - Do not refactor unrelated code.
 ```
 
