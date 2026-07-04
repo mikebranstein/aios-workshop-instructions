@@ -192,13 +192,42 @@ If a command fails, fix only the first failure, rerun, and update your issue not
 
 ### Step 5 (5 minutes): closure evidence
 
-When verification is complete, post a closure summary with links to:
+When verification is complete, add this exact closure comment in the issue:
 
-- issue
-- branch or commit
-- verification output
+```markdown
+## Closure Summary (Module 1)
 
-Move status to Done on the delivery board.
+### Outcome
+PASS | FAIL
+
+### What changed
+- Added available equipment count to the list page.
+- Kept existing list behavior intact.
+
+### Evidence
+- Issue: <issue-link>
+- Branch: <branch-link>
+- Commit: <commit-link>
+- PR (if opened): <pr-link-or-N/A>
+
+### Verification
+- dotnet restore: PASS | FAIL
+- dotnet build --configuration Release: PASS | FAIL
+- dotnet test --configuration Release: PASS | FAIL
+
+### Acceptance Criteria Check
+- AC1 (count shown): PASS | FAIL
+- AC2 (count matches IsAvailable=true): PASS | FAIL
+- AC3 (existing list behavior unchanged): PASS | FAIL
+
+### Notes
+- Any follow-up work or known limitations:
+```
+
+After posting the comment:
+1. Confirm all required evidence links are filled in.
+2. Confirm all three verification commands are marked PASS.
+3. Move status to Done on the delivery board.
 
 ## Micro checks
 
