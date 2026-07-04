@@ -4,7 +4,7 @@ You asked for detailed guidance, so this module is intentionally literal.
 
 If you complete this file step-by-step, you will produce one real ESS artifact you can execute with your agents.
 
-## How this builds on earlier modules
+## Before You Start
 
 This is where design discipline becomes concrete.
 

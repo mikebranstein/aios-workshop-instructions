@@ -2,7 +2,7 @@
 
 Use this file while running labs.
 
-## How this builds on workshop execution
+## Before You Start
 
 This file is your validation companion for 14 and 16.
 

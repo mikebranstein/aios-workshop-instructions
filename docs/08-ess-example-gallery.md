@@ -2,7 +2,7 @@
 
 Use this file when writing ESS in 07-ess-guide and 06-build-first-vertical-slice.
 
-## How this builds on previous docs
+## Before You Start
 
 06 teaches ESS rules. This file gives concrete examples so you can apply those rules in different feature types.
 

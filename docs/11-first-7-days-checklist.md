@@ -11,7 +11,7 @@ Each day includes:
 - pass condition
 - common mistake to avoid
 
-## How this builds iteratively
+## Before You Start
 
 Each day depends on the previous day.
 

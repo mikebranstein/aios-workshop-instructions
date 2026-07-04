@@ -4,7 +4,7 @@ This file tells you how to convert training artifacts into an operational AIOS.
 
 It is intentionally practical: each phase has prerequisites, execution steps, failure signals, and exit gates.
 
-## How this builds on the workshop
+## Before You Start
 
 The workshop proves you can run one issue correctly.
 

@@ -8,7 +8,7 @@ Do not continue when a gate says stop.
 
 If you complete this workshop, you will have a working AIOS for coding delivery using GitHub + Copilot with deterministic controls.
 
-## How this builds on previous files
+## Before You Start
 
 This workshop applies the concepts and control rules from 00 through 13 in one continuous execution path.
 

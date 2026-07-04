@@ -4,7 +4,7 @@ This file explains how GitHub becomes your AIOS control plane, not just your cod
 
 If you apply this model correctly, your AIOS can be inspected, audited, and resumed by anyone on the team.
 
-## How this builds on previous modules
+## Before You Start
 
 In 02 you defined architecture roles and transitions.
 

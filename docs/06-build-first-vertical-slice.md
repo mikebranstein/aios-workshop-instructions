@@ -2,7 +2,7 @@
 
 Use this file as your live checklist while executing a real feature from issue to close.
 
-## How this builds on previous modules
+## Before You Start
 
 You already defined concepts in 01, architecture in 02, and state rules in 03.
 

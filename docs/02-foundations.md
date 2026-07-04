@@ -2,13 +2,13 @@
 
 This is the foundation module rewritten as a real workshop.
 
-## How this builds on 00 overview
+## Before You Start
 
 In 00 you learned the operating model and success criteria.
 
 In this file you turn those ideas into concrete habits through short labs.
 
-## Apply this as you read
+## While You Read
 
 Complete each lab before reading the next part so learning stays tied to real repo changes.
 

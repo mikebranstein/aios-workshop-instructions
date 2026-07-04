@@ -4,7 +4,7 @@ This file explains the architecture decisions behind your workshop system.
 
 It is not just a list of agents. It is the operating blueprint for a controllable, auditable coding pipeline.
 
-## How this builds on what you already did
+## Before You Start
 
 You have already established the big picture in 00 overview and core principles in 01 foundations.
 

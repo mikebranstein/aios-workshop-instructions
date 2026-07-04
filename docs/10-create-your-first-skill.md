@@ -2,7 +2,7 @@
 
 This module teaches you exactly how to create and use "skills" in your Agentic OS.
 
-## How this builds on previous modules
+## Before You Start
 
 You already used skills as a concept in 01 and as an execution dependency in 05.
 

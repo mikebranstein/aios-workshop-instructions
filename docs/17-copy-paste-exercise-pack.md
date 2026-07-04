@@ -2,7 +2,7 @@
 
 Use this as your exact text source during live exercises.
 
-## How this builds on previous files
+## Before You Start
 
 14 tells you when to run a step.
 

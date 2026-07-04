@@ -8,11 +8,11 @@ What should I actually do differently tomorrow
 
 This file answers that directly.
 
-## How this builds on your workshop flow
+## Before You Start
 
 You already have foundations, architecture, and state model.
 
-This file is where you pressure-test your decisions against frontier guidance so you keep what works and avoid complexity theater.
+In this file, you compare your choices against current industry guidance and keep only what improves delivery.
 
 ## Apply this now
 

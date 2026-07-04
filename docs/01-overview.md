@@ -1,4 +1,4 @@
-# 00 - Program Overview (How To Use This Workshop)
+# 01 - Program Overview (How To Use This Workshop)
 
 This file answers five questions before you begin:
 
@@ -12,23 +12,15 @@ If you read only one orientation file, read this one.
 
 ## How to use this file right now
 
-## How this builds the rest of your workshop
+Read this once, then move into execution.
 
-This overview is the control frame for every file that follows.
+If you have not completed setup yet, run docs/00-prerequisites-and-tooling.md first.
 
-When later modules feel detailed, come back here to reconnect each step to the full delivery lifecycle.
+Choose one learner path:
 
-Read this once, then act immediately.
-
-If you have not completed tooling setup yet, run docs/00-prerequisites-and-tooling.md first.
-
-Choose one starting path:
-
-- understand first: go to 01 foundations
-- build first: go to 14 zero-to-hero workshop
-- control model first: go to 02 reference architecture, then 03 github-as-state
-
-Do not stay in overview mode for long. This file is a launch point.
+- Understand first: go to 02-foundations.
+- Build first: go to 16-zero-to-hero-live-workshop.
+- Control model first: go to 03-reference-architecture, then 04-github-as-state.
 
 ## Quick checkpoint before moving on
 
@@ -102,22 +94,22 @@ The material is intentionally split into three layers so you can learn and execu
 
 Layer A: Concepts and architecture
 
-- 01 foundations
-- 13 industry synthesis
-- 02 reference architecture
+- 02 foundations
+- 15 industry synthesis
+- 03 reference architecture
 
 Layer B: Operational setup
 
-- 11 GitHub Projects setup
-- 10 .NET command pack
-- 03 GitHub as state and memory
+- 13 GitHub Projects setup
+- 12 .NET command pack
+- 04 GitHub as state and memory
 
 Layer C: Live execution
 
-- 14 zero-to-hero workshop
-- 16 copy-paste exercise pack
-- 15 answer keys
-- 17 capstone rubric
+- 16 zero-to-hero workshop
+- 17 copy-paste exercise pack
+- 18 answer keys
+- 19 capstone rubric
 
 Use Layer C while you are doing real work. Use Layers A and B to understand why each step exists.
 
@@ -179,14 +171,14 @@ You complete this program when all are true:
 
 ## How to start right now
 
-1. Read 01 foundations carefully once.
-2. Run Day 1 and Day 2 in 14 zero-to-hero workshop.
-3. Use 16 copy-paste pack during execution.
-4. Validate with 15 answer keys.
-5. Score with 17 rubric after your first full issue.
+1. Read 02 foundations carefully once.
+2. Run Day 1 and Day 2 in 16 zero-to-hero workshop.
+3. Use 17 copy-paste pack during execution.
+4. Validate with 18 answer keys.
+5. Score with 19 rubric after your first full issue.
 
 If you do this sequence exactly, you will have real traction within your first two sessions.
 
 ## Next step
 
-Open 01 foundations and complete the first two labs before attempting full live execution.
+Open 02 foundations and complete the first two labs before attempting full live execution.

@@ -2,7 +2,7 @@
 
 Use this runbook when a gate cannot be resolved inside normal retry limits.
 
-## How this builds on the workshop
+## Before You Start
 
 Gate loops and blocked-state handling are defined in foundations and state-machine.
 

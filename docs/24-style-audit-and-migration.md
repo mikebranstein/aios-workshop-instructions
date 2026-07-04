@@ -12,7 +12,7 @@ Use this as a navigation and consistency check, not as a one-time memo.
 
 When a file feels too abstract, come back here and confirm whether that file should teach, execute, or serve as an artifact.
 
-## How this builds on everything before it
+## Before You Start
 
 Files 00 through 19 define the system.
 

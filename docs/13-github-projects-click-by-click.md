@@ -14,19 +14,19 @@ By the end of this setup, you should be able to answer this at any moment:
 - who owns the next action
 - what gate must pass next
 
-## How this builds on earlier modules
+## Before You Start
 
 In 02 you defined architecture and in 03 you defined canonical state.
 
-This file is where that design becomes a working board your team can actually operate.
+In this file, you turn that design into a working board your team can use.
 
-## Apply this as you read
+## While You Read
 
 After each part, verify one real issue card reflects the field updates you just configured.
 
-If setup is done but cards are missing data, treat that as incomplete.
+If cards are missing data, finish setup before continuing.
 
-## Checkpoint before workshop execution
+## Checkpoint Before Continuing
 
 Before continuing, confirm at least one issue has complete State, Risk, Next Gate, and Owner Agent values on the board.
 

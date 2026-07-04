@@ -10,7 +10,7 @@ You are usually missing operating controls, not model intelligence.
 
 This guide explains each missing control, why it matters, and exactly how to implement it.
 
-## How this builds on your real runs
+## Before You Start
 
 Use this file after you complete at least one issue run.
 

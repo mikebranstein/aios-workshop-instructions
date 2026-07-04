@@ -2,7 +2,7 @@
 
 Use this file when a step fails and you are unsure what to do next.
 
-## How this builds on previous docs
+## Before You Start
 
 14 gives the execution path. This file gives recovery routing when a gate fails.
 

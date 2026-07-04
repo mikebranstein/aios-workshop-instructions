@@ -4,7 +4,7 @@ This file is your single source for .NET verification commands in local runs, ga
 
 Use these commands consistently so your gate decisions are reproducible.
 
-## How this builds on previous modules
+## Before You Start
 
 You already defined gates in 02 and state transitions in 03.
 
