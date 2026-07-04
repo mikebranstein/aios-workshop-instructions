@@ -1,25 +1,25 @@
-# Quality Gates
+# Gates (Docs 2)
 
 ## Design Gate
-- Required inputs: Completed issue template, ESS draft sections 1-7, risk level assigned.
-- Pass criteria: Design is feasible, scope bounded, risks documented with mitigations.
-- Evidence: Link to ESS and design approval comment.
-- Owner: Design Agent + Human approver.
+- Required inputs: issue, ESS draft
+- Pass criteria: ESS complete, binary ACs, risk mitigations defined
+- Fail signals: missing scope, ambiguous ACs, no rollback
+- Evidence: ESS link, design decision comment
 
 ## Verification Gate
-- Required inputs: Code changes and test updates.
-- Pass criteria: Build, tests, and lint all pass.
-- Evidence: CI/check logs and verification summary comment.
-- Owner: Verification Agent.
+- Required inputs: code changes, test updates
+- Pass criteria: restore/build/test pass, no blocking diagnostics
+- Fail signals: failed commands, missing evidence, unstable output
+- Evidence: command outputs, CI or local verification summary
 
 ## QA Gate
-- Required inputs: Verified build and completed QA checklist.
-- Pass criteria: Acceptance scenarios pass; no unresolved blocking defects.
-- Evidence: QA report document and defect list.
-- Owner: QA Agent.
+- Required inputs: verification pass, QA scenarios
+- Pass criteria: scenarios executed, no blocking defects
+- Fail signals: critical defects, untested scenarios
+- Evidence: QA report link, scenario results
 
 ## Merge Gate
-- Required inputs: Design/Verification/QA gates passed.
-- Pass criteria: Required reviewers approved; rollback plan present.
-- Evidence: PR review approvals and release summary.
-- Owner: Release Agent + Human approver.
+- Required inputs: QA pass, policy compliance
+- Pass criteria: required approvals and checks complete
+- Fail signals: missing approver, missing checks
+- Evidence: PR review history, checks summary, closure-ready note

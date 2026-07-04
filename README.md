@@ -6,40 +6,26 @@ This workspace is a hands-on workshop, not a theory guide. You can follow it lin
 
 If you want to start immediately, open and follow these in order:
 
-1. docs/00-prerequisites-and-tooling.md
-2. docs/01-overview.md
-3. docs/02-foundations.md
-4. docs/03-reference-architecture.md
-5. docs/04-github-as-state.md
-6. docs/05-training-regimen.md
+1. docs/README.md
+2. docs/01-module-1-tiny-end-to-end-run.md
+3. docs/02-module-2-intake-quality-template.md
+4. docs/03-module-3-first-ess.md
 
 ## Full Reading Order
 
-1. docs/00-prerequisites-and-tooling.md
-2. docs/01-overview.md
-3. docs/02-foundations.md
-4. docs/03-reference-architecture.md
-5. docs/04-github-as-state.md
-6. docs/05-training-regimen.md
-7. docs/06-build-first-vertical-slice.md
-8. docs/07-ess-guide.md
-9. docs/08-ess-example-gallery.md
-10. docs/09-implementation-blueprint.md
-11. docs/10-create-your-first-skill.md
-12. docs/11-first-7-days-checklist.md
-13. docs/12-dotnet-command-pack.md
-14. docs/13-github-projects-click-by-click.md
-15. docs/14-what-you-are-missing.md
-16. docs/15-industry-synthesis-agentic-os.md
-17. docs/16-zero-to-hero-live-workshop.md
-18. docs/17-copy-paste-exercise-pack.md
-19. docs/18-live-lab-answer-keys.md
-20. docs/19-capstone-evaluator-rubric.md
-21. docs/20-lab-file-by-file-solutions.md
-22. docs/21-escalation-runbook.md
-23. docs/22-troubleshooting-flowchart.md
-24. docs/23-curriculum-map-and-file-intent.md
-25. docs/24-style-audit-and-migration.md
+1. docs/README.md
+2. docs/01-module-1-tiny-end-to-end-run.md
+3. docs/02-module-2-intake-quality-template.md
+4. docs/03-module-3-first-ess.md
+5. docs/04-module-4-objective-gates.md
+6. docs/05-module-5-loop-safety-and-escalation.md
+7. docs/06-module-6-first-intake-skill-contract.md
+8. docs/07-module-7-design-build-skill-contracts.md
+9. docs/08-module-8-verification-qa-evidence-loop.md
+10. docs/09-module-9-github-state-source-of-truth.md
+11. docs/10-module-10-first-low-risk-automation.md
+12. docs/11-module-11-policy-boundaries-and-approvals.md
+13. docs/12-module-12-capstone-two-issue-run.md
 
 ## What You Will Build
 

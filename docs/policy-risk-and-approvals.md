@@ -1,31 +1,20 @@
-# Risk and Approval Policy
+# Risk and Approvals Policy (Docs 2)
 
-## Purpose
+## Risk levels
+- Low
+- Medium
+- High
 
-Define required gates and human approvals by risk level.
+## Approval requirements
+- Low: standard reviewer approval
+- Medium: designated reviewer plus owner approval
+- High: designated reviewer, owner approval, and final human sign-off before merge
 
-## Low Risk
+## Merge rules
+- Pull request required
+- Required checks must pass
+- Required reviewers must approve
+- Conversation resolution required
 
-- Required gates: Design, Verification
-- Required human approvals: 1 PR reviewer
-- QA gate: optional unless change affects shared core module
-
-## Medium Risk
-
-- Required gates: Design, Verification, QA
-- Required human approvals: 1 design approver + 1 PR reviewer
-- Merge rule: no bypass of required checks
-
-## High Risk
-
-- Required gates: Design, Verification, QA, Merge
-- Required human approvals: 2 PR reviewers + rollback plan approval
-- Additional rule: closure requires explicit sign-off comment
-
-## Escalation
-
-If disagreement on risk level:
-
-1. Default to higher risk level.
-2. Record decision in issue Decision Log.
-3. Continue only after approver sign-off.
+## Exceptions
+- Emergency hotfix requires explicit exception comment including reason, approver, and rollback plan
