@@ -1,6 +1,6 @@
 # 07 - ESS Guide (Executable System Spec, Full Walkthrough)
 
-You asked for detailed guidance, so this module is intentionally literal.
+This module is intentionally literal so you can execute it line by line.
 
 If you complete this file step-by-step, you will produce one real ESS artifact you can execute with your agents.
 
@@ -16,11 +16,11 @@ Do not read this passively.
 
 Create the ESS file while you read, fill each section in order, and keep criteria binary.
 
-## First, what you meant by "essays"
+## First, what ESS means
 
-I am treating "essays" as ESS, which stands for Executable System Spec.
+ESS stands for Executable System Spec.
 
-If you meant something different, tell me and I will swap this module.
+In this workshop, ESS is the design artifact used before build starts.
 
 ## Why ESS exists
 

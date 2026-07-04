@@ -99,7 +99,7 @@ Design Gate can only start when decision is READY.
 Open your issue content and run this prompt:
 
 ```text
-Act as the Intake Agent Skill defined in templates/skills/intake-agent.md.
+Use the intake skill instructions from templates/skills/intake-agent.md.
 Use the following work item data:
 
 <PASTE ISSUE BODY HERE>

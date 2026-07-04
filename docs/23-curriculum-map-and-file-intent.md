@@ -1,61 +1,49 @@
-# 23 - Curriculum Map and File Intent
+# 23 - Curriculum Progress Map
 
-This document explains what every major file is for.
+Use this file as a quick progress map before each working session.
 
-You asked for depth and no hidden gaps. This map prevents ambiguity by showing which files teach concepts, which files execute workflows, and which files are operational templates.
+## How to use this map
 
-## How to use this map iteratively
+At session start:
 
-This map builds on all prior modules by connecting concept files to execution files and artifact files.
+1. Pick one learning file.
+2. Pick one execution file.
+3. Pick one artifact file to validate output quality.
 
-Do not treat this as a static index.
+At session end:
 
-Use it at the start of each session to decide what to learn next, what to execute now, and what artifact to validate before moving on.
+1. Confirm one visible artifact change.
+2. Confirm one state update or decision log entry.
 
-## How to read this map
+## Learning files (understand why)
 
-Three file types are used intentionally:
+- docs/01-overview.md
+- docs/02-foundations.md
+- docs/03-reference-architecture.md
+- docs/04-github-as-state.md
+- docs/07-ess-guide.md
+- docs/09-implementation-blueprint.md
+- docs/12-dotnet-command-pack.md
+- docs/13-github-projects-click-by-click.md
+- docs/14-what-you-are-missing.md
+- docs/15-industry-synthesis-agentic-os.md
 
-1. Teaching guides
-- explain concepts and reasoning
+## Execution files (do the work)
 
-2. Execution runbooks
-- provide step-by-step actions and pass gates
+- docs/05-training-regimen.md
+- docs/06-build-first-vertical-slice.md
+- docs/10-create-your-first-skill.md
+- docs/16-zero-to-hero-live-workshop.md
 
-3. Operational artifacts
-- templates, checklists, and scoring tools used during execution
+## Artifact files (check quality)
 
-Short files are acceptable only when they are operational artifacts.
+- docs/11-first-7-days-checklist.md
+- docs/17-copy-paste-exercise-pack.md
+- docs/18-live-lab-answer-keys.md
+- docs/19-capstone-evaluator-rubric.md
+- docs/20-lab-file-by-file-solutions.md
 
-## Teaching guides
-
-- docs/01-overview.md: program orientation, outcomes, how to use the workshop
-- docs/02-foundations.md: foundational concepts with labs and practical interpretation
-- docs/03-reference-architecture.md: architecture decisions and control model
-- docs/04-github-as-state.md: state and memory operating model
-- docs/07-ess-guide.md: ESS concept and creation walkthrough
-- docs/09-implementation-blueprint.md: phased deployment strategy
-- docs/12-dotnet-command-pack.md: .NET verification rationale and command standards
-- docs/13-github-projects-click-by-click.md: GitHub Projects as AIOS state system
-- docs/14-what-you-are-missing.md: reliability control diagnostics
-- docs/15-industry-synthesis-agentic-os.md: frontier guidance translated to your implementation
-
-## Execution runbooks
-
-- docs/05-training-regimen.md: multi-week calendar and progression logic
-- docs/06-build-first-vertical-slice.md: exact issue-to-close runbook
-- docs/10-create-your-first-skill.md: first skill creation and validation
-- docs/16-zero-to-hero-live-workshop.md: primary scripted training path
-
-## Operational artifacts
-
-- docs/11-first-7-days-checklist.md: compressed launch checklist
-- docs/18-live-lab-answer-keys.md: quick correctness checks
-- docs/17-copy-paste-exercise-pack.md: reusable prompts and templates
-- docs/19-capstone-evaluator-rubric.md: objective graduation scoring
-- docs/20-lab-file-by-file-solutions.md: exact file solution examples
-
-## Governance and policy artifacts
+## Policy references (enforce controls)
 
 - docs/gates.md
 - docs/state-machine.md
@@ -65,35 +53,22 @@ Short files are acceptable only when they are operational artifacts.
 - docs/postmortem-template.md
 - docs/aios-definition-of-done.md
 
-These are intentionally concise because they are policy controls and should stay precise.
+## Recommended weekly loop
 
-## Work item examples
+1. Start with one issue in Backlog.
+2. Use execution files to move it through gates.
+3. Use artifact files to validate outputs.
+4. Use rubric to score outcome and identify one improvement.
 
-- docs/work-items/aios-001-project-state-sync.md
-- docs/ess-aios-001.md
+## Confidence check
 
-These are reference implementations for bootstrapping AIOS on itself.
+You are on track when you can answer all quickly:
 
-## Recommended reading and doing order
-
-1. Read docs/01-overview.md
-2. Read docs/02-foundations.md
-3. Read docs/15-industry-synthesis-agentic-os.md
-4. Execute docs/16-zero-to-hero-live-workshop.md with docs/17-copy-paste-exercise-pack.md
-5. Validate using docs/18-live-lab-answer-keys.md and docs/20-lab-file-by-file-solutions.md
-6. Score with docs/19-capstone-evaluator-rubric.md
-
-## Completion confidence test
-
-You can consider the curriculum clear enough when you can answer all without searching externally:
-
-1. What is Agentic OS in this workshop
-2. What is your canonical state source
-3. Why are retry caps required
-4. What evidence is mandatory at closure
-5. Which pattern is your default for feature delivery and why
-
-If any answer is unclear, revisit the corresponding teaching guide before continuing execution.
+1. Current issue state and next gate
+2. Missing evidence before next transition
+3. Current risk and required approval
+4. Retry status at current gate
+5. Closure evidence required for Done
 
 ## Next step
 

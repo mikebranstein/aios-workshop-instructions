@@ -1,382 +1,125 @@
-# 02 - Foundations Workshop (From Zero to Operational)
+# 02 - Foundations Workshop (Build First)
 
-This is the foundation module rewritten as a real workshop.
+This module gives you quick context, then immediate practice.
 
 ## Before You Start
 
-In 00 you learned the operating model and success criteria.
+Finish docs/00-prerequisites-and-tooling.md and docs/01-overview.md first.
 
-In this file you turn those ideas into concrete habits through short labs.
+## How to run this module
 
-## While You Read
+Use this loop for each section:
 
-Complete each lab before reading the next part so learning stays tied to real repo changes.
+1. Read the context block.
+2. Complete the build task.
+3. Pass the checkpoint.
 
-Read this file top-to-bottom once, then run the labs exactly in order.
+If checkpoint fails, stop and fix before moving on.
 
-For fully scripted live execution with copy-paste text and answer keys, immediately continue with:
+## Module 1 - Create one real work item
 
-- docs/16-zero-to-hero-live-workshop.md
-- docs/17-copy-paste-exercise-pack.md
-- docs/18-live-lab-answer-keys.md
+Context:
+You need one issue to run the workshop against real state.
 
-If a step says create a file, create it.
-If a step says run a command, run it.
-If a step has an output check, do not continue until it passes.
+Build task:
 
-## Checkpoint before you leave this file
-
-You should have:
-
-- one issue with state fields set
-- one workflow-vs-agent note in your repo
-- one tested intake skill contract with confidence rule
-
-If any item is missing, complete labs before moving on.
-
-## Next step
-
-Continue to docs/03-reference-architecture.md.
-
----
-
-## Part 1 - What Agentic OS Actually Means
-
-### Plain-English definition
-
-An Agentic OS is an operating model for AI-assisted work.
-
-It is not a single model prompt.
-It is a repeatable system with:
-
-- specialized roles (agents)
-- a workflow (orchestration)
-- a shared state/memory model
-- quality gates
-- retry loops
-- human approvals at risk boundaries
-
-For your goal, your Agentic OS is the delivery engine that takes a GitHub work item and runs it through:
-
-Intake -> Design -> Build -> Verify -> QA -> PR -> Close.
-
-### Why this matters
-
-Without an OS model, you get one-off outputs.
-With an OS model, you get repeatable outcomes.
-
-Repeatability is the whole point.
-
----
-
-## Part 2 - Industry Baseline (What Frontier Teams Converge On)
-
-This section ties together what major sources are saying.
-
-### 1) Start simple, add complexity only when needed
-
-Common message across Anthropic and Microsoft guidance:
-
-- Do not jump to multi-agent first.
-- Start with single agent + tools.
-- Add multi-agent only when specialization is clearly useful.
-
-Practical implication for you:
-
-- Week 1-2: single flow with strict gates
-- Week 3+: add specialists where quality or speed improves measurably
-
-### 2) Workflow vs Agent (critical distinction)
-
-Anthropic-style distinction:
-
-- Workflow: predefined code path (predictable)
-- Agent: model decides steps/tools dynamically (flexible)
-
-Practical implication:
-
-- Use workflows for deterministic delivery stages.
-- Use agent autonomy inside stages where exploration is needed.
-
-Example:
-
-- Deterministic: do not skip Design Gate.
-- Agentic: Build Agent chooses exact files to edit.
-
-### 3) Orchestration patterns are not interchangeable
-
-Microsoft architecture guidance describes major patterns:
-
-- Sequential: fixed pipeline
-- Concurrent: parallel specialists
-- Handoff: dynamic transfer between specialists
-- Group chat: collaborative debate / maker-checker
-- Magentic: manager builds and adapts a task ledger dynamically
-
-Practical implication:
-
-- For coding delivery, your default should be Sequential + maker-checker loops.
-- Add Concurrent only for independent tasks (for example, security review and docs review in parallel).
-- Use Magentic pattern only when task path is unknown upfront.
-
-### 4) Loops need caps, or they become chaos
-
-Across sources, loop guidance is consistent:
-
-- loops improve quality
-- uncapped loops waste time and money
-
-Your rule (adopt now):
-
-- max retries per gate = 3
-- after 3 failures -> Blocked + escalate to human
-
-Retry definition:
-
-- one retry = one full gate attempt
-- verification gate attempt means run full restore/build/test/format sequence once
-- retry count resets only when root cause class changes
-
-Detailed policy lives in docs/state-machine.md.
-
-### 5) State must be external and durable
-
-Industry guidance emphasizes durable state for long-running workflows.
-
-Your implementation:
-
-- GitHub Project fields = state
-- issue comments = decision log
-- PR checks = verification truth
-- ESS + QA report = execution evidence
-
-If state only exists in chat, it is not operational state.
-
-### 6) Skills and tools must be explicit
-
-Modern agent stacks separate:
-
-- Skills: reusable behavior modules (instructions/contracts)
-- Tools: external actions (filesystem, APIs, shells)
-
-Practical implication:
-
-- skills define how an agent thinks and reports
-- tools define what an agent can do
-
-Your AIOS needs both, with least privilege.
-
----
-
-## Part 3 - Your Target Architecture (for this training)
-
-You are building a coding Agentic OS with this control model:
-
-1. GitHub Issue starts work
-2. Intake skill validates completeness
-3. ESS is created and approved
-4. Build runs in feature branch
-5. Verification gate enforces build/test/lint
-6. QA gate validates scenarios
-7. PR merges with required approvals
-8. Closure posts evidence and marks Done
-
-This is a controlled, auditable pipeline.
-
-Not "vibe coding."
-
----
-
-## Part 4 - Foundation Labs (Do These Now)
-
-Each lab takes 15-30 minutes.
-
-## Lab 0 - Confirm the operating surface
-
-Goal: verify your system of record.
-
-Do this:
-
-1. Open docs/13-github-projects-click-by-click.md and complete Part A through Part D.
-2. Ensure one issue exists in your project board.
-3. Set fields on that item:
+1. Create one feature issue in your target repository.
+2. Add it to your GitHub Project.
+3. Set these fields:
    - State = Backlog
    - Risk = Medium
    - Next Gate = Design Gate
    - Owner Agent = Intake
 
-Output check:
+Checkpoint:
 
-- You can point to one issue card with all four fields set.
+- One issue card exists with all four fields populated.
 
-## Lab 1 - Understand workflow vs agent in your own repo
+## Module 2 - Define your gate language
 
-Goal: make the distinction concrete.
+Context:
+Clear pass and fail criteria prevent debate later.
 
-Create file docs/workflow-vs-agent.md with this exact template:
+Build task:
 
-```markdown
-# Workflow vs Agent (My Repo)
+1. Open docs/gates.md.
+2. Add at least three objective pass criteria for each gate.
+3. Add at least one fail signal for each gate.
 
-## Deterministic Workflow Steps
-- Step 1:
-- Step 2:
-- Step 3:
+Checkpoint:
 
-## Agentic Decision Points
-- Decision 1:
-- Decision 2:
-- Decision 3:
+- Another person could evaluate gate status without asking follow-up questions.
 
-## Guardrails
-- Never skip:
-- Always require human approval when:
-```
+## Module 3 - Add retry safety
 
-Fill it using your current AIOS process.
+Context:
+Quality loops need hard stop conditions.
 
-Output check:
-
-- At least 3 deterministic steps and 3 agentic decisions listed.
-
-## Lab 2 - Build your first real skill contract
-
-Goal: create one reusable skill with strict output.
-
-1. Open templates/skills/intake-agent.md.
-2. Confirm output schema is JSON-only.
-3. Add one field to output schema: confidence (0.0 to 1.0).
-4. Add guardrail: confidence < 0.7 cannot return READY.
-
-Now test in Copilot chat with one real issue.
-
-Prompt:
-
-```text
-Act as templates/skills/intake-agent.md exactly.
-Input:
-<PASTE ISSUE BODY>
-Return JSON only.
-```
-
-Output check:
-
-- You get valid JSON with decision, missing_fields, questions, next_state, summary, confidence.
-
-## Lab 3 - Install loop safety
-
-Goal: prevent infinite refinement loops.
+Build task:
 
 1. Open docs/state-machine.md.
 2. Add a section named Loop Safety Policy.
 3. Add these rules:
    - Max retries per gate = 3
-   - On third fail: move State to Blocked
-   - Set Owner Agent = Human Review
-   - Require postmortem document before retry
+   - On third fail, move work to Blocked
+   - Record reason and next action in issue comments
 
-Output check:
+Checkpoint:
 
-- The policy is written and referenced in your process docs.
+- Retry policy is documented and easy to find.
 
-## Lab 4 - Add objective gate criteria
+## Module 4 - Build one execution spec
 
-Goal: remove ambiguity from pass/fail.
+Context:
+A short executable spec improves implementation quality.
 
-1. Open docs/gates.md.
-2. For each gate, add at least 3 pass criteria that are objective.
-3. For Verification Gate, include .NET command set from docs/12-dotnet-command-pack.md.
-
-Output check:
-
-- A reviewer can determine pass/fail without asking follow-up questions.
-
-## Lab 5 - Create your first ESS from scratch
-
-Goal: produce executable planning artifact.
+Build task:
 
 1. Copy templates/ess-feature.md to docs/ess-foundations-lab.md.
-2. Fill sections 1-7 completely.
-3. Ensure every acceptance criterion is binary.
-4. Ensure rollback section is realistic.
+2. Fill all required sections.
+3. Make acceptance criteria binary pass or fail.
 
-Output check:
+Checkpoint:
 
-- Another engineer could implement from ESS without a live meeting.
+- Another engineer could implement from your spec without a live meeting.
 
----
+## Module 5 - Run a mini end-to-end rehearsal
 
-## Part 5 - What "Magentic" Means and Where It Fits
+Context:
+Practice one full loop before deeper architecture work.
 
-You mentioned "magenta OS." In current architecture language, you likely mean Magentic orchestration.
+Build task:
 
-Magentic pattern (per Microsoft architecture language):
+1. Add one issue comment with intake decision.
+2. Add one issue comment with design decision.
+3. Move State from Backlog to Ready if criteria are met.
+4. If criteria are not met, move to Blocked and explain why.
 
-- a manager agent dynamically builds and updates a task ledger
-- delegates to specialists
-- checks progress in loops
-- adapts plan as new evidence appears
+Checkpoint:
 
-When to use:
+- Issue timeline shows at least one decision and one state transition.
 
-- open-ended tasks where step order is unknown
+## Common mistakes and fixes
 
-When not to use:
+Mistake: reading ahead instead of executing.
+Fix: do one module at a time and require checkpoint pass.
 
-- deterministic delivery flows like normal feature implementation
+Mistake: vague gates.
+Fix: use measurable pass or fail language.
 
-For your AIOS now:
+Mistake: no evidence links.
+Fix: add explicit links in issue comments at every transition.
 
-- Do not start with full Magentic.
-- Start with deterministic delivery pipeline + evaluator loops.
-- Introduce Magentic manager later for large refactors or incident-like tasks.
+## Checkpoint before you leave this file
 
----
+You should have all of these:
 
-## Part 6 - Common Beginner Mistakes (and exact fixes)
+- one issue with state fields set
+- objective gate criteria documented
+- loop safety policy documented
+- one completed ESS draft
+- one mini state transition run
 
-Mistake: adding too many agents too soon.
-Fix: begin with Intake, Design, Build, Verification.
+## Next step
 
-Mistake: prose outputs with no schema.
-Fix: force JSON outputs for gate decisions.
-
-Mistake: no durable state.
-Fix: GitHub Project fields are mandatory state.
-
-Mistake: no stop conditions.
-Fix: retry caps + escalation.
-
-Mistake: closing issues without evidence.
-Fix: closure template with ESS/PR/Verification/QA links.
-
----
-
-## Part 7 - Definition of Foundation Complete
-
-You are done with Foundations only when all are true:
-
-1. You can explain workflow vs agent in your own words.
-2. You can explain why your default pattern is sequential with loops.
-3. You have one active issue with project state fields populated.
-4. You have one tested Intake skill returning strict JSON.
-5. You have loop safety and objective gates documented.
-6. You created one full ESS draft.
-
-If any item is false, Foundations is not complete.
-
----
-
-## Sources Used For This Foundations Rewrite
-
-- Anthropic Engineering: Building effective agents
-  - https://www.anthropic.com/engineering/building-effective-agents
-- Microsoft Azure Architecture Center: AI Agent Orchestration Patterns
-  - https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/ai-agent-design-patterns
-- GitHub Copilot docs (agents, skills, automations, memory, hooks)
-  - https://docs.github.com/en/copilot
-- OpenAI: New tools for building agents + Agents SDK docs
-  - https://openai.com/index/new-tools-for-building-agents/
-  - https://developers.openai.com/api/docs/guides/agents
-
-Use these as concept references. Your implementation remains Copilot-first in this repo.
+Continue to docs/03-reference-architecture.md.

@@ -6,9 +6,9 @@ Use this only after attempting the labs once.
 
 ## Before You Start
 
-You first attempt in 01 and 14.
+You first attempt the labs in the earlier modules.
 
-Then you use this file to compare output shape, correct mistakes, and internalize what good artifacts look like.
+Then you use this file to compare output shape, correct mistakes, and learn what strong artifacts look like.
 
 ## How to apply this file
 

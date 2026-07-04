@@ -1,8 +1,8 @@
-# 15 - Industry Synthesis: Frontier Guidance Applied To Your AIOS
+# 15 - Industry Synthesis: Practical Guidance Applied To Your AIOS
 
-This module translates frontier agent guidance into practical decisions for your coding system.
+This module translates current guidance into practical decisions for your coding system.
 
-Most teams read thought leadership and ask:
+Most teams read guidance and ask:
 
 What should I actually do differently tomorrow
 
@@ -181,7 +181,7 @@ This is a healthy trajectory. Do not rush beyond this point.
 
 ## 7) Safe implementation sequence for your profile
 
-Given your .NET depth and newness to agent orchestration internals, the lowest-risk path is:
+Given a .NET implementation context and early-stage orchestration maturity, the lowest-risk path is:
 
 1. enforce governance and branch rules
 2. prove one issue end-to-end manually

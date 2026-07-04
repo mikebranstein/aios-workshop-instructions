@@ -16,7 +16,7 @@ Apply this as a strict gate checklist, not as a loose reference.
 
 Do one step at a time, post evidence before advancing, and treat each exit criteria line as a hard gate.
 
-## Before You Start
+## Prerequisite check
 
 Confirm these files exist:
 
@@ -51,8 +51,8 @@ Exit criteria:
 Run this prompt in Copilot Chat:
 
 ```text
-Act as the Intake Agent Skill defined in templates/skills/intake-agent.md.
-Use this issue content:
+Use the intake instructions in templates/skills/intake-agent.md.
+Evaluate this issue content:
 
 <PASTE ISSUE BODY>
 
@@ -96,7 +96,7 @@ Exit criteria:
 Run this prompt:
 
 ```text
-Act as the Design Agent Skill in templates/skills/design-agent.md.
+Use the design instructions in templates/skills/design-agent.md.
 Input:
 - Work item content
 - ESS draft
@@ -163,7 +163,7 @@ git commit -m "feat(issue-<id>): implement AC1 request validation"
 Run this prompt:
 
 ```text
-Act as the Verification Agent Skill in templates/skills/verification-agent.md.
+Use the verification instructions in templates/skills/verification-agent.md.
 Use these commands:
 - Build: dotnet build --configuration Release
 - Test: dotnet test --configuration Release --logger "trx;LogFileName=test-results.trx"

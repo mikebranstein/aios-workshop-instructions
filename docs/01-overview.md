@@ -1,160 +1,70 @@
 # 01 - Program Overview (How To Use This Workshop)
 
-This file answers five questions before you begin:
+This workshop is build-first.
 
-1. What this program teaches
-2. What an Agentic OS means in practice
-3. Why this is different from prompt engineering alone
-4. How to move through the training without getting lost
-5. What "done" looks like at the end
-
-If you read only one orientation file, read this one.
+You get a short map, then you build in small steps.
 
 ## How to use this file right now
 
-Read this once, then move into execution.
+1. Read this file once.
+2. Start docs/02-foundations.md immediately after.
+3. Build every exercise before moving to the next file.
 
-If you have not completed setup yet, run docs/00-prerequisites-and-tooling.md first.
+If setup is incomplete, finish docs/00-prerequisites-and-tooling.md first.
 
-Follow the workshop in strict order from docs/02-foundations.md through docs/24-style-audit-and-migration.md.
+## 1000-foot overview in 2 minutes
 
-## Quick checkpoint before moving on
-
-You should be able to say, in one sentence each:
-
-- what Agentic OS means in this workshop
-- what your target state flow is
-- what proof is required before closure
-
-## What you are building
-
-You are building an Agentic OS for software delivery.
-
-In plain language, this means a repeatable system that can take a work item from idea to closure with controls and evidence.
-
-Your target run looks like this:
+You are building a repeatable delivery workflow that moves one issue through:
 
 Backlog -> Ready -> In Design -> In Build -> In Verification -> In QA -> Ready to Merge -> Done
 
-Each state transition requires an owner, a gate decision, and evidence.
+At each step, you produce evidence.
 
-## What Agentic OS means here
+## Workshop rhythm (used in every module)
 
-An Agentic OS is not a model. It is an operating model.
+Each module follows the same loop:
 
-It combines:
+1. Quick context (3-5 minutes)
+2. Build task (10-20 minutes)
+3. Checkpoint (2-5 minutes)
+4. Common fixes (as needed)
 
-- role-specialized agents
-- explicit workflow control
-- shared state and memory
-- quality gates
-- retry and escalation loops
-- human approvals at policy boundaries
+If a checkpoint fails, fix it before continuing.
 
-You can think of it like DevOps for AI-assisted delivery.
+## What you will build by the end
 
-Without this operating model, AI helps you produce output.
-With this operating model, AI helps you produce reliable outcomes.
+You will produce a full, auditable delivery path with:
 
-## Why this is not just "one great prompt"
+- issue intake quality checks
+- design and execution spec artifacts
+- build and test evidence
+- QA evidence
+- merge and closure evidence links
 
-One excellent prompt can produce surprisingly good code.
+## How to avoid getting stuck
 
-The problem is reliability under repetition.
+- Do not skip ahead.
+- Do not read three files before doing one exercise.
+- Do not continue when a checkpoint is red.
 
-When you run 20 work items, prompt-only systems drift:
-
-- scope drift
-- skipped checks
-- inconsistent documentation
-- weak rollback planning
-- hard-to-audit decisions
-
-This workshop solves that by making process explicit and testable.
-
-## What your final system will do
-
-By completion, your AIOS will support this flow:
-
-1. Intake: validates issue completeness
-2. Design: produces ESS and risk-aware approach
-3. Build: implements within approved scope
-4. Verification: runs .NET build/test/lint checks
-5. QA: validates acceptance and regression scenarios
-6. Release: prepares PR with evidence and rollback notes
-7. Closure: closes issue with complete audit links
-
-## How the curriculum is structured
-
-This curriculum is designed as one continuous sequence from docs/00-prerequisites-and-tooling.md to docs/24-style-audit-and-migration.md.
-
-Read and execute in numeric order.
-
-Earlier files establish foundations and controls.
-Middle files turn those controls into repeatable operating behavior.
-Later files run full execution, recovery, and evaluation loops.
-
-## Program principles
-
-These principles are non-negotiable in this workshop:
-
-- Reliability over novelty
-- Evidence over opinion
-- Deterministic workflow where possible
-- Explicit escalation when uncertain
-- Human approvals at risk boundaries
-
-If you are unsure what to do, return to these five principles.
-
-## Progression model you will pass through
-
-Step 1: Manual orchestration
-
-- You run the flow with checklists and skills.
-- Goal is process correctness.
-
-Step 2: Assisted orchestration
-
-- GitHub Actions automate transitions and summaries.
-- Goal is consistency and reduced manual overhead.
-
-Step 3: Selective autonomy
-
-- Agent behaviors are automated under policy.
-- Goal is speed without losing control.
-
-Important: Do not skip ahead. Move to the next step only when current controls are stable.
-
-## What you will produce
-
-By design, this workshop leaves artifacts, not just understanding.
-
-You will produce:
-
-- skills and agent contracts
-- ESS and QA artifacts
-- gate and policy documents
-- GitHub workflow automation
-- closure evidence for real issues
-- capstone run metrics
-
-These artifacts are your operational knowledge base.
+Small wins first. Depth follows practice.
 
 ## Completion criteria
 
-You complete this program when all are true:
+You are done when all are true:
 
-1. You can run two consecutive real issues end-to-end.
-2. No gate is skipped in either run.
-3. Every closure includes ESS, PR, verification, and QA links.
-4. Retry and escalation policy is honored.
-5. Your capstone score meets the rubric threshold.
+1. Three issues are completed end-to-end.
+2. Each issue has complete evidence links.
+3. No quality gate is skipped.
+4. Retry and escalation rules are followed.
 
-## How to start right now
+## Quick checkpoint before moving on
 
-1. Complete docs/02-foundations.md.
-2. Continue sequentially through each numbered file in order.
-3. Do not skip ahead. Finish each checkpoint before moving on.
+You should be able to explain:
+
+- the state flow above
+- why checkpoints must pass before moving on
+- what evidence is needed before closure
 
 ## Next step
 

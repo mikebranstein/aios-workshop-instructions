@@ -22,7 +22,7 @@ Escalate when any is true:
 
 - Intake gate blocker: Product owner or issue author
 - Design gate blocker: Tech lead or architecture owner
-- Verification gate blocker: Build owner and CI maintainer
+- Verification gate blocker: Build owner and CI workflow owner
 - QA gate blocker: QA owner
 - Merge blocker: Repository admin or release owner
 

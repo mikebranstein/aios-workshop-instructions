@@ -307,7 +307,7 @@ Action:
 Run this prompt:
 
 ```text
-Act as templates/skills/design-agent.md.
+Use instructions from templates/skills/design-agent.md.
 Evaluate this ESS for scope clarity, risk handling, and readiness for build.
 Return JSON only with decision PASS|REVISE|BLOCKED.
 ```

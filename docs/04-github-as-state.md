@@ -1,228 +1,115 @@
-# 04 - Using GitHub as State and Memory (Operational Model)
+# 04 - Using GitHub as State and Memory (Hands-On)
 
-This file explains how GitHub becomes your AIOS control plane, not just your code host.
-
-If you apply this model correctly, your AIOS can be inspected, audited, and resumed by anyone on the team.
+This module makes GitHub your visible system of record.
 
 ## Before You Start
 
-In 02 you defined architecture roles and transitions.
+Complete docs/03-reference-architecture.md first.
 
-In this file you bind that architecture to durable state in GitHub so it can run repeatedly without relying on chat memory.
+## How to run this module
 
-## Apply this immediately
+Keep one real issue open while you work.
 
-While reading, keep one real issue open and map these fields on it:
+For each section:
 
-- State
-- Risk
-- Owner Agent
-- Next Gate
+1. Read context.
+2. Perform the build task.
+3. Pass checkpoint.
 
-After each section, confirm your issue still reflects the canonical state rule.
+## Module 1 - Set canonical state fields
 
-## Checkpoint before continuing
+Context:
+One source of truth is required for predictable delivery.
 
-You should be able to answer, without guessing:
+Build task:
 
-- what is canonical state
-- where each decision is logged
-- what evidence is required before Done
+1. In your project board, verify or create these fields:
+	- State
+	- Risk
+	- Next Gate
+	- Owner Agent
+2. Reuse equivalent existing fields before creating new ones.
+3. Mark State as the canonical state field for workflow tracking.
 
-## Customization starts here
+Checkpoint:
 
-This is the first step where project custom fields become required.
+- One issue shows all four fields populated.
 
-If your board does not yet have operational fields, configure them now.
-Reuse equivalent existing fields when possible and create only missing ones.
+## Module 2 - Add state value definitions
 
-Required operational fields:
+Context:
+State names are useful only when team meaning is consistent.
 
-- State (single select)
-- Risk (single select)
-- Next Gate (single select)
-- Owner Agent (text)
+Build task:
 
-For a click-by-click setup walkthrough, run docs/13-github-projects-click-by-click.md.
+1. In docs/state-machine.md, confirm state list:
+	- Backlog, Ready, In Design, In Build, In Verification, In QA, Ready to Merge, Done, Blocked
+2. Add one-line definition for each state.
+
+Checkpoint:
+
+- Team members can read definitions and classify one issue the same way.
+
+## Module 3 - Define decision log location
+
+Context:
+Decisions must be findable after the work is done.
+
+Build task:
+
+1. Decide one standard location for gate decisions.
+2. Add the rule to docs/evidence-convention.md.
+3. Add one decision comment to your active issue.
+
+Checkpoint:
+
+- You can find the latest decision in under 30 seconds.
+
+## Module 4 - Run one event-to-state update
+
+Context:
+State should update from real delivery events.
+
+Build task:
+
+1. Open or update a pull request linked to your issue.
+2. Update project State and Next Gate based on that event.
+3. Add a short comment explaining why the transition was valid.
+
+Checkpoint:
+
+- Issue timeline and project fields tell the same story.
+
+## Module 5 - Perform a data quality audit
+
+Context:
+Bad state data breaks reporting and automation.
+
+Build task:
+
+For one active issue, verify all are true:
+
+1. State is populated.
+2. Owner Agent is populated for active state.
+3. Next Gate is populated unless State is Done.
+4. At least one gate decision comment exists.
+5. Evidence links are present before closure.
+
+Checkpoint:
+
+- All five checks pass.
+
+## Common anti-patterns and fixes
+
+Anti-pattern: state only in chat.
+Fix: use project fields and issue timeline.
+
+Anti-pattern: issue closed without evidence links.
+Fix: require ESS, PR, verification, and QA links before Done.
+
+Anti-pattern: too many labels used as state.
+Fix: keep labels lightweight and use canonical project fields.
 
 ## Next step
 
 Continue to docs/05-training-regimen.md.
-
-## 1) Why GitHub is a strong first state layer
-
-An Agentic OS needs durable state, event history, approvals, and artifacts.
-
-GitHub already has these primitives:
-
-- durable entities: issues, projects, pull requests
-- timeline events: comments, review actions, merges
-- verification outputs: check runs and workflow logs
-- governance points: approvals and branch protection
-
-Because this infrastructure already exists, you can start with process quality instead of infrastructure engineering.
-
-## 2) Canonical state rule
-
-Your system needs exactly one source of truth for delivery state.
-
-For this workshop:
-
-- GitHub Project field State is canonical.
-
-Labels and comments are useful, but not canonical.
-
-If project state and labels disagree, project state wins and labels must be reconciled.
-
-## 3) Required state schema
-
-Minimum fields to operate reliably:
-
-- State: Backlog, Ready, In Design, In Build, In Verification, In QA, Ready to Merge, Done, Blocked
-- Priority: P0 to P3
-- Risk: Low, Medium, High
-- Owner Agent: current role responsible for progress
-- Next Gate: immediate gate that must pass next
-
-Why these five:
-
-- State tells where work is
-- Priority and Risk tell how to treat work
-- Owner Agent tells who acts next
-- Next Gate tells what must be proven before moving
-
-## 4) Memory model mapping
-
-Your AIOS memory is distributed across GitHub artifacts.
-
-Requirement memory:
-
-- issue body and linked requirements
-
-Decision memory:
-
-- issue Decision Log comments
-
-Design memory:
-
-- ESS and design documents
-
-Implementation memory:
-
-- commits and pull request conversation
-
-Verification memory:
-
-- CI logs and verification summaries
-
-QA memory:
-
-- QA report files and defect comments
-
-Closure memory:
-
-- final closure comment with evidence links
-
-This memory model is practical because it is reviewable by humans and machines.
-
-## 5) Event-driven state transitions
-
-Once your manual process is stable, transitions should be triggered by events.
-
-High-value events:
-
-- issue marked ready
-- pull request opened and linked to issue
-- checks completed
-- review approved
-- pull request merged
-
-Each event should produce one of three outcomes:
-
-- transition applied
-- transition blocked with reason
-- no-op with explanation
-
-Avoid silent behavior.
-
-## 6) Transition ownership
-
-Every transition must have a responsible owner.
-
-Example ownership map:
-
-- Backlog -> Ready: Intake Agent
-- Ready -> In Design: Planning or Design Agent
-- In Build -> In Verification: Build Agent
-- In Verification -> In QA: Verification Agent
-- In QA -> Ready to Merge: QA Agent
-- Ready to Merge -> Done: Release and Closure with human approval
-
-When ownership is unclear, items stall.
-
-## 7) What to automate and what not to automate
-
-Automate first:
-
-- field and label transitions from deterministic events
-- check result summaries
-- evidence reminders
-
-Keep human-required:
-
-- medium and high risk design approvals
-- policy exceptions
-- high-risk merge and closure decisions
-
-This split preserves velocity while protecting safety.
-
-## 8) Data quality rules
-
-If your state data quality drops, your AIOS becomes unreliable.
-
-Enforce these rules:
-
-1. State field always populated.
-2. Owner Agent always populated for active states.
-3. Next Gate always populated outside Done.
-4. Decision Log updated on every gate decision.
-5. Closure requires links to ESS, PR, verification, and QA evidence.
-
-## 9) Common anti-patterns and fixes
-
-Anti-pattern: state only in chat context.
-Fix: persist state transitions in project fields and comments.
-
-Anti-pattern: issue closed after merge without QA evidence.
-Fix: closure check rejects missing QA link.
-
-Anti-pattern: too many labels with no operational meaning.
-Fix: keep labels lightweight and rely on state fields.
-
-Anti-pattern: no blocker semantics.
-Fix: use Blocked state with explicit reason and owner.
-
-## 10) Practical implementation walkthrough
-
-Run this sequence on one issue:
-
-1. create issue from template
-2. add to project with initial fields
-3. run Intake skill and log decision
-4. set State to Ready or Blocked based on output
-5. create ESS and set Next Gate to Design Gate
-6. continue through Build, Verification, QA, and closure with evidence links
-
-If you can perform this sequence with complete artifact traceability, your GitHub state model is functioning.
-
-## Exercise
-
-Pick one real issue and complete this short audit:
-
-1. What is current State
-2. Who is current Owner Agent
-3. What is Next Gate
-4. What evidence is missing for next transition
-5. Is a human approval required now
-
-If you cannot answer all five from GitHub alone, your state model is incomplete.
