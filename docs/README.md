@@ -1,6 +1,22 @@
-# AIOS Workshop V2 (Docs 2)
+# AIOS Workshop V2
 
 This is the new workshop track built from the approved ground-up outline.
+
+## Repo Topology
+
+This workshop uses a two-repo default model, with an optional third repo.
+
+1. Repo 1: Workshop Instructions Repo
+- Purpose: workshop modules and templates.
+- In this workspace: this repository and this docs folder.
+
+2. Repo 2: Learner Delivery Repo
+- Purpose: where learners create issues, implement code, run checks, and merge PRs.
+- This is the primary execution surface during the workshop.
+
+3. Repo 3: Framework Repo (optional)
+- Purpose: package a reusable Agentic OS framework separate from project code.
+- Not required for the workshop modules in this track.
 
 Design intent:
 - build starts in Module 1

@@ -2,6 +2,22 @@
 
 This workspace is a hands-on workshop, not a theory guide. You can follow it line by line and build a working multi-agent coding system.
 
+## Repo Topology
+
+This workshop uses a two-repo default model, with an optional third repo.
+
+1. Repo 1: Workshop Instructions Repo
+- Purpose: training modules, templates, and workshop guidance.
+- In this workspace: this repository.
+
+2. Repo 2: Learner Delivery Repo
+- Purpose: real issues, code changes, PRs, and state transitions during the workshop.
+- This is where learners run the delivery flow.
+
+3. Repo 3: Framework Repo (optional)
+- Purpose: package a reusable Agentic OS framework separate from project delivery code.
+- Not required for this workshop path.
+
 ## Fast Start
 
 If you want to start immediately, open and follow these in order:
