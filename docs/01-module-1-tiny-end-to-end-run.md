@@ -197,7 +197,7 @@ If a command fails, fix only the first failure, rerun, and update your issue not
 When verification is complete, add this exact closure comment in the issue:
 
 ```markdown
-## Closure Summary (Module 1)
+## Closure Summary
 
 ### Outcome
 PASS | FAIL
