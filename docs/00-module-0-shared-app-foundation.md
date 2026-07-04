@@ -106,6 +106,7 @@ Requirements:
 	- checkout failure when unavailable
 	- return success
 	- return failure when already available
+- Add a .gitignore for .NET/C#/ASP.NET Core MVC projects (bin/, obj/, .vs/, TestResults/, user-specific files).
 - Add a README.md with exact commands to run restore, build, test, and run.
 
 Constraints:
