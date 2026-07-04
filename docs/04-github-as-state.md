@@ -43,7 +43,7 @@ Required operational fields:
 - Next Gate (single select)
 - Owner Agent (text)
 
-For a click-by-click setup walkthrough, run docs/14-github-projects-click-by-click.md.
+For a click-by-click setup walkthrough, run docs/13-github-projects-click-by-click.md.
 
 ## Next step
 

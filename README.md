@@ -7,42 +7,40 @@ This workspace is a hands-on workshop, not a theory guide. You can follow it lin
 If you want to start immediately, open and follow these in order:
 
 1. docs/00-prerequisites-and-tooling.md
-2. docs/01-beginner-gate-checklist.md
-3. docs/02-overview.md
-4. docs/03-foundations.md
-5. docs/17-zero-to-hero-live-workshop.md
-6. docs/18-copy-paste-exercise-pack.md
-7. docs/19-live-lab-answer-keys.md
-8. docs/20-capstone-evaluator-rubric.md
+2. docs/01-overview.md
+3. docs/02-foundations.md
+4. docs/16-zero-to-hero-live-workshop.md
+5. docs/17-copy-paste-exercise-pack.md
+6. docs/18-live-lab-answer-keys.md
+7. docs/19-capstone-evaluator-rubric.md
 
 ## Full Reading Order
 
 1. docs/00-prerequisites-and-tooling.md
-2. docs/01-beginner-gate-checklist.md
-3. docs/02-overview.md
-4. docs/03-foundations.md
-5. docs/04-reference-architecture.md
-6. docs/05-github-as-state.md
-7. docs/06-training-regimen.md
-8. docs/07-build-first-vertical-slice.md
-9. docs/08-ess-guide.md
-10. docs/09-ess-example-gallery.md
-11. docs/10-implementation-blueprint.md
-12. docs/11-create-your-first-skill.md
-13. docs/12-first-7-days-checklist.md
-14. docs/13-dotnet-command-pack.md
-15. docs/14-github-projects-click-by-click.md
-16. docs/15-what-you-are-missing.md
-17. docs/16-industry-synthesis-agentic-os.md
-18. docs/17-zero-to-hero-live-workshop.md
-19. docs/18-copy-paste-exercise-pack.md
-20. docs/19-live-lab-answer-keys.md
-21. docs/20-capstone-evaluator-rubric.md
-22. docs/21-lab-file-by-file-solutions.md
-23. docs/22-escalation-runbook.md
-24. docs/23-troubleshooting-flowchart.md
-25. docs/24-curriculum-map-and-file-intent.md
-26. docs/25-style-audit-and-migration.md
+2. docs/01-overview.md
+3. docs/02-foundations.md
+4. docs/03-reference-architecture.md
+5. docs/04-github-as-state.md
+6. docs/05-training-regimen.md
+7. docs/06-build-first-vertical-slice.md
+8. docs/07-ess-guide.md
+9. docs/08-ess-example-gallery.md
+10. docs/09-implementation-blueprint.md
+11. docs/10-create-your-first-skill.md
+12. docs/11-first-7-days-checklist.md
+13. docs/12-dotnet-command-pack.md
+14. docs/13-github-projects-click-by-click.md
+15. docs/14-what-you-are-missing.md
+16. docs/15-industry-synthesis-agentic-os.md
+17. docs/16-zero-to-hero-live-workshop.md
+18. docs/17-copy-paste-exercise-pack.md
+19. docs/18-live-lab-answer-keys.md
+20. docs/19-capstone-evaluator-rubric.md
+21. docs/20-lab-file-by-file-solutions.md
+22. docs/21-escalation-runbook.md
+23. docs/22-troubleshooting-flowchart.md
+24. docs/23-curriculum-map-and-file-intent.md
+25. docs/24-style-audit-and-migration.md
 
 ## What You Will Build
 

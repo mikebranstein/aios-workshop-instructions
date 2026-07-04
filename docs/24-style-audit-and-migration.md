@@ -75,22 +75,22 @@ Style migration remains in place through tone and formatting choices inside thos
 
 These files retain the improved voice and instructional flow:
 
-- docs/02-overview.md
-- docs/03-foundations.md
-- docs/04-reference-architecture.md
-- docs/05-github-as-state.md
-- docs/10-implementation-blueprint.md
-- docs/13-dotnet-command-pack.md
-- docs/14-github-projects-click-by-click.md
-- docs/15-what-you-are-missing.md
-- docs/16-industry-synthesis-agentic-os.md
+- docs/01-overview.md
+- docs/02-foundations.md
+- docs/03-reference-architecture.md
+- docs/04-github-as-state.md
+- docs/09-implementation-blueprint.md
+- docs/12-dotnet-command-pack.md
+- docs/13-github-projects-click-by-click.md
+- docs/14-what-you-are-missing.md
+- docs/15-industry-synthesis-agentic-os.md
 
 Execution-oriented files remain runbook-first and practical:
 
-- docs/17-zero-to-hero-live-workshop.md
-- docs/18-copy-paste-exercise-pack.md
-- docs/19-live-lab-answer-keys.md
-- docs/20-capstone-evaluator-rubric.md
+- docs/16-zero-to-hero-live-workshop.md
+- docs/17-copy-paste-exercise-pack.md
+- docs/18-live-lab-answer-keys.md
+- docs/19-capstone-evaluator-rubric.md
 
 Operational artifact files stay concise by design:
 
@@ -102,16 +102,16 @@ Operational artifact files stay concise by design:
 
 Follow the original sequence starting from:
 
-1. docs/02-overview.md
-2. docs/03-foundations.md
-3. docs/04-reference-architecture.md
-4. docs/05-github-as-state.md
+1. docs/01-overview.md
+2. docs/02-foundations.md
+3. docs/03-reference-architecture.md
+4. docs/04-github-as-state.md
 
 Then execute the workshop with runbook and artifact support files.
 
 ## Remaining optional migration work
 
-If you want stricter consistency, the next pass is to tune tone in the remaining lower-touch docs (for example, docs/04 and docs/09) while keeping their current structure.
+If you want stricter consistency, the next pass is to tune tone in the remaining lower-touch docs (for example, docs/03 and docs/08) while keeping their current structure.
 
 Current state keeps your preferred structure and preserves the upgraded workshop tone.
 

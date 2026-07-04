@@ -16,9 +16,9 @@ Read this file top-to-bottom once, then run the labs exactly in order.
 
 For fully scripted live execution with copy-paste text and answer keys, immediately continue with:
 
-- docs/17-zero-to-hero-live-workshop.md
-- docs/18-copy-paste-exercise-pack.md
-- docs/19-live-lab-answer-keys.md
+- docs/16-zero-to-hero-live-workshop.md
+- docs/17-copy-paste-exercise-pack.md
+- docs/18-live-lab-answer-keys.md
 
 If a step says create a file, create it.
 If a step says run a command, run it.
@@ -197,7 +197,7 @@ Goal: verify your system of record.
 
 Do this:
 
-1. Open docs/14-github-projects-click-by-click.md and complete Part A through Part D.
+1. Open docs/13-github-projects-click-by-click.md and complete Part A through Part D.
 2. Ensure one issue exists in your project board.
 3. Set fields on that item:
    - State = Backlog
@@ -285,7 +285,7 @@ Goal: remove ambiguity from pass/fail.
 
 1. Open docs/gates.md.
 2. For each gate, add at least 3 pass criteria that are objective.
-3. For Verification Gate, include .NET command set from docs/13-dotnet-command-pack.md.
+3. For Verification Gate, include .NET command set from docs/12-dotnet-command-pack.md.
 
 Output check:
 

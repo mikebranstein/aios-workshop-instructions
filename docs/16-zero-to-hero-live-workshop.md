@@ -78,7 +78,7 @@ with evidence and approvals.
 
 Action:
 
-1. Follow docs/14-github-projects-click-by-click.md Part A through Part E.
+1. Follow docs/13-github-projects-click-by-click.md Part A through Part E.
 2. Create one issue using .github/ISSUE_TEMPLATE/feature.yml.
 3. Add issue to project board.
 
@@ -181,7 +181,7 @@ Pass gate:
 
 Action:
 
-Create docs/workflow-vs-agent.md using the template in docs/03-foundations.md Lab 1.
+Create docs/workflow-vs-agent.md using the template in docs/02-foundations.md Lab 1.
 
 Use this exact minimum content:
 
@@ -360,7 +360,7 @@ Pass gate:
 
 Action:
 
-Run commands from docs/13-dotnet-command-pack.md baseline.
+Run commands from docs/12-dotnet-command-pack.md baseline.
 
 Post this exact issue comment template:
 

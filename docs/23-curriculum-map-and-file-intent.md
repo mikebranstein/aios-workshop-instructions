@@ -29,31 +29,31 @@ Short files are acceptable only when they are operational artifacts.
 
 ## Teaching guides
 
-- docs/02-overview.md: program orientation, outcomes, how to use the workshop
-- docs/03-foundations.md: foundational concepts with labs and practical interpretation
-- docs/04-reference-architecture.md: architecture decisions and control model
-- docs/05-github-as-state.md: state and memory operating model
-- docs/08-ess-guide.md: ESS concept and creation walkthrough
-- docs/10-implementation-blueprint.md: phased deployment strategy
-- docs/13-dotnet-command-pack.md: .NET verification rationale and command standards
-- docs/14-github-projects-click-by-click.md: GitHub Projects as AIOS state system
-- docs/15-what-you-are-missing.md: reliability control diagnostics
-- docs/16-industry-synthesis-agentic-os.md: frontier guidance translated to your implementation
+- docs/01-overview.md: program orientation, outcomes, how to use the workshop
+- docs/02-foundations.md: foundational concepts with labs and practical interpretation
+- docs/03-reference-architecture.md: architecture decisions and control model
+- docs/04-github-as-state.md: state and memory operating model
+- docs/07-ess-guide.md: ESS concept and creation walkthrough
+- docs/09-implementation-blueprint.md: phased deployment strategy
+- docs/12-dotnet-command-pack.md: .NET verification rationale and command standards
+- docs/13-github-projects-click-by-click.md: GitHub Projects as AIOS state system
+- docs/14-what-you-are-missing.md: reliability control diagnostics
+- docs/15-industry-synthesis-agentic-os.md: frontier guidance translated to your implementation
 
 ## Execution runbooks
 
-- docs/06-training-regimen.md: multi-week calendar and progression logic
-- docs/07-build-first-vertical-slice.md: exact issue-to-close runbook
-- docs/11-create-your-first-skill.md: first skill creation and validation
-- docs/17-zero-to-hero-live-workshop.md: primary scripted training path
+- docs/05-training-regimen.md: multi-week calendar and progression logic
+- docs/06-build-first-vertical-slice.md: exact issue-to-close runbook
+- docs/10-create-your-first-skill.md: first skill creation and validation
+- docs/16-zero-to-hero-live-workshop.md: primary scripted training path
 
 ## Operational artifacts
 
-- docs/12-first-7-days-checklist.md: compressed launch checklist
-- docs/19-live-lab-answer-keys.md: quick correctness checks
-- docs/18-copy-paste-exercise-pack.md: reusable prompts and templates
-- docs/20-capstone-evaluator-rubric.md: objective graduation scoring
-- docs/21-lab-file-by-file-solutions.md: exact file solution examples
+- docs/11-first-7-days-checklist.md: compressed launch checklist
+- docs/18-live-lab-answer-keys.md: quick correctness checks
+- docs/17-copy-paste-exercise-pack.md: reusable prompts and templates
+- docs/19-capstone-evaluator-rubric.md: objective graduation scoring
+- docs/20-lab-file-by-file-solutions.md: exact file solution examples
 
 ## Governance and policy artifacts
 
@@ -76,12 +76,12 @@ These are reference implementations for bootstrapping AIOS on itself.
 
 ## Recommended reading and doing order
 
-1. Read docs/02-overview.md
-2. Read docs/03-foundations.md
-3. Read docs/16-industry-synthesis-agentic-os.md
-4. Execute docs/17-zero-to-hero-live-workshop.md with docs/18-copy-paste-exercise-pack.md
-5. Validate using docs/19-live-lab-answer-keys.md and docs/21-lab-file-by-file-solutions.md
-6. Score with docs/20-capstone-evaluator-rubric.md
+1. Read docs/01-overview.md
+2. Read docs/02-foundations.md
+3. Read docs/15-industry-synthesis-agentic-os.md
+4. Execute docs/16-zero-to-hero-live-workshop.md with docs/17-copy-paste-exercise-pack.md
+5. Validate using docs/18-live-lab-answer-keys.md and docs/20-lab-file-by-file-solutions.md
+6. Score with docs/19-capstone-evaluator-rubric.md
 
 ## Completion confidence test
 

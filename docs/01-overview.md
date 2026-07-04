@@ -20,7 +20,7 @@ When later modules feel detailed, come back here to reconnect each step to the f
 
 Read this once, then act immediately.
 
-If you have not completed tooling setup yet, run docs/00-prerequisites-and-tooling.md and docs/01-beginner-gate-checklist.md first.
+If you have not completed tooling setup yet, run docs/00-prerequisites-and-tooling.md first.
 
 Choose one starting path:
 

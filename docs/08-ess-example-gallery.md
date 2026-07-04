@@ -1,6 +1,6 @@
 # 00d - ESS Example Gallery (Good vs Weak)
 
-Use this file when writing ESS in 06-ess-guide and 05-build-first-vertical-slice.
+Use this file when writing ESS in 07-ess-guide and 06-build-first-vertical-slice.
 
 ## How this builds on previous docs
 
@@ -86,4 +86,4 @@ Before design gate PASS, confirm:
 
 ## Next step
 
-Return to 06-ess-guide and write your ESS. Then validate with 15-live-lab-answer-keys.
+Return to 07-ess-guide and write your ESS. Then validate with 18-live-lab-answer-keys.

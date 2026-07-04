@@ -6,8 +6,8 @@ This file is your execution calendar, not your concept glossary.
 
 Use it together with:
 
-- docs/03-foundations.md for concept explanations
-- docs/17-zero-to-hero-live-workshop.md for scripted live runs
+- docs/02-foundations.md for concept explanations
+- docs/16-zero-to-hero-live-workshop.md for scripted live runs
 
 If you only use this file, you will execute correctly but may miss architecture reasoning.
 If you only use concept files, you will understand but not operationalize.
@@ -260,7 +260,7 @@ Validation:
 
 - You generated at least one state transition and one decision log entry.
 
-Before Week 2, read docs/13-dotnet-command-pack.md and set your exact build/test command set.
+Before Week 2, read docs/12-dotnet-command-pack.md and set your exact build/test command set.
 
 ## Week 2 - First Real Build Through Verification
 

@@ -1,6 +1,6 @@
 # 00 - Prerequisites and Tooling (Beginner Gate)
 
-Use this file before you start 02-overview or 17-zero-to-hero-live-workshop.
+Use this file before you start 01-overview or 16-zero-to-hero-live-workshop.
 
 If one required prerequisite fails, stop and fix it now.
 
@@ -151,8 +151,8 @@ If permission denied:
 
 - request project admin access before continuing
 
-Custom field configuration is intentionally deferred to docs/05-github-as-state.md.
-For click-by-click setup of those fields, run docs/14-github-projects-click-by-click.md after docs/05.
+Custom field configuration is intentionally deferred to docs/04-github-as-state.md.
+For click-by-click setup of those fields, run docs/13-github-projects-click-by-click.md after docs/04.
 
 ## Step 7 - Branch protection readiness
 
@@ -174,7 +174,7 @@ Pass condition:
 
 If you cannot edit:
 
-- identify approver/admin who will apply required rules in 17 step 1.3
+- identify approver/admin who will apply required rules in 16 step 1.3
 
 ## Step 8 - Run baseline verify script
 
@@ -207,4 +207,4 @@ You are ready only when all are true:
 
 ## Next step
 
-Continue to 02-overview, then 03-foundations, then 17-zero-to-hero-live-workshop.
+Continue to 01-overview, then 02-foundations, then 16-zero-to-hero-live-workshop.
