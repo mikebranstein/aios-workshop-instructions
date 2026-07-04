@@ -23,25 +23,29 @@ This workshop uses a two-repo default model, with an optional third repo.
 If you want to start immediately, open and follow these in order:
 
 1. docs/README.md
-2. docs/01-module-1-tiny-end-to-end-run.md
-3. docs/02-module-2-intake-quality-template.md
-4. docs/03-module-3-first-ess.md
+2. docs/00-module-0-shared-app-foundation.md
+3. docs/01-module-1-tiny-end-to-end-run.md
+4. docs/02-module-2-intake-quality-template.md
+5. docs/03-module-3-first-ess.md
+
+Module 0 establishes one fixed starter app baseline so all later modules run on the same project context.
 
 ## Full Reading Order
 
 1. docs/README.md
-2. docs/01-module-1-tiny-end-to-end-run.md
-3. docs/02-module-2-intake-quality-template.md
-4. docs/03-module-3-first-ess.md
-5. docs/04-module-4-objective-gates.md
-6. docs/05-module-5-loop-safety-and-escalation.md
-7. docs/06-module-6-first-intake-skill-contract.md
-8. docs/07-module-7-design-build-skill-contracts.md
-9. docs/08-module-8-verification-qa-evidence-loop.md
-10. docs/09-module-9-github-state-source-of-truth.md
-11. docs/10-module-10-first-low-risk-automation.md
-12. docs/11-module-11-policy-boundaries-and-approvals.md
-13. docs/12-module-12-capstone-two-issue-run.md
+2. docs/00-module-0-shared-app-foundation.md
+3. docs/01-module-1-tiny-end-to-end-run.md
+4. docs/02-module-2-intake-quality-template.md
+5. docs/03-module-3-first-ess.md
+6. docs/04-module-4-objective-gates.md
+7. docs/05-module-5-loop-safety-and-escalation.md
+8. docs/06-module-6-first-intake-skill-contract.md
+9. docs/07-module-7-design-build-skill-contracts.md
+10. docs/08-module-8-verification-qa-evidence-loop.md
+11. docs/09-module-9-github-state-source-of-truth.md
+12. docs/10-module-10-first-low-risk-automation.md
+13. docs/11-module-11-policy-boundaries-and-approvals.md
+14. docs/12-module-12-capstone-two-issue-run.md
 
 ## What You Will Build
 
