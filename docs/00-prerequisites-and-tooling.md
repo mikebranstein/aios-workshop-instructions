@@ -118,7 +118,7 @@ Use retry prompt:
 Return raw JSON only. No markdown fence. No explanation.
 ```
 
-## Step 6 - Create or verify GitHub Project for AIOS state
+## Step 6 - Create or verify GitHub Project shell
 
 If your team already has a project board for this workshop, verify it and continue.
 
@@ -131,22 +131,17 @@ If not, create one now:
 5. Name it AIOS Delivery Board.
 6. Create the project.
 
-Now connect your repository and add required fields:
+Now connect your repository for workshop tracking:
 
 1. Open project settings.
 2. Connect your workshop repository.
-3. Add fields:
-  - State (single select)
-  - Risk (single select)
-  - Next Gate (single select)
-  - Owner Agent (text)
-4. Enable auto-add workflow from connected repository issues.
+3. Enable auto-add workflow from connected repository issues.
 
 Validation test:
 
 1. Create one issue in your repository.
 2. Add issue to project.
-3. Confirm card shows State, Risk, Next Gate, Owner Agent values.
+3. Confirm issue appears as a card on the project board.
 
 Pass condition:
 
@@ -156,7 +151,8 @@ If permission denied:
 
 - request project admin access before continuing
 
-For full project setup walkthrough, run docs/14-github-projects-click-by-click.md.
+Custom field configuration is intentionally deferred to docs/05-github-as-state.md.
+For click-by-click setup of those fields, run docs/14-github-projects-click-by-click.md after docs/05.
 
 ## Step 7 - Branch protection readiness
 

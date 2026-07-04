@@ -52,9 +52,10 @@ Expected result:
 
 - a new board exists with editable fields and workflow options
 
-## Part B - Create required state fields
+## Part B - Verify or create required state fields
 
-In your project, add these fields in this order.
+In your project, first check for existing equivalent fields and reuse them.
+Create fields only when missing.
 
 Field 1: State (single select)
 

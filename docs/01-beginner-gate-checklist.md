@@ -24,7 +24,7 @@ This gate confirms you can run the workshop without hidden setup blockers.
 
 ## Process gate
 
-- [ ] Understand State field as canonical source
+- [ ] Understand that project field customization is deferred to docs/05-github-as-state.md
 - [ ] Understand one retry equals one full gate attempt
 - [ ] Know escalation path for blocked issues
 - [ ] Know closure requires ESS, PR, verification, QA links
@@ -36,7 +36,7 @@ Run this quick dry run:
 1. Create test issue.
 2. Run intake prompt in Copilot Chat.
 3. Capture JSON output.
-4. Update board fields.
+4. Add issue to project board.
 5. Add Decision Log comment.
 
 Pass condition:

@@ -29,6 +29,22 @@ You should be able to answer, without guessing:
 - where each decision is logged
 - what evidence is required before Done
 
+## Customization starts here
+
+This is the first step where project custom fields become required.
+
+If your board does not yet have operational fields, configure them now.
+Reuse equivalent existing fields when possible and create only missing ones.
+
+Required operational fields:
+
+- State (single select)
+- Risk (single select)
+- Next Gate (single select)
+- Owner Agent (text)
+
+For a click-by-click setup walkthrough, run docs/14-github-projects-click-by-click.md.
+
 ## Next step
 
 Run 11 github-projects-click-by-click to implement this model in your board, then return to 04 and 14 for execution.
