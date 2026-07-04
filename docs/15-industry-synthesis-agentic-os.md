@@ -20,7 +20,7 @@ As you read, create a short decision list for your repo:
 
 - keep unchanged
 - change this week
-- defer until Stage 2
+- defer until current controls are stable
 
 If you cannot map a recommendation to a concrete behavior change, treat it as reference only and move on.
 
@@ -76,7 +76,7 @@ Tool:
 
 Orchestrator:
 
-- control layer deciding route, retries, and completion
+- control path deciding route, retries, and completion
 
 Magentic orchestration:
 
@@ -134,7 +134,7 @@ This is why successful systems are rarely prompt-only.
 
 ## 5) The practical glue that separates demos from production
 
-High-functioning teams consistently implement six glue layers:
+High-functioning teams consistently implement six glue controls:
 
 1. output contracts
 
@@ -160,11 +160,11 @@ High-functioning teams consistently implement six glue layers:
 
 - hard stop for repeated failures
 
-If any glue layer is missing, orchestration quality drops quickly.
+If any glue control is missing, orchestration quality drops quickly.
 
 ## 6) Maturity interpretation for your current repo
 
-Current position is between Stage 1 and Stage 2.
+Current position is between manual orchestration and assisted orchestration.
 
 Strengths present:
 
@@ -173,7 +173,7 @@ Strengths present:
 - runbooks
 - governance drafts
 
-Remaining gap to solid Stage 2:
+Remaining gap to consistent assisted orchestration:
 
 - stable event-driven automation for transitions and summaries
 
@@ -188,7 +188,7 @@ Given your .NET depth and newness to agent orchestration internals, the lowest-r
 3. automate deterministic transitions
 4. introduce maker-checker loops for quality
 5. add selective concurrency for independent side tasks
-6. adopt Magentic manager only after Stage 2 stability
+6. adopt Magentic manager only after assisted orchestration is stable
 
 This sequence maximizes reliability per unit complexity.
 

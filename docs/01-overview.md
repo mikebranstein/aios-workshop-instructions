@@ -86,28 +86,13 @@ By completion, your AIOS will support this flow:
 
 ## How the curriculum is structured
 
-The material is intentionally split into three layers so you can learn and execute in parallel.
+This curriculum is designed as one continuous sequence from docs/00-prerequisites-and-tooling.md to docs/24-style-audit-and-migration.md.
 
-Layer A: Concepts and architecture
+Read and execute in numeric order.
 
-- 02 foundations
-- 15 industry synthesis
-- 03 reference architecture
-
-Layer B: Operational setup
-
-- 13 GitHub Projects setup
-- 12 .NET command pack
-- 04 GitHub as state and memory
-
-Layer C: Live execution
-
-- 16 zero-to-hero workshop
-- 17 copy-paste exercise pack
-- 18 answer keys
-- 19 capstone rubric
-
-Use Layer C while you are doing real work. Use Layers A and B to understand why each step exists.
+Earlier files establish foundations and controls.
+Middle files turn those controls into repeatable operating behavior.
+Later files run full execution, recovery, and evaluation loops.
 
 ## Program principles
 
@@ -121,24 +106,24 @@ These principles are non-negotiable in this workshop:
 
 If you are unsure what to do, return to these five principles.
 
-## Maturity model you will pass through
+## Progression model you will pass through
 
-Stage 1: Manual orchestrator
+Step 1: Manual orchestration
 
 - You run the flow with checklists and skills.
 - Goal is process correctness.
 
-Stage 2: Assisted orchestration
+Step 2: Assisted orchestration
 
 - GitHub Actions automate transitions and summaries.
 - Goal is consistency and reduced manual overhead.
 
-Stage 3: Selective autonomy
+Step 3: Selective autonomy
 
 - Agent behaviors are automated under policy.
 - Goal is speed without losing control.
 
-Important: You are not trying to skip to Stage 3 quickly. You are trying to reach Stage 3 safely.
+Important: Do not skip ahead. Move to the next step only when current controls are stable.
 
 ## What you will produce
 
@@ -165,7 +150,13 @@ You complete this program when all are true:
 4. Retry and escalation policy is honored.
 5. Your capstone score meets the rubric threshold.
 
-## How to start right now`r`n`r`n1. Complete docs/02-foundations.md.`r`n2. Continue sequentially through each numbered file in order.`r`n3. Do not skip ahead. Finish each checkpoint before moving on.`r`n`r`n## Next step
+## How to start right now
+
+1. Complete docs/02-foundations.md.
+2. Continue sequentially through each numbered file in order.
+3. Do not skip ahead. Finish each checkpoint before moving on.
+
+## Next step
 
 Continue to docs/02-foundations.md.
 

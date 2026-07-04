@@ -2,7 +2,7 @@
 
 This file tells you how to convert training artifacts into an operational AIOS.
 
-It is intentionally practical: each phase has prerequisites, execution steps, failure signals, and exit gates.
+It is intentionally practical: each step has prerequisites, execution steps, failure signals, and exit gates.
 
 ## Before You Start
 
@@ -12,15 +12,15 @@ This blueprint shows how to scale that behavior safely across weeks without losi
 
 ## How to apply this file
 
-Pick your current maturity stage first, then execute only that phase checklist.
+Pick your current operating position first, then execute only the matching step checklist.
 
-Do not start Phase B until Phase A exit conditions are true on real issues.
+Do not start Step 2 until Step 1 exit conditions are true on real issues.
 
-## Checkpoint before phase changes
+## Checkpoint before step changes
 
-Before moving to the next phase, verify current phase exit criteria on real issue evidence, not estimates.
+Before moving to the next step, verify current step exit criteria on real issue evidence, not estimates.
 
-## Why phased implementation matters
+## Why step-by-step implementation matters
 
 Most teams fail by automating too early.
 
@@ -32,7 +32,7 @@ This blueprint enforces a stable progression:
 - then automate repetitive mechanics
 - then introduce policy-aware autonomy
 
-## Phase A - Manual orchestration first
+## Step 1 - Manual orchestration first
 
 Duration target: Week 1 to Week 2
 
@@ -66,9 +66,9 @@ Failure signals:
 - unclear gate pass criteria
 - closure without full evidence links
 
-If failure signals appear, stop and fix process docs before Phase B.
+If failure signals appear, stop and fix process docs before Step 2.
 
-## Phase B - Lightweight automation
+## Step 2 - Lightweight automation
 
 Duration target: Week 3 to Week 4
 
@@ -99,7 +99,7 @@ Failure signals:
 
 If automation quality is low, simplify transition rules before adding new rules.
 
-## Phase C - Policy-driven orchestration
+## Step 3 - Policy-driven orchestration
 
 Duration target: Week 5 to Week 6
 
@@ -131,25 +131,25 @@ If these appear, improve observability before increasing autonomy.
 
 Use this map to understand which capabilities must be stable before moving on.
 
-Stage 1 capabilities:
+Step 1 capabilities:
 
 - deterministic state transitions
 - objective gate definitions
 - complete evidence convention
 
-Stage 2 capabilities:
+Step 2 capabilities:
 
 - reliable CI checks
 - automated lifecycle summaries
 - project state sync from PR events
 
-Stage 3 capabilities:
+Step 3 capabilities:
 
 - risk-policy enforcement
 - selective autonomous transitions
 - controlled escalation and recovery loops
 
-Do not move to next stage until current stage is stable for at least two real issues.
+Do not move to the next step until the current step is stable for at least two real issues.
 
 ## Recommended metrics and interpretation
 

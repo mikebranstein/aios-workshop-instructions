@@ -61,7 +61,7 @@ Reference style source:
 - NOTE, RULE, DEFINITION used to reduce ambiguity
 
 6. Incremental scaffolding
-- concept -> small exercise -> validation -> next layer
+- concept -> small exercise -> validation -> next step
 
 ## Direction correction applied
 
