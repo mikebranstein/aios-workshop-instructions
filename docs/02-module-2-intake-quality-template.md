@@ -210,6 +210,27 @@ Add one comment in the issue titled `Intake Quality Check` summarizing:
 - acceptance criteria testable: yes or no
 - ready for ESS: yes or no
 
+If you want Copilot to generate the comment draft, use this prompt:
+
+```text
+Generate a markdown issue comment titled "Intake Quality Check" for this feature request.
+
+Requirements:
+- Use exactly these fields:
+	- missing fields: none or list
+	- acceptance criteria testable: yes or no
+	- ready for ESS: yes or no
+- Be strict and concise.
+- If any section is weak or ambiguous, mark ready for ESS as "no".
+
+Output format:
+- Return markdown only (copy/paste ready).
+- Do not include explanation outside the comment.
+
+Feature request content:
+<paste finalized feature request markdown here>
+```
+
 ### Step 6 (5 minutes): capture module scorecard
 
 Post your module scorecard and prepare to continue to ESS creation.
