@@ -4,6 +4,16 @@
 
 Complete one tiny issue from creation to closure so you experience the full lifecycle immediately.
 
+## Prerequisite handoff from Module 0
+
+Before starting this module, confirm you already have:
+- scaffolded starter app (Team Equipment Checkout Tracker)
+- baseline restore/build/test passing from Module 0
+- In Scope Now and Not In Scope Now boundaries defined
+- .NET 10 MVC app running locally
+
+If you do not have these, complete [00-module-0-shared-app-foundation.md](00-module-0-shared-app-foundation.md) first.
+
 ## Time Box
 
 Target: 75 minutes
@@ -21,8 +31,8 @@ Most workshop failures happen when learners understand isolated steps but have n
 You will complete this module in five phases:
 
 Step 1: preflight check and workspace readiness.
-Step 2: create one tiny issue and set initial state.
-Step 3: move the issue from Backlog to Ready with a clear decision.
+Step 2: create one tiny issue and set initial board state.
+Step 3: run intake review and move the issue from To Do to In Progress.
 Step 4: implement a minimal code change and run verification.
 Step 5: close the issue with complete evidence.
 
@@ -62,21 +72,109 @@ If you are unsure, choose the safer path, reduce scope, and ask for review.
 
 ## Build exercise (50 minutes)
 
-### Step 1 (10 minutes): create a tiny issue
+### Step 1 (10 minutes): create one fixed tiny issue and put it in To Do
 
-Create one tiny feature issue, such as adding one validation guard or one small error message improvement. Keep scope intentionally narrow so the full lifecycle fits in a single session.
+Use this exact tiny issue for Module 1:
 
-Add the issue to your project board and set state to Backlog.
+Title:
+`[Feature] Show available equipment count on the list page`
 
-### Step 2 (10 minutes): intake and Ready decision
+Paste this markdown as the issue body:
 
-Review the issue body and confirm it is complete enough to start build. Record a short decision note in the issue comment history explaining why it is ready.
+```markdown
+## Problem Statement
+The equipment list page does not show a quick summary of how many items are currently available, which slows down inventory checks.
 
-Move state from Backlog to Ready.
+## Scope
+Display an "Available items" count at the top of the equipment list page.
+
+## Non-Goals
+- No authentication or user accounts
+- No database changes
+- No redesign of page layout
+
+## Acceptance Criteria
+- [ ] AC1: Equipment list page shows a numeric "Available items" count.
+- [ ] AC2: The count matches the number of items where `IsAvailable = true`.
+- [ ] AC3: Existing equipment list behavior remains unchanged.
+
+## Test Scenarios
+- Scenario 1 (happy path): Seeded items include available entries -> count displays correctly.
+- Scenario 2 (edge case): No items are available -> count displays 0.
+- Scenario 3 (regression): Item list still renders with existing columns and availability values.
+
+## Risk Level
+Low
+
+## Dependencies
+None
+
+## Notes
+Keep this change to equipment list flow and one small test update.
+```
+
+Then add this issue to your project delivery board and set status to To Do.
+
+### Step 2 (10 minutes): intake decision and start approval
+
+Review the issue body and confirm it is complete enough to start build.
+
+Use this intake checklist:
+- scope is one change in one flow (equipment list summary count)
+- acceptance criteria are binary pass/fail
+- one happy path and one edge case are present
+- risk level is Low
+- non-goals are explicit and prevent scope creep
+
+If all checks pass, post this comment in the issue:
+
+```markdown
+## Intake Decision
+Decision: Approved for In Progress
+
+Why:
+- Scope is narrow and fits one pull request.
+- Acceptance criteria are testable and binary.
+- Failure path and happy path are both defined.
+- Risk is low and non-goals are explicit.
+
+Next:
+- Implement available-equipment count on the list page.
+- Run restore/build/test and attach evidence.
+```
+
+If any checklist item fails, do not start implementation yet. Fix the issue body first.
+
+If intake passes, move status on the delivery board from To Do to In Progress.
 
 ### Step 3 (15 minutes): implement one minimal change
 
 Create a branch and implement the smallest change that satisfies the issue intent. Do not broaden scope. Keep this focused on one outcome.
+
+Use this prompt in Copilot Chat to implement the minimal change:
+
+```text
+Implement a minimal .NET 10 ASP.NET Core MVC change for this issue:
+"Show available equipment count on the list page".
+
+Context:
+- App: Team Equipment Checkout Tracker
+- Flow: Equipment list page
+- Stack: classic MVC with Controllers, ViewModels, Views, Services
+
+Requirements:
+1. Compute available item count where IsAvailable is true.
+2. Expose the count to the equipment list MVC view (via ViewModel or view data).
+3. Render a clear "Available items: <count>" summary on the list page.
+4. Keep existing list rendering behavior unchanged.
+5. Add or update one focused test for count calculation or list view model data.
+6. Keep changes small and localized to list flow only.
+
+Output format:
+- List files to edit.
+- Show minimal code edits per file.
+- Do not refactor unrelated code.
+```
 
 After coding, commit with a message that clearly references the issue.
 
@@ -100,12 +198,12 @@ When verification is complete, post a closure summary with links to:
 - branch or commit
 - verification output
 
-Move state to Done.
+Move status to Done on the delivery board.
 
 ## Micro checks
 
 By minute 15 you should see the issue created and attached to the project.
-By minute 30 you should see state moved to Ready with a decision note.
+By minute 30 you should see status moved to In Progress with a decision note.
 By minute 50 you should see verification results posted.
 
 ## Stretch task (optional)
