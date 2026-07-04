@@ -6,27 +6,33 @@ Complete one tiny issue from creation to closure so you experience the full life
 
 ## Time Box
 
-- Target: 75 minutes
+Target: 75 minutes
+
+This module is intentionally longer than the number of visible commands because you are not only running commands. You are practicing decision points, evidence capture, and state transitions in a controlled way.
 
 ## Why this matters
 
 You learn the full flow first, then improve quality and automation in later modules.
 
-## Required tasks
+Most workshop failures happen when learners understand isolated steps but have never run the full lifecycle once. This module fixes that first.
 
-1. Run preflight checks.
-2. Create one tiny feature issue.
-3. Move it through Backlog -> Ready -> In Build -> In Verification -> Done.
-4. Run build and test once.
-5. Post closure comment with evidence links.
+## Module flow
 
-## Stretch tasks
+You will complete this module in five phases:
 
-- Run the same flow on a second tiny issue.
+Step 1: preflight check and workspace readiness.
+Step 2: create one tiny issue and set initial state.
+Step 3: move the issue from Backlog to Ready with a clear decision.
+Step 4: implement a minimal code change and run verification.
+Step 5: close the issue with complete evidence.
+
+## What to build in this module
+
+You will build one small but complete delivery record. That means the issue is not only closed, but also traceable from request to implementation to proof.
 
 ## Preflight environment gate (10 minutes)
 
-Run:
+Start here and do not skip it. Run the commands below to confirm your toolchain is available:
 
 ```powershell
 git --version
@@ -34,26 +40,49 @@ dotnet --info
 code --version
 ```
 
-Verify:
-- repository access works (`git fetch origin`)
-- one issue can be created and edited
-- one project item can be updated
+Now verify you can actually work in the repository by running `git fetch origin`, creating or editing one issue, and updating one project item.
 
-If one check fails, stop and fix before continuing.
+If one of these checks fails, pause and fix it before moving on. The purpose is to prevent a 40-minute derailment later in the module.
 
-## Policy preview (for awareness now)
+## Safety rules for this exercise
 
-- Low risk: standard checks and evidence required.
-- Medium/High risk: human approval required before merge.
-- Retry cap: 3 attempts per gate before escalation.
+Before you continue, use these as ground rules for this module.
 
-## Build exercise
+Rule 1: Keep this exercise low risk.
+Choose a tiny, safe change and avoid work that could impact production behavior broadly.
 
-1. Create a tiny issue (example: add one validation guard).
-2. Add issue to project and set `State=Backlog`.
-3. Run intake decision manually and move to `Ready`.
-4. Implement smallest change in branch.
-5. Run verification commands:
+Rule 2: Do not merge anything high risk on your own.
+If your change turns out to be medium or high risk, pause and get human review before merge.
+
+Rule 3: Do not loop forever on failures.
+If the same gate fails three times, stop retrying, mark the work as Blocked, and escalate.
+
+What this means in practice:
+If you are unsure, choose the safer path, reduce scope, and ask for review.
+
+## Build exercise (50 minutes)
+
+### Step 1 (10 minutes): create a tiny issue
+
+Create one tiny feature issue, such as adding one validation guard or one small error message improvement. Keep scope intentionally narrow so the full lifecycle fits in a single session.
+
+Add the issue to your project board and set state to Backlog.
+
+### Step 2 (10 minutes): intake and Ready decision
+
+Review the issue body and confirm it is complete enough to start build. Record a short decision note in the issue comment history explaining why it is ready.
+
+Move state from Backlog to Ready.
+
+### Step 3 (15 minutes): implement one minimal change
+
+Create a branch and implement the smallest change that satisfies the issue intent. Do not broaden scope. Keep this focused on one outcome.
+
+After coding, commit with a message that clearly references the issue.
+
+### Step 4 (10 minutes): verification evidence
+
+Run the verification commands and capture results in the issue:
 
 ```powershell
 dotnet restore
@@ -61,28 +90,59 @@ dotnet build --configuration Release
 dotnet test --configuration Release
 ```
 
-6. Post verification summary in issue.
-7. Move to `Done` with closure summary.
+If a command fails, fix only the first failure, rerun, and update your issue note.
+
+### Step 5 (5 minutes): closure evidence
+
+When verification is complete, post a closure summary with links to:
+
+- issue
+- branch or commit
+- verification output
+
+Move state to Done.
 
 ## Micro checks
 
-- Minute 15: issue exists and is in project.
-- Minute 30: issue moved to Ready with decision note.
-- Minute 50: build/test evidence posted.
+By minute 15 you should see the issue created and attached to the project.
+By minute 30 you should see state moved to Ready with a decision note.
+By minute 50 you should see verification results posted.
+
+## Stretch task (optional)
+
+If time remains, repeat the same pattern with a second tiny issue to confirm the flow is repeatable.
 
 ## You should see
 
-- one closed issue with links to code change and verification evidence.
+One closed issue with a clear trail from request to implementation to verification proof.
 
 ## If this fails, do this
 
-- reduce scope and retry with a smaller issue.
-- fix only first failing gate before rerunning.
+If you run out of time, reduce scope instead of skipping evidence.
+If verification fails repeatedly, isolate one root cause and fix only that first.
+If issue quality is weak, rewrite the issue before coding.
 
 ## Definition of done
 
-- issue is closed with complete evidence links.
-- module scorecard is posted.
+The module is done when all are true:
+
+- issue state is Done
+- implementation exists and is linked
+- verification evidence is posted
+- decision notes are visible in issue history
+- module scorecard is posted
+
+## Module scorecard template
+
+```markdown
+## Module Scorecard
+- Module: 01
+- Completion time (minutes):
+- Retry count by gate:
+- Primary blocker cause:
+- Evidence completeness (0-100%):
+- Outcome: PASS | FAIL
+```
 
 ## Next module
 
