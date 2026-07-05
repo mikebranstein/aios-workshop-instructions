@@ -43,11 +43,17 @@ Design intent:
 6. [05-module-5-loop-safety-and-escalation.md](05-module-5-loop-safety-and-escalation.md)
 7. [06-module-6-first-intake-skill-contract.md](06-module-6-first-intake-skill-contract.md)
 8. [07-module-7-design-build-skill-contracts.md](07-module-7-design-build-skill-contracts.md)
-9. [08-module-8-verification-qa-evidence-loop.md](08-module-8-verification-qa-evidence-loop.md)
-10. [09-module-9-github-state-source-of-truth.md](09-module-9-github-state-source-of-truth.md)
-11. [10-module-10-first-low-risk-automation.md](10-module-10-first-low-risk-automation.md)
-12. [11-module-11-policy-boundaries-and-approvals.md](11-module-11-policy-boundaries-and-approvals.md)
-13. [12-module-12-capstone-two-issue-run.md](12-module-12-capstone-two-issue-run.md)
+9. [08-module-8-first-agentic-os-run.md](08-module-8-first-agentic-os-run.md)
+
+## Modules 9-13 (being rebuilt)
+
+The following modules are being rebuilt based on the new agentic OS architecture. Legacy versions are in `docs/legacy/` for reference.
+
+- 09. Module 09 - GitHub State as Source of Truth (coming soon)
+- 10. Module 10 - Add Verification to the Agentic OS (coming soon)
+- 11. Module 11 - Add QA to the Agentic OS (coming soon)
+- 12. Module 12 - Policy, Boundaries, and Approvals (coming soon)
+- 13. Module 13 - Capstone: Full System Run with 2–3 Issues (coming soon)
 
 ## Scorecard template (copy into each issue comment)
 

@@ -41,11 +41,14 @@ Module 0 establishes one fixed starter app baseline so all later modules run on 
 7. docs/05-module-5-loop-safety-and-escalation.md
 8. docs/06-module-6-first-intake-skill-contract.md
 9. docs/07-module-7-design-build-skill-contracts.md
-10. docs/08-module-8-verification-qa-evidence-loop.md
-11. docs/09-module-9-github-state-source-of-truth.md
-12. docs/10-module-10-first-low-risk-automation.md
-13. docs/11-module-11-policy-boundaries-and-approvals.md
-14. docs/12-module-12-capstone-two-issue-run.md
+10. docs/08-module-8-first-agentic-os-run.md
+11. docs/09-module-9-github-state-source-of-truth.md (coming soon)
+12. docs/10-module-10-add-verification-to-agentic-os.md (coming soon)
+13. docs/11-module-11-add-qa-to-agentic-os.md (coming soon)
+14. docs/12-module-12-policy-boundaries-and-approvals.md (coming soon)
+15. docs/13-module-13-capstone-full-system-run.md (coming soon)
+
+Legacy versions of modules 9–12 are archived in `docs/legacy/` for reference.
 
 ## What You Will Build
 

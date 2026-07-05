@@ -481,4 +481,4 @@ Module 7 is complete when all are true:
 
 ## Next module
 
-Continue to [08-module-8-verification-qa-evidence-loop.md](08-module-8-verification-qa-evidence-loop.md).
+Continue to [08-module-8-first-agentic-os-run.md](08-module-8-first-agentic-os-run.md).
