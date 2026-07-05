@@ -7,7 +7,7 @@ Intake is the first quality check on a work item before implementation starts.
 You use intake right after an issue is created (or updated) and before design/build work begins.
 
 Brief example:
-- A new issue says: "Reject equipment checkout when stock is zero."
+- A new issue describes a validation rule for a user action.
 - Intake checks whether required details exist (like acceptance criteria and constraints).
 - If details are complete, intake marks it READY.
 - If key details are missing, intake marks it BLOCKED and asks targeted follow-up questions.
@@ -222,10 +222,9 @@ If you want Copilot to replace the file contents with a fresh baseline draft, us
 Generate a complete markdown contract file for templates/skills/intake-agent.md.
 
 Context:
-- App: Team Equipment Checkout Tracker
-- Stack: .NET 10 classic ASP.NET Core MVC + xUnit
 - Workflow states: To Do, In Progress, Done, Blocked
 - Existing issue already has intake intent, ESS, gate contracts, and loop safety comments
+- Use the current project and technology context already established in the issue and repository.
 
 Requirements:
 - Use exactly these sections:
@@ -347,20 +346,20 @@ Do not add extra keys.
 
 Case input:
 issue_id: EQ-INTAKE-A
-title: Prevent checkout when inventory is zero
-problem_statement: Users can submit checkout requests even when no units are available.
-scope: Block checkout submission when current stock is 0.
+title: Prevent an invalid action when required conditions are not met
+problem_statement: Users can trigger an action even when a required validation condition is not satisfied.
+scope: Block the action when the required condition fails.
 acceptance_criteria:
-- Checkout attempt is rejected when stock is 0.
-- User sees clear message: "Item unavailable".
-- Successful checkout still works when stock > 0.
+- Invalid action is rejected under the specified condition.
+- User sees a clear feedback message.
+- Existing valid flow remains unchanged.
 constraints:
 - No database schema changes.
-- Preserve existing checkout API contract.
+- Preserve existing external API contract.
 test_scenarios:
-- stock=0 returns rejection and user message.
-- stock>0 allows checkout.
-- concurrent checkout does not bypass stock check.
+- invalid condition returns rejection and user message.
+- valid condition allows the normal flow.
+- concurrent requests do not bypass the validation rule.
 risk_level: Medium
 ```
 
@@ -375,9 +374,9 @@ Do not add extra keys.
 
 Case input:
 issue_id: EQ-INTAKE-B
-title: Prevent checkout when inventory is zero
-problem_statement: Users can submit checkout requests even when no units are available.
-scope: Block checkout submission when current stock is 0.
+title: Prevent an invalid action when required conditions are not met
+problem_statement: Users can trigger an action even when a required validation condition is not satisfied.
+scope: Block the action when the required condition fails.
 acceptance_criteria:
 - <missing>
 constraints:
