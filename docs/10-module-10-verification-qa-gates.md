@@ -23,10 +23,12 @@ Issue Created
      ↓
 [Verification Contract] → PASS (tests pass, lint clean, build successful)
      ↓
+[QA Contract] → PASS (scenarios pass, real-world workflows validated)
+     ↓
 PR Automatically Merged to Main
 ```
 
-When verification passes, the PR is automatically merged to main and the feature branch is deleted. When it fails, the failure report goes back to build with clear guidance on what went wrong.
+**Important:** Module 10 focuses on verification as the automated quality gate. When verification passes, the issue awaits QA (covered in Module 11). When verification fails, the failure report goes back to build with clear guidance on what went wrong. The final merge happens after QA approves.
 
 ## Time Box
 
@@ -38,8 +40,8 @@ When verification passes, the PR is automatically merged to main and the feature
 2. Extend the orchestrator to include verification routing and conflict handling.
 3. Watch Features 1, 2, 3 flow from build → verification (already built from Module 8 & 9).
 4. Create Feature 4 and watch it flow through the complete intake → design → [ba] → build → verify pipeline.
-5. Merge Feature 1's PR and observe Feature 2's verification detect integration conflicts.
-6. Watch Feature 2 automatically re-route to design for re-evaluation with the new codebase changes.
+5. Observe verification results and how the orchestrator routes based on pass/fail.
+6. Understand that Module 11 will add QA as the next gate and show the full flow including merge.
 
 ---
 
@@ -108,7 +110,7 @@ cp templates/agents/orchestrator.v5.agent.md .github/agents/orchestrator.agent.m
 **What v5 adds:**
 - After `build-complete` label is applied, the next cycle routes the issue to verification
 - Verification runs the checks on the PR
-- If `verification-passed`: the verification agent **automatically merges the PR to main** and deletes the feature branch (no manual step needed)
+- If `verification-passed`: the issue awaits QA (Module 11 covers the QA gate and final merge)
 - **If `verification-failed` with integration conflict:** issue returns to `design-approved` (keeps design label, removes build/verification labels) so design can be re-evaluated with the new codebase state
 - **If `verification-failed` with test/lint failure:** issue returns to build for rework
 
