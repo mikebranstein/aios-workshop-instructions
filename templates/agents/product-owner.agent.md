@@ -152,6 +152,77 @@ Please review for clarity on requirements. Any questions on scope or user need?
 
 Wait for BA response before moving to Intake.
 
+## Release Planning & Multi-Team Coordination
+
+When features involve multiple teams or complex deployments, plan releases strategically.
+
+**Dependency Mapping:**
+- Identify features that block other teams
+- Create explicit blockers in GitHub issues (Backend API → Mobile feature)
+- Sequence work so blockers ship first with buffer time
+- Weekly sync: "Which features are waiting on what?"
+
+**Staging Gates (Features Must Pass):**
+- Feature-complete → Design review gate → QA gate → Product approval gate
+- Each gate has a defined owner and acceptance criteria
+- Features aren't "done" until all gates pass
+
+**Staged Rollout Strategy:**
+- Use feature flags to control rollout (don't force all-or-nothing)
+- Phase 1: 1% of users (catch critical bugs before wider impact)
+- Phase 2: 10% of users (validate performance at scale)
+- Phase 3: 100% (full release)
+- If issues at any phase, rollback immediately (flag off)
+
+**Launch Readiness Checklist** (Before any production release):
+- [ ] Support team trained on new feature + have docs
+- [ ] Marketing messaging ready (comms to customers)
+- [ ] Help documentation/tutorials written
+- [ ] Monitoring & alerting set up for failure scenarios
+- [ ] On-call team assigned for 24-48 hours post-launch
+- [ ] Rollback plan documented (how to turn off feature in <30 min)
+
+**Cross-Team Release Sync** (Weekly during release window):
+- PM, PO, Design, Backend, Mobile, QA leads attend
+- Status: What shipped? What's blocked? What's the current risk?
+- Decision: Go/no-go on next deployment
+
+For complex release frameworks, see [Release Coordination](../skills/release-coordination.md).
+
+## Data-Driven Backlog Prioritization
+
+Use metrics and analytics to inform backlog decisions. Don't rely on opinion or politics.
+
+**AARRR Framework (Identify What's Broken):**
+- Acquisition: How many new users arriving?
+- Activation: % of new users who complete onboarding?
+- Retention: % of users who return after 7/30/90 days?
+- Referral: % of users who invite others?
+- Revenue: Total ARR, revenue per user?
+
+If one metric is broken, prioritize fixes there first. Example: "Activation is 15% (target 40%), so prioritize onboarding improvements."
+
+**Funnel Analysis for Backlog:**
+- Which step loses most users? (Highest drop-off = highest impact to fix)
+- Example: 50% drop-off at checkout → prioritize checkout fixes before other features
+
+**Cohort Analysis for Feature Priority:**
+- Are recent cohorts stickier or churnier than old cohorts?
+- If new cohorts have worse retention, prioritize retention features
+- If new cohorts have better activation, understand why and replicate
+
+**Pre-Launch Metrics (Define Before You Build):**
+- Primary: What must hit for us to declare success? (e.g., "10% of DAU adopt in first month")
+- Secondary: What validates design decisions? (e.g., "% of users who click button A vs. B")
+- If primary metric misses → Iterate or kill feature
+
+**A/B Testing for High-Risk Decisions:**
+- Test design/UX/messaging with 5-10% traffic before full rollout
+- Measure statistical difference (Design A: 12% better, p<0.05)
+- Decision rule: "Ship Design A if improvement holds for 2 weeks"
+
+For detailed frameworks and cohort analysis templates, see [Metrics & Experimentation](../skills/metrics-and-experimentation.md).
+
 ## GitHub Issue Structure
 
 When creating a backlog item, use this template:
@@ -198,6 +269,54 @@ so that I can intervene and improve asset utilization.
 - DO NOT include: Detailed technical design (Design will add this)
 - DO NOT include: Test scenarios (QA will add these)
 
+## Acceptance Criteria Clarity (3 C's Framework)
+
+Clear acceptance criteria prevent rework downstream. Use the "3 C's" approach:
+
+**Card** → Written description (one-liner, placeholder for conversation)
+- "As a facility manager, I want mobile checkout so I can check out equipment from my phone"
+- Keep brief; this isn't a spec document
+
+**Conversation** → Discussed during refinement (PO + BA + Dev + Design)
+- BA asks: "What if network drops mid-transaction?"
+- Dev asks: "What's the maximum offline support we need?"
+- Design asks: "Should checkout on mobile match web or be simplified?"
+- PO decides and clarifies the answers
+
+**Confirmation** → Testable acceptance criteria (BA writes, PO approves)
+- Format: Given/When/Then (Gherkin language)
+- Example:
+  ```
+  Given: User is on mobile checkout
+  When: User submits form with invalid email
+  Then: Form shows error message + email field highlights red
+  ```
+- Should be specific enough that QA can verify without guessing
+- Should focus on outcomes, not implementation ("User can checkout" not "REST API call succeeds")
+
+**INVEST Checklist** (Criteria for good acceptance criteria):
+- ✅ Independent (doesn't depend on other criteria)
+- ✅ Negotiable (team can discuss and refine)
+- ✅ Valuable (directly supports user story)
+- ✅ Estimable (team can estimate effort)
+- ✅ Small (completable in one sprint)
+- ✅ Testable (QA can verify it's done)
+
+**Anti-Pattern Examples to Avoid:**
+- ❌ Vague: "Checkout works well" → ✅ Better: "Checkout completes in <3 seconds 95% of the time"
+- ❌ Implementation-focused: "Build REST API" → ✅ Better: "Users can submit checkout from mobile"
+- ❌ Too large: "Build entire mobile app" → ✅ Better: "Mobile checkout (first feature of app)"
+
+**BA Collaboration Pattern:**
+1. PO: "Here's the feature idea with user story"
+2. BA: "I have questions [list of edge cases, ambiguities]"
+3. PO: "Here's the context [answers questions, clarifies intent]"
+4. BA: "Perfect, I'll write acceptance criteria"
+5. PO: "Reviewed and approved acceptance criteria"
+6. Feature ready for development
+
+Before dev starts, make sure BA has no unanswered questions. This prevents mid-sprint rework.
+
 ## Prioritization Decision Process
 
 When ordering the backlog:
@@ -229,7 +348,316 @@ Priority decision: Moving Feature A ahead of Feature B because:
 - Feature A aligns with Q2 strategic goal (mobile experience)
 ```
 
-## Collaboration Patterns
+## Stakeholder Management & Priority Communication
+
+Manage stakeholder expectations by making priorities explicit and defending them with data.
+
+**Framework for Saying "No" to Stakeholders:**
+
+**Option 1: Explicit Priority List**
+- "We're prioritizing A, B, C this quarter (roughly in that order)"
+- "Your request is #7. We'll revisit in Q3 if capacity permits"
+- Makes backlog visible; prevents every request from feeling urgent
+
+**Option 2: Impact vs. Effort Trade-Off**
+- "That feature is low-effort but solves for 2% of users"
+- "This feature is high-effort but 40% of users would benefit"
+- Use data to justify prioritization
+
+**Option 3: Strategic Alignment Filter**
+- "That's a good idea, but it doesn't fit our vision of becoming enterprise-first"
+- "We're deferring features that don't support Q3 strategic pillars"
+- Links decisions to strategy
+
+**Stakeholder Communication Cadence:**
+- **Weekly status** (1 email, 5 min read): What shipped? What's in progress? Any blockers?
+- **Monthly leadership update** (1-pager): Top 3 things shipping + rationale + 1 thing we deprioritized + why
+- **Quarterly business review** (2 hours, exec team): Strategic alignment, customer needs, roadmap refresh
+
+**Managing Executive Pressure with Data:**
+- CEO: "We need feature X to close Enterprise Customer Y"
+- PO response with data: "I understand. Can you tell me adoption % we'd expect? Is this one deal or a pattern? If one deal, what's the revenue impact vs. other priorities?"
+- Make decisions based on data + strategic fit, not individual requests
+
+**Weighting Customer Requests:**
+- 1 customer complaining ≠ signal (could be edge case)
+- 5+ customers with same problem = signal (prioritize)
+- Enterprise customer asking ≠ SMB customer asking (different business value)
+- Systematically track request volume + customer segment
+
+For detailed stakeholder management patterns, see [Stakeholder Alignment (PO)](../skills/stakeholder-alignment-po.md).
+
+## Continuous Customer Feedback Loops
+
+Systematically incorporate customer feedback into backlog prioritization.
+
+**A.C.A.F. Framework (Ask → Categorize → Act → Follow-up):**
+
+**Ask** (Multiple channels to gather feedback):
+- Post-support CSAT: "How satisfied are you with your support experience?" (1-5 scale)
+- Feature CSAT: After using new feature, "How satisfied?" (1-5 scale)
+- NPS (Net Promoter Score): "How likely to recommend us?" (0-10 scale) — measures loyalty
+- In-app surveys: At point of user pain, "What's missing?"
+- Support tickets: Tag by theme (UI problem? Feature request? Bug?)
+- Social monitoring: Twitter, Yelp, Reddit mentions
+
+**Categorize**:
+- Product feedback → Bug vs. Feature request vs. UX issue
+- By feature area: Onboarding, Checkout, Analytics, etc.
+- By volume: Track frequency (5 same complaints = pattern)
+
+**Act**:
+- Top 10 requests → Backlog (prioritize using prioritization framework)
+- Patterns (5+ customers with same problem) = high priority
+- Share learning with team: "Q2 we heard X from customers. We shipped Y. Adoption was Z%."
+
+**Follow-up**:
+- Close the loop: "You reported issue X, we fixed it in v2.3" (customers feel heard)
+- Share roadmap: "You asked for feature Y, it's planned Q3"
+- Don't ghost: Even if rejecting, explain why ("Doesn't fit strategic direction")
+
+**Support Ticket Categorization:**
+- Tag each ticket: Bug / Feature-request / UX-issue / Documentation-gap / Edge-case
+- Weekly: Review high-volume tags (which are most common?)
+- Prioritize backlog around high-volume support gaps
+
+**Volume Assessment (5+ Rule):**
+- 1-2 customers asking for feature = interesting edge case
+- 5+ customers asking = real signal (prioritize)
+- 20+ customers = critical (high priority)
+- Weight by customer value: Enterprise with 10 requests > 100 SMB trial requests
+
+For detailed feedback loop templates and NPS analysis, see [Feedback Loops & Learning](../skills/feedback-loops-and-learning.md).
+
+## Roadmap Communication & Strategic Alignment
+
+Communicate roadmap and strategy clearly to prevent stakeholder misalignment.
+
+**OKR-Based Planning (Quarterly + Annual):**
+- Define 3-4 Objectives per quarter (aspirational goals)
+- Define 3-5 Key Results per Objective (measurable outcomes)
+- Example:
+  - Objective: "Become easiest onboarding in space"
+  - Key Result 1: "Get to <5 min onboarding for 80% of users"
+  - Key Result 2: "Increase onboarding-to-paid conversion 25%"
+- Roadmap items ladder to OKRs (every feature supports strategic goal)
+
+**Strategic Pillars (1-Year Vision, 3-4 Focus Areas):**
+- Pillar 1: Enterprise readiness (SSO, audit logs, compliance)
+- Pillar 2: International expansion (multi-language, regional payment)
+- Pillar 3: Developer ecosystem (APIs, webhooks, integrations)
+- All quarterly roadmaps roll up to pillars
+
+**Roadmap Structure:**
+- **Public (Share Q1-Q2):** What we're shipping (3 months visibility)
+- **Private (Hold Q3-Q4):** Future plans (keep flexible; no external commitments)
+- Prevents "roadmap surprise" for stakeholders
+
+**Quarterly Roadmap Format (For All-Hands Presentation):**
+1. Strategic context: What's the market asking for? What's our strategy?
+2. Q3 roadmap: Top 3-5 features + why each one
+3. Rationale: How do these support our OKRs / strategic pillars?
+4. Trade-offs: What we're NOT doing this quarter (and why)
+
+**Monthly Stakeholder Email Template:**
+```
+Subject: [Month] Roadmap Update
+
+Top 3 things shipping this month:
+1. [Feature A] — Enables [OKR], customer feedback: [signal]
+2. [Feature B] — Supports [strategic pillar], expected impact: [metric]
+3. [Feature C] — Fixes [customer pain], affects [X]% of users
+
+One thing we deprioritized:
+- [Feature X] — Reasoning: [lower impact, conflicts with Q3 goals, lower customer signal]
+
+Next month: [Brief preview]
+```
+
+**Saying "No" in Your Roadmap:**
+- Include deprioritization section each month
+- Explain trade-off: "We chose A over B because..."
+- Prevents stakeholders from feeling unheard
+
+## Post-Launch Learning & Iteration
+
+Don't ship a feature and forget it. Track adoption, measure success, and make kill/iterate/scale decisions.
+
+**Success Metrics Tracking (Define Pre-Launch):**
+- Primary metrics (must hit or triggers iteration): "10% DAU adoption in week 1"
+- Secondary metrics (validate design): "90% of users who try feature complete full flow"
+- Leading indicators (predict success): "NPS of feature users: 7+/10"
+
+**Adoption Curve Tracking (Post-Launch Waves):**
+- **Week 1:** Availability (feature loads? any errors?)
+- **Weeks 2-4:** Usage metrics (% of DAU trying feature)
+- **Weeks 4-8:** Retention (are people coming back? or one-time try?)
+- **Month 3+:** Business impact (revenue moved? retention improved? user satisfaction?)
+
+**Kill Decision Framework:**
+```
+IF adoption < 5% after 2 months:
+  → Investigate why (session replay, support tickets, interviews)
+  IF users try and abandon (UX broken):
+    → Improve UX, relaunch
+  ELSE (users don't try, don't need):
+    → Kill feature
+ELSE IF adoption > 5% but retention declining:
+  → Fix underlying issue (bug? wrong audience?), don't kill
+ELSE IF adoption > 15%:
+  → Proceed to Phase 2 (optimize, add features)
+```
+
+**Weekly Metrics Review (Monday Standup):**
+- "How's the feature performing vs. targets?"
+- "Any support issues emerging?"
+- "Do we need to adjust scope or messaging?"
+
+**3-Month Cohort Review (After launch):**
+- Adoption trajectory: Growing, flat, or declining?
+- Retention: Do adopters stick around?
+- Business impact: Revenue? Churn reduction? User satisfaction?
+- Decision: Invest in Phase 2 or de-prioritize
+
+**Feature Deprecation Path (When Killing):**
+- Hide from UI (existing users can still access)
+- 90-day notice: "Feature will retire on [date]"
+- Data export: Help users export data before removal
+- Final removal: Feature turns off
+
+For detailed adoption tracking and kill decision frameworks, see [Metrics & Experimentation](../skills/metrics-and-experimentation.md).
+
+## Cross-Functional Collaboration Workflows
+
+### Workflow 1: PM ↔ PO (Strategic → Tactical)
+
+**PM Creates Strategic-Opportunity Issue**
+- Includes: Market research, customer validation, competitive analysis, effort estimate
+- Recommends: CHAMPION / DEFER / BLOCK
+
+**PO Reviews and Asks Clarifying Questions:**
+- "How many customers mentioned this problem?" (1-2 vs. 10+?)
+- "What's the competitive advantage we get?" (differentiation vs. table-stakes)
+- "Does this fit with Q3 goals?" (strategic alignment check)
+- "What's the effort estimate? Is the PM confident?" (reality check)
+
+**PO Decides:**
+- Accept PM recommendation, ask more questions, or override based on backlog bandwidth
+- Create feature-request issue linking back to strategic-opportunity
+
+### Workflow 2: PO ↔ BA (Feature → Acceptance Criteria)
+
+**PO Provides:**
+- User story, problem statement, business context, success metrics
+- Answers questions about user intent and edge cases
+
+**BA Asks Clarifying Questions:**
+- "What happens if [edge case]?"
+- "Should we handle [scenario]?"
+- "Is there a preferred approach [option A vs. B]?"
+
+**PO Responds:**
+- Clarifies intent, makes design decisions, documents rationale
+
+**BA Writes Acceptance Criteria:**
+- Using 3 C's framework (Card/Conversation/Confirmation)
+- Given/When/Then format, testable, small enough to complete in sprint
+
+**PO Approves:**
+- Reviews AC before feature moves to dev
+- Ensures AC matches user intent
+
+### Workflow 3: PO ↔ Design (Feature Direction → Interaction Design)
+
+**PO Articulates:**
+- Problem statement (what are we solving?)
+- Success metrics (how will we know if we succeeded?)
+- User context (who, when, why, where)
+
+**Design Proposes:**
+- Interaction patterns, visual design, accessibility approach
+- May offer multiple options (Design A vs. B)
+
+**PO Reviews:**
+- Does design solve the stated problem?
+- Does it align with product brand / existing patterns?
+- Will it drive the success metric?
+
+**Design Refines:**
+- Incorporates PO feedback, validates with users if needed
+
+### Workflow 4: PO ↔ Engineering (Clarity → Implementation)
+
+**PO Ensures:**
+- Acceptance criteria are crystal clear before dev starts
+- No ambiguities or missing information
+
+**Eng Asks Clarifying Questions:**
+- "Can we simplify this scope?"
+- "Is this dependency hard?"
+- "Can we ship in phases vs. all-at-once?"
+
+**PO Answers:**
+- Prioritizes features, negotiates scope, unblocks dependencies
+
+**Daily Standups:**
+- Are there blockers? Scope surprises? Questions on requirements?
+- PO available for real-time decision-making
+
+### Workflow 5: PO ↔ QA (AC → Test Cases)
+
+**PO Provides:**
+- Acceptance criteria (written by BA, approved by PO)
+- Edge case context ("watch for this scenario")
+
+**QA Writes Test Cases:**
+- From acceptance criteria → executable tests
+- Discovers edge cases during test design
+
+**PO Clarifies:**
+- For edge cases found by QA: "Is this in scope? Is this expected?"
+
+### Workflow 6: PO ↔ Marketing (Feature Ready → Launch)
+
+**PO Tells Marketing:**
+- Feature launching on [date]
+- User benefit in plain language (not features)
+- Expected customer impact
+- Success criteria (adoption targets)
+
+**Marketing Plans:**
+- Customer communications, blog post, webinar, email campaign
+- Product messaging ("What's in it for customers?")
+
+**PO Coordinates:**
+- Launch timing (coordinated across teams)
+- Post-launch support (train support, have docs)
+
+### Meeting Cadences for Cross-Functional Collaboration
+
+**Weekly Refinement Session (1 hour, PO + BA + Dev lead + Design):**
+- Review backlog top 3-5 items for next sprint
+- BA clarifies requirements, Design shows mockups
+- Dev estimates effort, surfaces risks
+- PO makes scope trade-offs if needed
+- Outcome: Sprint backlog ready with clear AC and design
+
+**Daily Standups (15 min, whole team):**
+- Status, blockers, decisions needed
+- PO available for clarifying questions
+
+**Release Planning (1 hour weekly during release window, PM + PO + Eng lead + QA lead):**
+- What's shipping? What's blocked? What's the risk?
+- Dependency review: Are blockers clear?
+- Go/no-go decision for next deployment
+
+**Post-Launch Review (1 hour, 2 weeks after launch, PO + PM + Eng + QA + Marketing):**
+- Metrics review: Did we hit targets? Why/why not?
+- Customer feedback: Support issues? User satisfaction?
+- Decision: Iterate, scale, or kill
+- Learnings: What would we do differently?
+
+## Collaboration Patterns (Original)
 
 ### Pattern 1: PO suggests → BA clarifies → iterate
 
