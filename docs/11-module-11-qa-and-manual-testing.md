@@ -79,7 +79,6 @@ The QA skill contract is already prepared for you in `templates/skills/qa-agent.
 - **Process:** How to read issues, extract scenarios, execute them, and record results
 - **Scenarios to Always Verify:** Functional (happy path, failure path, edge cases), Regression checks, Non-functional (error handling, logging, performance)
 - **Decision Output:** Both JSON-structured and human-readable formats
-- **Example:** "Prevent double checkout" feature walkthrough showing how to apply the framework
 
 **To review the contract:**
 
@@ -95,7 +94,7 @@ Read through it and familiarize yourself with:
 
 **Option A - Use the pre-built contract as-is**
 
-The template is designed for the Team Equipment Checkout Tracker project. If it matches your needs, you can use it immediately in Step 3.
+Use it immediately in Step 3.
 
 **Option B - Customize the contract with Copilot**
 
@@ -188,60 +187,56 @@ a) Skip to next issue (done and approved for release)
 
 ---
 
-## Step 5 (10 minutes): Create QA scenarios for a feature
+## Step 5 (10 minutes): Define QA scenarios for your feature
 
-Take Feature 1 from Module 10 (the one that passed verification). Define QA scenarios for it.
+Take the feature you're testing (Feature 1 from Module 10, or any feature that passed verification). Define QA scenarios for it.
 
-In the issue, create a new comment with QA scenarios. Use this example for the "Prevent double checkout" feature:
+In the issue, create a new comment with QA scenarios. Use this template structure (customize with your actual feature details):
 
 ```markdown
-## QA Scenarios for #N: Prevent double checkout of the same item
+## QA Scenarios for #N: [Feature Title]
 
-### Scenario 1: Happy Path - Checkout Available Item
-- **Precondition:** Laptop is marked as available in inventory
+### Scenario 1: Happy Path - [Core Success Workflow]
+- **Precondition:** [Initial state before executing the feature]
 - **Steps:**
-  1. User selects laptop from inventory
-  2. User clicks "Checkout"
-  3. System prompts for checkout confirmation
-  4. User confirms
-- **Expected Result:** Checkout succeeds, item marked as unavailable, confirmation shown
+  1. [Action 1]
+  2. [Action 2]
+  3. [Action 3]
+- **Expected Result:** [Feature works as specified]
 - **Actual Result:** [Record after testing]
 
-### Scenario 2: Failure Path - Checkout Already-Checked-Out Item
-- **Precondition:** Laptop is already checked out by Alice
+### Scenario 2: Failure Path - [Constraint Violation]
+- **Precondition:** [Initial state with constraint that would be violated]
 - **Steps:**
-  1. User (Bob) selects the same laptop from inventory
-  2. User clicks "Checkout"
-  3. System should show error
-- **Expected Result:** System shows clear error: "Laptop is currently checked out by Alice. Available for return [date]."
+  1. [Attempt action that violates constraint]
+  2. [Observe system response]
+- **Expected Result:** [System shows clear error and recovers gracefully]
 - **Actual Result:** [Record after testing]
 
-### Scenario 3: Edge Case - Multiple Users Attempting Simultaneous Checkout
-- **Precondition:** Laptop is available, two users in separate browser tabs
+### Scenario 3: Edge Case - [Boundary or Race Condition]
+- **Precondition:** [Edge case state]
 - **Steps:**
-  1. User A clicks "Checkout" on laptop (step 2, not yet confirmed)
-  2. User B clicks "Checkout" on same laptop (step 2, not yet confirmed)
-  3. User A confirms checkout
-  4. User B confirms checkout
-- **Expected Result:** User A succeeds, User B sees "Item no longer available" error
+  1. [Execute edge case scenario]
+  2. [Observe behavior]
+- **Expected Result:** [Feature handles edge case gracefully]
 - **Actual Result:** [Record after testing]
 
-### Scenario 4: Regression Check - Normal Checkout Still Works
-- **Precondition:** Feature disabled, item marked available
+### Scenario 4: Regression Check - [Critical Existing Workflow A]
+- **Precondition:** [Setup for workflow A]
 - **Steps:**
-  1. User checks out any available item (no double-checkout scenario)
-- **Expected Result:** Checkout succeeds normally
+  1. [Execute workflow A]
+- **Expected Result:** [Workflow A still works as before]
 - **Actual Result:** [Record after testing]
 
-### Scenario 5: Regression Check - Normal Return Still Works
-- **Precondition:** Item is currently checked out
+### Scenario 5: Regression Check - [Critical Existing Workflow B]
+- **Precondition:** [Setup for workflow B]
 - **Steps:**
-  1. User clicks "Return" on checked-out item
-- **Expected Result:** Item marked available, return succeeds
+  1. [Execute workflow B]
+- **Expected Result:** [Workflow B still works as before]
 - **Actual Result:** [Record after testing]
 
 ## Execution Environment
-- Test environment: localhost:3000
+- Test environment: [localhost, staging, etc.]
 - Build version: Commit [hash from verification result]
 - Tested by: [Your name]
 - Date: [Today]
@@ -266,57 +261,52 @@ Capture output and post as evidence.
 Deploy the built feature to a test environment and manually execute each scenario:
 
 1. Check out the PR branch from Module 10
-2. Start the app locally
-3. Walk through Scenario 1: Checkout an available item (should succeed)
-4. Walk through Scenario 2: Try to checkout an already-checked-out item (should show error)
-5. Walk through Scenario 3: Simultaneous checkout attempt (verify race condition is handled)
-6. Walk through Scenario 4: Normal checkout without the new validation (regression check)
-7. Walk through Scenario 5: Normal return (regression check)
-
-For each scenario, document:
-- What you did
-- What you expected
-- What actually happened
-- Pass/Fail
-- Any observations or defects
+2. Start the app locally (or deploy to test environment)
+3. Walk through each scenario you defined (happy path, failure path, edge cases, regressions)
+4. For each scenario, document:
+   - What you did
+   - What you expected
+   - What actually happened
+   - Pass/Fail
+   - Any observations or defects
 
 ---
 
 ## Step 7 (10 minutes): Post QA decision
 
-Once you've executed all scenarios, post a QA decision comment on the issue. Use the template from Step 3:
+Once you've executed all scenarios, post a QA decision comment on the issue. Use this template structure:
 
 ```markdown
 ## QA Decision
 
-**Status:** PASS
+**Status:** PASS or FAIL
 
-**Summary:** All scenarios passed. Feature is ready for release.
+**Summary:** [One sentence: all scenarios passed and ready for release, or specific failures blocking release]
 
-**Scenarios Tested:** 5
-- Scenario 1 (Happy Path): ✅ PASS - Checkout available item succeeded
-- Scenario 2 (Failure Path): ✅ PASS - System showed clear error for already-checked-out item
-- Scenario 3 (Edge Case): ✅ PASS - Race condition handled, second user saw error
-- Scenario 4 (Regression): ✅ PASS - Normal checkout unaffected
-- Scenario 5 (Regression): ✅ PASS - Return flow unaffected
+**Scenarios Tested:** [Number of scenarios]
+- [Scenario 1 name]: ✅ PASS or ❌ FAIL [brief result]
+- [Scenario 2 name]: ✅ PASS or ❌ FAIL [brief result]
+- [Scenario 3 name]: ✅ PASS or ❌ FAIL [brief result]
+- [Regression 1 name]: ✅ PASS or ❌ FAIL [brief result]
+- [Regression 2 name]: ✅ PASS or ❌ FAIL [brief result]
 
-**Regressions:** None detected
+**Regressions:** None detected, or [list of impacted workflows]
 
-**Recommendation:** Feature is ready for release. Merge to main.
+**Recommendation:** Feature is ready for release, or [list of issues blocking release]
 
 **JSON Decision:**
 ```json
 {
   "contract": "QA",
-  "decision": "PASS",
-  "qa_date": "2026-07-06",
-  "tester": "Your Name",
-  "environment": "localhost:3000",
-  "scenarios_passed": 5,
-  "scenarios_failed": 0,
-  "regressions_found": "none",
-  "blockers": "none",
-  "recommendations": "Ready for release"
+  "decision": "PASS or FAIL",
+  "qa_date": "[today's date]",
+  "tester": "[Your Name]",
+  "environment": "[test environment]",
+  "scenarios_passed": [count],
+  "scenarios_failed": [count],
+  "regressions_found": "none | [list]",
+  "blockers": "none | [specific blockers]",
+  "recommendations": "[any notes for next steps]"
 }
 ```
 ```
@@ -335,12 +325,12 @@ Once you've posted the QA decision with `qa-passed` label, the orchestrator will
 ```
 --- Orchestrator Cycle Summary (Cycle N) ---
 Model: [your active model]
-Issue focused on: #1 Prevent double checkout -> QA PASSED
+Issue focused on: #1 [Feature Title] -> QA PASSED
 Issues ready for release: 1
 Issues in pipeline: 0
 
 --- Next Cycle ---
-Checking issue #1: Prevent double checkout
+Checking issue #1: [Feature Title]
   Labels: intake-approved, design-approved, build-complete, verification-passed, qa-passed
   -> Action: COMPLETE. Ready for release.
 
@@ -374,8 +364,8 @@ Watch the issue labels advance: intake-approved → design-approved → build-co
 
 To see the rework flow, deliberately create a feature or scenario that will fail QA:
 
-1. Run Feature 3 through intake → design → build → verification
-2. When running QA, introduce a failure: mark Scenario 1 as failing (e.g., "Checkout showed no confirmation prompt")
+1. Run a feature through intake → design → build → verification
+2. When running QA, introduce a failure: mark one scenario as failing (e.g., "User workflow did not complete as expected" or "Error message was unclear")
 3. Post a `qa-failed` comment with specific failure details
 4. Apply `qa-failed` label
 5. The orchestrator will:
@@ -383,10 +373,11 @@ To see the rework flow, deliberately create a feature or scenario that will fail
    - Remove `build-complete` label (route back to build stage)
    - Route back to build for behavior rework
    - Build will fix the issue and create a new PR
-   - On the next cycle, QA will run again
+   - On the next cycle, verification will run again
+   - On the next cycle after that, QA will run again
    - If it passes, feature advances to release-ready
 
-This demonstrates the full loop: QA finds an issue → developer fixes → QA re-validates → release.
+This demonstrates the full loop: QA finds an issue → developer fixes → verification re-validates → QA re-validates → release.
 
 ---
 

@@ -3,7 +3,7 @@ description: "Executes manual QA scenarios on a verified feature. Records scenar
 tools: ["*"]
 ---
 
-You are the QA agent for the Team Equipment Checkout Tracker project.
+You are the QA agent.
 
 Your contract is in `templates/skills/qa-agent.md`. Apply it strictly.
 
@@ -34,7 +34,7 @@ You will be given an issue number that is ready for QA (already passed verificat
    - Execute the documented steps
    - Observe the actual result
    - Record pass/fail and any deviation from expected behavior
-7. **Execute regression checks** on existing critical flows (e.g., normal checkout, normal return, viewing inventory).
+7. **Execute regression checks** on existing critical workflows (identify the most critical user journeys or features for this project).
 8. **Document edge cases** you discover during testing (boundary conditions, unusual data, error paths).
 9. **Collect results:**
    - PASS if all scenarios pass, no regressions, error handling works, performance is acceptable
