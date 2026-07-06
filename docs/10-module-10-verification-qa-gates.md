@@ -69,7 +69,10 @@ The verification agent is the quality gate. Unlike intake (which validates requi
 
 **What the verification agent does:**
 
-1. **Rebases the PR onto the current main branch** — Main is the authoritative source of truth. Before running any checks, pull in all the latest code from main to ensure this PR integrates with what's currently deployed/merged.
+**Step 1: Work in the PR branch context**
+The verification agent first checks out and pulls the feature branch from the PR (the actual code that was built). All verification runs against this code.
+
+1. **Rebase the PR onto the current main branch** — Main is the authoritative source of truth. Before running any checks, pull in all the latest code from main to ensure this PR integrates with what's currently deployed/merged.
    - If rebase succeeds cleanly: This PR is compatible with current main → continue with verification
    - If rebase fails with conflicts: This PR conflicts with what's currently in main → route back to design/build to resolve
 

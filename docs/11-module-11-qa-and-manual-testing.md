@@ -137,10 +137,13 @@ This agent will execute the QA skill contract you reviewed in Step 2. The agent 
 **What the agent does:**
 - Reads issues that have passed verification
 - Extracts QA scenarios and acceptance criteria
+- **Checks out the PR branch** to work in the context of the built feature
 - Executes scenarios manually or via automation
 - Documents results (pass/fail, regressions, edge cases)
 - Posts QA decision with JSON and human-readable summary
 - Applies `qa-passed` or `qa-failed` labels
+
+**Important:** The QA agent checks out and works in the feature branch context (the actual code being tested). This is the same branch used by the verification agent. QA ensures all scenario tests run against the built feature, not the main branch.
 
 ---
 
