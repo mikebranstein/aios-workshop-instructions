@@ -124,14 +124,17 @@ First, create the labels that the issue templates will auto-apply.
 1. Go to your repository main page on GitHub
 2. Click **Settings** (top right)
 3. In the left sidebar, click **Labels**
-4. Click **New label**
-5. In the **Label name** field, type: `pm-idea`
-6. Add a description (optional): "Feature idea submitted for product discovery"
-7. Click **Create label**
-8. Click **New label** again
-9. In the **Label name** field, type: `pm-opportunity`
-10. Add a description (optional): "Validated market opportunity ready for PO prioritization"
-11. Click **Create label**
+4. Click **New label** and create these 7 labels:
+
+| Label | Description |
+|-------|-------------|
+| `pm-idea` | Feature idea submitted for product discovery |
+| `pm-opportunity` | Validated market opportunity ready for PO prioritization |
+| `pm-deferred` | PM opportunity deferred to next quarter |
+| `pm-blocked` | PM opportunity blocked (not strategic fit) |
+| `feature-request` | Development-ready feature (labeled by PO) |
+| `po-prioritized` | PO has prioritized and positioned in backlog |
+| `blocked-on` | Feature blocked by dependency; revisit when blocker clears |
 
 **Option 2: GitHub CLI (faster)**
 
@@ -140,9 +143,14 @@ If you have `gh` (GitHub CLI) installed, run these commands in your terminal:
 ```bash
 gh label create pm-idea --description "Feature idea submitted for product discovery" --color "E8F4F8"
 gh label create pm-opportunity --description "Validated market opportunity ready for PO prioritization" --color "D4E8F7"
+gh label create pm-deferred --description "PM opportunity deferred to next quarter" --color "F0E5D8"
+gh label create pm-blocked --description "PM opportunity blocked (not strategic fit)" --color "E8D5D8"
+gh label create feature-request --description "Development-ready feature (labeled by PO)" --color "D4E8E8"
+gh label create po-prioritized --description "PO has prioritized and positioned in backlog" --color "D4F0E8"
+gh label create blocked-on --description "Feature blocked by dependency; revisit when blocker clears" --color "E8E4D8"
 ```
 
-Once both labels exist, they'll be available for your issue templates to auto-apply.
+Once all 7 labels exist, they'll be available for your issue templates and orchestrator workflows.
 
 ---
 
