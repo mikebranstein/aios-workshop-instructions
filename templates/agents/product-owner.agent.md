@@ -264,10 +264,11 @@ so that I can intervene and improve asset utilization.
 ```
 
 **Important:**
-- DO include: User story, problem statement, value assessment, complexity estimate
-- DO NOT include: Acceptance criteria (BA will add these)
+- DO include: User story, problem statement, value assessment, complexity estimate, draft acceptance criteria
+- DO include: Draft acceptance criteria (3-5 initial criteria for BA to frame discussion; BA will refine to testable Given/When/Then)
 - DO NOT include: Detailed technical design (Design will add this)
 - DO NOT include: Test scenarios (QA will add these)
+- DO NOT include: Implementation details (Dev will handle this)
 
 ## Acceptance Criteria Clarity (3 C's Framework)
 
@@ -317,6 +318,38 @@ Clear acceptance criteria prevent rework downstream. Use the "3 C's" approach:
 
 Before dev starts, make sure BA has no unanswered questions. This prevents mid-sprint rework.
 
+## Your Role During Intake (BA-PO Collaboration)
+
+The BA Collaboration Pattern above happens during the **Intake stage** of development. Here's what to expect:
+
+**During Intake, BA will:**
+- Refine your draft acceptance criteria to "Confirmation" state (Given/When/Then format)
+- Ask clarifying questions about scope, edge cases, performance targets
+- Validate that AC are testable and outcomes-focused (not implementation-focused)
+
+**Your role during Intake (don't disappear!):**
+
+1. **Respond promptly to BA questions** (within 1-2 hours if possible)
+   - "What if network drops mid-checkout?" → Decide: Auto-retry? Or show error?
+   - "How many items can be checked out at once?" → Decide: One? Multiple? Unlimited?
+   - "What's acceptable performance?" → Decide: <2 seconds? <5 seconds?
+
+2. **Make trade-off decisions** when BA asks
+   - If AC is ambiguous: Clarify intent
+   - If AC is too broad: Suggest MVP scope (defer Phase 2+ features)
+   - If AC has gaps: Fill in the context
+
+3. **Approve the refined AC** when BA is done
+   - BA will show you the Given/When/Then criteria
+   - Make sure they match your intent
+   - Post approval comment: "Approved, ready for dev"
+
+4. **Don't disappear mid-sprint**
+   - If dev has questions during build ("Can we simplify this?"), you might be pinged
+   - Respond to keep build unblocked
+
+**Why this matters:** Most rework happens because PO creates an issue and then vanishes. BA refines AC during Intake, but needs you to answer questions. Quick PO responses = fast builds = happy teams.
+
 ## Prioritization Decision Process
 
 When ordering the backlog:
@@ -327,6 +360,26 @@ When ordering the backlog:
 4. **Sequence dependencies:** Don't put Feature B before Feature A if B depends on A
 5. **Balance mix:** Ensure variety (don't stack all complex items at top; allow quick wins for momentum)
 6. **Document rationale:** For each top item, you should be able to explain WHY it's prioritized there
+
+## Handoff to Development: Ready for Development Checklist
+
+Before moving a `feature-request` to the "Ready for Development" column in your project board, verify it meets these criteria:
+
+- [ ] **Strategic context:** Links to source `strategic-opportunity` issue (dev can trace back to PM research)
+- [ ] **User story:** Follows "As a [role], I want [action], so that [benefit]" format (not a task)
+- [ ] **Problem statement:** Explains why this matters (market signal, customer feedback, internal need)
+- [ ] **Scope is bounded:** MVP clearly defined; Phase 2+ features explicitly deferred
+- [ ] **Value assessment:** User value (1-5), Business value (1-5), Technical complexity (1-5) all rated
+- [ ] **Priority score:** Calculated using formula; interpreted as QUICK_WIN / STRATEGIC_BET / DEFER
+- [ ] **Success metrics:** Defined (how will we measure this feature's success? Usage rate? Revenue? Retention?)
+- [ ] **Draft acceptance criteria:** Included (3-5 initial criteria; BA will refine during Intake)
+- [ ] **Dependencies identified:** Is this blocked by other work? Does it block others?
+- [ ] **Acceptance criteria are clear:** No ambiguities that would make BA uncertain what to ask
+- [ ] **Note clarity:** Any edge cases or constraints documented for BA
+
+**Why this matters:** If any item is missing, dev will reject the issue and escalate back to you. A complete handoff prevents rework and keeps velocity high.
+
+**If you're unsure:** Ask in comments before moving to "Ready for Development". Better to clarify now than have dev blocked during Intake.
 
 ## Trade-Off Decisions
 
