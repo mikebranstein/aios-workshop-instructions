@@ -281,27 +281,7 @@ Go to your repository, click **New issue**, and you should see **PM Idea**, **St
 
 ---
 
-## Step 4 (5 minutes): Define your market anchor
-
-Instead of writing a full vision upfront, start with a **lightweight market anchor**—a 1-2 sentence description of what market you're exploring. Your vision will emerge from discovery.
-
-**Market anchor:**
-- What customer segment are you exploring?
-- What broad problem space are you investigating?
-- (That's it. No full framework yet.)
-
-**Example anchors:**
-- "Mid-market facility managers who manually track equipment checkout"
-- "Remote teams struggling with async communication and decision-making"
-- "SMBs overpaying for enterprise HR software they don't use"
-
-**Why lightweight?** Because you don't have customer research yet. As you discover and validate opportunities in Step 5, your vision will sharpen. You'll learn the real market size, competitive landscape, and strategic advantage through research—not guessing upfront.
-
-**Write 1-2 sentences now.** You'll refine this into a full vision after discovery.
-
----
-
-## Step 5 (10 minutes): Review the Product Manager agent
+## Step 4 (10 minutes): Review the Product Manager agent
 
 The PM agent (`templates/agents/product-manager.agent.md`) walks you through:
 
@@ -317,7 +297,7 @@ The PM agent (`templates/agents/product-manager.agent.md`) walks you through:
 
 ---
 
-## Step 6 (10 minutes): Review the Product Owner agent
+## Step 5 (10 minutes): Review the Product Owner agent
 
 The PO agent (`templates/agents/product-owner.agent.md`) walks you through:
 
@@ -331,9 +311,9 @@ The PO agent (`templates/agents/product-owner.agent.md`) walks you through:
 
 ---
 
-## Step 7 (15 minutes): Conduct PM discovery and create strategic opportunities
+## Step 6 (15 minutes): Conduct PM discovery and create strategic opportunities
 
-Using your market anchor from Step 4, discover 2-3 market opportunities:
+Using market anchor definition (from PM agent), discover 2-3 market opportunities:
 
 **For each opportunity:**
 
