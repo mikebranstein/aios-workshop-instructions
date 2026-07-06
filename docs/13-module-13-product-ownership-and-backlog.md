@@ -1,200 +1,529 @@
-# Module 13 - Product Ownership: Strategic Direction and Backlog Management
+# Module 13 - Product Leadership: Strategy and Execution
 
-## Concept: The product owner guides what gets built and why
+## Concept: The product is driven by two complementary leaders
 
-Modules 1-12 focused on **how** to build features efficiently: intake → design → build → verification → QA → policy → release. But someone needs to decide **what** to build and **why**—that's the product owner.
+Modules 1-12 focused on **how** to build and release features efficiently: intake → design → build → verification → QA → policy → release. But someone needs to decide **what** to build and **why**—and someone else needs to execute that strategy tactically.
 
-**Module 13 introduces the product owner role:** the strategic decision-maker who defines product vision, suggests features based on user needs and business goals, prioritizes the backlog, and ensures the development pipeline works on the most valuable items.
+**Module 13 introduces the complete product leadership layer**: the product manager (strategic direction) and the product owner (tactical execution). Together, they ensure every feature shipped is strategically important *and* valuable to the business.
 
-The key distinction:
-- **Product Manager** (strategic): Market research, competitive analysis, overall product strategy
-- **Product Owner** (execution): Translate strategy into specific features, prioritize backlog, work with development team
+**Key distinctions:**
+- **Product Manager (Strategic)**: Sets long-term product vision, discovers market opportunities, understands competition, evaluates trade-offs at the strategic level. Asks: "What market problems should we solve? Where is the product heading?"
+- **Product Owner (Tactical)**: Prioritizes the backlog, ensures execution aligns with strategy, works daily with development team. Asks: "Which features should we build next to execute that vision?"
 
-**Product owners are the voice of the product.** They balance:
-- User needs: "What problems do our users have?"
-- Business goals: "What drives revenue and growth?"
-- Team capacity: "What can we realistically build?"
-- Technical constraints: "What's feasible given our architecture?"
+**Why both roles matter:**
+- Without a PM, the product becomes reactive (chasing every customer request) instead of strategic (building toward a vision)
+- Without a PO, the strategy stays theoretical (never gets executed) instead of practical (features ship regularly)
 
-Product owners don't write acceptance criteria or design systems. They decide what to build and why. The BA, Design, and Build teams take it from there.
+Together, they form the **two-tier leadership model**: PM sets direction → PO executes it through the backlog → Development pulls from backlog continuously.
 
-## Where the product owner fits in the workflow
+## Where product leadership fits in the system
+
+**Two independent, concurrent orchestrator loops:**
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                                                          │
-│ [Product Owner]                                          │
-│ ├─ Define product vision & strategy                     │
-│ ├─ Identify user needs and business opportunities       │
-│ ├─ Create & refine backlog items                        │
-│ ├─ Prioritize features (what to build next)             │
-│ └─ Create GitHub issues and order them                  │
-│                                                          │
-│ ↓ (feature idea flows downstream)                       │
-│                                                          │
-│ [Intake] → [BA] → [Design] → [Build]                   │
-│ ↓                                                        │
-│ [Verification] → [QA] → [Policy] → [Release]           │
-│                                                          │
-│ ↑ (feedback loops back to PO for refinement)            │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│ PM-PO Orchestrator Loop (runs continuously, independent)    │
+│                                                             │
+│ [PM Discovery] → [PM Validation] → [PO Prioritization]    │
+│ ├─ Research market opportunities                          │
+│ ├─ Validate with customers                                │
+│ ├─ Make CHAMPION/DEFER/BLOCK decisions                    │
+│ └─ Order backlog by priority score                         │
+│                                                             │
+│ Output: "Ready for Development" column (pre-prioritized)   │
+└─────────────────────────────────────────────────────────────┘
+                         ↓ (async pull)
+┌─────────────────────────────────────────────────────────────┐
+│ Development Orchestrator Loop (runs continuously, pulls)    │
+│                                                             │
+│ [Intake] → [BA] → [Design] → [Build]                      │
+│ → [Verification] → [QA] → [Policy] → [Release]            │
+│                                                             │
+│ - Never waits for PM-PO                                    │
+│ - Pulls next-priority issue from backlog                   │
+│ - Executes 8-stage pipeline                                │
+│ - Ships to production                                      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Product owner is **upstream** of Intake—the source of feature ideas.
+**Why two independent loops:**
+- PM-PO can continuously research, validate, and re-prioritize opportunities without blocking the development pipeline
+- Development can keep shipping from the backlog without waiting for product decisions
+- When market conditions change, PM can reprioritize without halting mid-development work
+- Both teams work autonomously at the speed that suits their work
 
 ## Time Box
 
-- Target: 60 minutes (focused on understanding the PO role and orchestration with BA)
+- Target: 90 minutes (understanding both PM and PO roles, how they collaborate, and running features through both tiers)
 
 ## Required Tasks
 
-1. Understand the product owner role and decision-making framework.
-2. Define your product vision and strategic goals.
-3. Review the product owner agent (`templates/agents/product-owner.agent.md`).
-4. Create or refine backlog in GitHub (create a few feature ideas).
-5. Practice orchestration: Product Owner suggests → BA clarifies → iterate.
-6. Verify backlog ordering reflects priorities.
+1. Understand the product manager role and strategic discovery process.
+2. Understand the product owner role and tactical prioritization process.
+3. Define your product vision and strategic priorities.
+4. Review the product manager agent (`templates/agents/product-manager.agent.md`).
+5. Review the product owner agent (`templates/agents/product-owner.agent.md`).
+6. Research market opportunities and validate with stakeholders or customers.
+7. Create backlog items based on validated opportunities.
+8. Practice PM ↔ PO collaboration (PM proposes → PO prioritizes).
 
 ---
 
-## Step 1 (10 minutes): Understand the product owner role
+## Step 1 (10 minutes): Understand the Product Manager role
 
-A product owner is responsible for:
+A product manager is responsible for **strategic product direction**. They sit at the intersection of business, market, and technology.
 
-**Vision & Strategy**
-- Define where the product is headed
-- Ensure features align with business goals
-- Communicate the "why" behind decisions
+**What PMs do:**
+- **Set product vision:** Where is the product headed? What market are we trying to own? What competitive advantage are we building?
+- **Discover market opportunities:** Talk to customers, analyze competition, identify problems that need solving. PMs are customer detectives.
+- **Validate ideas:** Before building anything, confirm that customers actually want it and it aligns with strategy.
+- **Make strategic trade-offs:** When capacity is limited (always), decide what's important and what can wait.
+- **Channel opportunities to PO:** Hand off validated ideas to the Product Owner for tactical prioritization.
 
-**Backlog Management**
-- Create and refine feature ideas
-- Prioritize based on value, urgency, user impact
-- Order items for the development team to work on
-
-**Stakeholder Communication**
-- Translate between executives (who think in terms of revenue), customers (who need problems solved), and developers (who think in code)
-- Field questions about timelines and priorities
-- Protect the team from too many interruptions
-
-**Scope & Priority Decisions**
-- Decide what to build, what to defer, what to cut
-- Make trade-off decisions (building Feature A means not building Feature B)
-- Use data and feedback to guide decisions
-
-**Collaboration**
-- Work with BA to clarify requirements
-- Work with Design to understand feasibility
-- Work with QA to validate shipped features
-
-**Key insight:** Product owners decide WHAT to build and WHY. They do NOT:
+**What PMs do NOT do:**
 - Define acceptance criteria (BA does this)
 - Design architecture (Design does this)
-- Implement code (Build does this)
-- Write test cases (QA does this)
+- Prioritize the day-to-day backlog (PO does this)
+- Manage sprint execution (PO does this)
 
-Your job is **strategic vision and prioritization**, not execution details.
-
----
-
-## Step 2 (10 minutes): Define your product vision
-
-Every product owner needs a clear vision to guide decisions.
-
-**Vision framework:**
-- **Who are your users?** (personas, pain points)
-- **What problem does the product solve?** (core value proposition)
-- **What makes it different?** (competitive advantage)
-- **How do you measure success?** (metrics: user satisfaction, revenue, retention, etc.)
-- **What's the 3-6 month roadmap?** (strategic direction)
-
-**Example (Team Equipment Checkout Tracker):**
-- **Users:** Facility managers, employees
-- **Problem:** Manual equipment tracking is time-consuming and error-prone
-- **Differentiator:** Real-time availability + automated notifications
-- **Success metrics:** Reduce checkout time by 50%, improve asset utilization by 30%
-- **Roadmap:** MVP (basic checkout) → Smart notifications → Mobile app → Analytics dashboard
-
-**Write this down.** You'll use it to evaluate feature ideas and make prioritization decisions.
+**Key PM question:** "What market problems should we solve? Is this strategically important?"
 
 ---
 
-## Step 3 (5 minutes): Review the product owner agent
+## Step 2 (10 minutes): Understand the Product Owner role
 
-The product owner agent is your guide for suggesting and prioritizing features. It's in `templates/agents/product-owner.agent.md` and walks you through:
+A product owner is responsible for **tactical execution** of the PM's strategic vision. They work daily with the development team.
 
-1. Evaluating feature ideas against product vision
-2. Assessing value (user impact, business impact, technical complexity)
-3. Creating GitHub issues with proper structure
-4. Prioritizing the backlog using a decision framework
-5. Collaborating with BA if requirements need clarification
+**What POs do:**
+- **Manage the backlog:** Order features by priority. Quick wins first (high value + low complexity), then strategic bets (high value + high complexity), then maintenance work.
+- **Collaborate with BA:** Clarify requirements, ask clarifying questions, work through ambiguities.
+- **Create issues:** Turn validated opportunities into GitHub issues with structure and clarity.
+- **Prioritize:** Use a formula to assess (User Value + Business Value) / (Complexity × 1.5). Higher score = higher priority.
+- **Escalate to PM:** If a customer request conflicts with strategy or needs strategic context, ask PM for input.
 
-**Key insight:** The PO agent helps you stay disciplined about what gets into the backlog. Not every idea is a good idea—the agent helps you evaluate.
+**What POs do NOT do:**
+- Set product strategy (PM does this)
+- Conduct market research (PM does this)
+- Define acceptance criteria (BA does this)
+- Build features (Design and Build do this)
+
+**Key PO question:** "Which features should we build next to execute our strategy? What's the business value vs. effort?"
 
 ---
 
-## Step 4 (15 minutes): Create backlog items and prioritize
+## Step 3 (15 minutes): Three Issue Types in Product Leadership
 
-Using your product vision as a guide, brainstorm 3-5 feature ideas:
+Product leadership uses three distinct issue types to separate concerns and make hand-offs explicit.
 
-**For each idea, consider:**
-- **User value:** Does this solve a real user problem? High/Medium/Low
-- **Business value:** Does this drive revenue, retention, or strategic goals? High/Medium/Low
-- **Technical complexity:** How hard is this to build? High/Medium/Low
-- **Dependencies:** Does this depend on other features?
+### Creating Custom Labels
 
-**Create GitHub issues** for your top ideas:
+First, create the labels that the issue templates will auto-apply.
+
+**Option 1: GitHub Web UI**
+
+1. Go to your repository main page on GitHub
+2. Click **Settings** (top right)
+3. In the left sidebar, click **Labels**
+4. Click **New label**
+5. In the **Label name** field, type: `pm-idea`
+6. Add a description (optional): "Feature idea submitted for product discovery"
+7. Click **Create label**
+8. Click **New label** again
+9. In the **Label name** field, type: `pm-opportunity`
+10. Add a description (optional): "Validated market opportunity ready for PO prioritization"
+11. Click **Create label**
+
+**Option 2: GitHub CLI (faster)**
+
+If you have `gh` (GitHub CLI) installed, run these commands in your terminal:
 
 ```bash
-# Example: Create a feature issue
-gh issue create \
-  --title "Smart notifications: Alert checkout conflicts" \
-  --body "Users should be notified when equipment they need is checked out by someone else. Include option to reserve or request return." \
-  --label "feature,backlog" \
-  --project "Team Equipment Checkout Tracker"
+gh label create pm-idea --description "Feature idea submitted for product discovery" --color "E8F4F8"
+gh label create pm-opportunity --description "Validated market opportunity ready for PO prioritization" --color "D4E8F7"
 ```
 
-**Order the backlog** by priority. GitHub Projects allows you to order issues in a backlog view.
+Once both labels exist, they'll be available for your issue templates to auto-apply.
 
-**Prioritization framework:**
-1. **Quick wins** (High user value + Low complexity) → Do first
-2. **Strategic bets** (High user value + High complexity) → Plan and sequence
-3. **Small enhancements** (Low user value + Low complexity) → Fill gaps
-4. **Big rocks** (High business value but Low/Medium user visibility) → Schedule strategically
+### Setting Up Custom GitHub Issue Types
+
+Create two custom issue templates by adding files directly to your repository.
+
+**To create the `pm-idea` template:**
+
+1. Go to your repository main page on GitHub
+2. Click **Add file** → **Create new file**
+3. In the filename field, type exactly: `.github/ISSUE_TEMPLATE/pm-idea.md`
+4. Copy and paste this content into the file:
+
+```markdown
+---
+name: PM Idea
+about: Submit a feature idea for product discovery
+title: "[PM Idea]: "
+labels: 'pm-idea'
+assignees: ''
 
 ---
 
-## Step 5 (15 minutes): Orchestrate with BA
+## Feature Idea (1-3 sentences)
+[Describe your feature idea here]
 
-The Product Owner suggests; the BA clarifies and refines.
+## Customer Context (optional)
+- Who mentioned this?
+- Support tickets or customer calls?
 
-**Workflow:**
-1. **PO creates issue:** "Smart notifications for checkout conflicts"
-2. **BA reads issue** and posts clarifying questions:
-   - "What's the 'notification' medium? In-app, email, SMS, all three?"
-   - "When exactly should the notification fire? Immediately or on next check-in?"
-   - "Should users be able to disable notifications?"
-3. **PO responds** with answers based on user research or business priorities
-4. **BA refines** the issue with acceptance criteria
-5. **Intake agent** validates and marks ready for Design
+## Competitive Context (optional)
+- What do competitors do?
+- What's our advantage?
+```
 
-This back-and-forth ensures the PO's vision is clear before it goes to technical teams.
+5. Click **Commit changes** at the bottom right
 
-**Do this iteration for 1-2 of your backlog items.** See how collaboration works between PO and BA.
+**To create the `strategic-opportunity` template:**
+
+1. Click **Add file** → **Create new file** again
+2. In the filename field, type exactly: `.github/ISSUE_TEMPLATE/strategic-opportunity.md`
+3. Copy and paste this content into the file:
+
+```markdown
+---
+name: Strategic Opportunity
+about: PM research, validation, and strategic decision
+title: "[Strategic Opportunity]: "
+labels: 'pm-opportunity'
+assignees: ''
 
 ---
 
-## Step 6 (5 minutes): Verify backlog is ordered and ready
+## Strategic Summary
+[Link to source pm-idea or standalone summary]
 
-Before moving to Module 14 (Capstone), verify:
+## Research Findings
+- Support tickets: [X mentions]
+- Customer validation: [Talked to Y customers; Z confirmed]
+- Competitive landscape: [Competitor analysis]
+- Market size: [~X% of target customers affected]
 
-- ✅ Backlog items are ordered by priority (top items are highest value)
-- ✅ Quick wins are at the top (get early momentum)
-- ✅ Strategic bets are sequenced (planned in phases)
-- ✅ Each item has clear user value and business justification
-- ✅ Dependencies are noted (if Feature X depends on Feature Y)
+## Validation Assessment
+- Strategic alignment: ✅ or ❌
+- Market opportunity: High/Medium/Low
+- Competitive advantage: [What makes ours unique?]
+- Effort estimate: [X weeks]
+- Customer validation strength: Strong/Medium/Weak
 
-This ordered backlog is what the orchestrator will process: highest-priority items first.
+## Decision
+- **Decision:** CHAMPION / DEFER / BLOCK
+- **Rationale:** [Why this decision?]
+```
+
+4. Click **Commit changes** at the bottom right
+
+**Verify templates are working:**
+
+Go to your repository, click **New issue**, and you should see both **PM Idea** and **Strategic Opportunity** in the template list.
+
+**Note on `feature-request`**
+   - `feature-request` is a standard GitHub issue type (built-in)
+   - You've already customized it in Module 2 (Intake Quality Template)
+   - No additional setup needed; use it as you've already configured it
+
+---
+
+### Issue Type 1: `pm-idea` — User Submission
+
+**Who creates:** Anyone (customer, sales, support, user, PM themselves)  
+**What it is:** Lightweight feature idea (1-3 sentences)  
+**When it's created:** Anytime someone thinks of a feature worth exploring
+
+**To create one:** Click **New issue** → Choose **pm-idea** template → Fill in the 1-3 sentence idea → Add optional context → Submit
+
+**Example:**
+```
+Title: Mobile app for field teams
+Labels: pm-idea
+Body: 
+- 4 support tickets this week about "can't checkout from field"
+- 2 enterprise customers mentioned in recent calls
+- Competitor X doesn't have mobile; Competitor Y has basic iOS
+- Fits Q3 priority "mobile-first experience"
+```
+
+### Issue Type 2: `strategic-opportunity` — PM's Research & Validation
+
+**Who creates:** Product Manager agent (after autonomous research/validation)  
+**What it is:** Market research findings, customer validation evidence, strategic decision  
+**When it's created:** After PM completes discovery, validation, and makes CHAMPION/DEFER/BLOCK decision
+
+**To create one manually:** Click **New issue** → Choose **strategic-opportunity** template → Fill in research findings, validation, and decision → Submit (or let PM agent create automatically from `pm-idea` labels)
+
+**Example:**
+```
+Title: Strategic Opportunity - Mobile app for field teams
+
+Research Findings:
+- 12 support tickets about field checkout over 4 weeks
+- 4 customers interviewed; all confirmed critical pain point
+- Competitor A has basic mobile; Competitor B doesn't
+- Affects ~35% of enterprise customer base
+
+Validation Assessment:
+- Strategic alignment: ✅ (aligns with Q3 mobile-first priority)
+- Market opportunity: High (multiple enterprise upsell opportunities)
+- Competitive advantage: Real-time + FM system integration (competitors lack this combo)
+- Effort estimate: 3-4 weeks
+- Customer validation: Strong (4/4 customers volunteered to beta-test)
+
+Decision: CHAMPION → Ready for PO prioritization
+```
+
+### Issue Type 3: `feature-request` — PO's Prioritized Task
+
+**Who creates:** Product Owner (after reading strategic-opportunity)  
+**What it is:** Ready-to-build development task (user story, acceptance criteria, priority score)  
+**When it's created:** After PO prioritizes a CHAMPION strategic-opportunity
+
+**To create one:** Click **New issue** → Choose **feature-request** template → Fill in user story, acceptance criteria, value assessment → Submit
+
+**Template and customization:** You've already created and customized the `feature-request` template in previous modules. Use that same structure:
+- Link to source `strategic-opportunity` 
+- User story: "As [user], I want [action], so that [benefit]"
+- Acceptance criteria (testable requirements)
+- Value assessment (user value, business value, complexity scores)
+- Priority score: (User Value + Business Value) / (Complexity × 1.5)
+- Success metrics
+
+**Example:** See [Module 2 - Intake Quality Template](02-module-2-intake-quality-template.md) for the feature-request template you've already created and customized.
+
+---
+
+## Step 4 (5 minutes): Define your market anchor
+
+Instead of writing a full vision upfront, start with a **lightweight market anchor**—a 1-2 sentence description of what market you're exploring. Your vision will emerge from discovery.
+
+**Market anchor:**
+- What customer segment are you exploring?
+- What broad problem space are you investigating?
+- (That's it. No full framework yet.)
+
+**Example anchors:**
+- "Mid-market facility managers who manually track equipment checkout"
+- "Remote teams struggling with async communication and decision-making"
+- "SMBs overpaying for enterprise HR software they don't use"
+
+**Why lightweight?** Because you don't have customer research yet. As you discover and validate opportunities in Step 5, your vision will sharpen. You'll learn the real market size, competitive landscape, and strategic advantage through research—not guessing upfront.
+
+**Write 1-2 sentences now.** You'll refine this into a full vision after discovery.
+
+---
+
+## Step 5 (10 minutes): Review the Product Manager agent
+
+The PM agent (`templates/agents/product-manager.agent.md`) walks you through:
+
+1. Strategic discovery: How to find market problems
+2. Research methods: User interviews, competitor analysis, support feedback, data trends
+3. Validation framework: Does this problem affect many customers? Is it strategically aligned?
+4. **Creates `strategic-opportunity` issues** as output (not just making decisions internally)
+5. **Autonomy Mode**: Submit a `pm-idea` and have the agent autonomously research, validate, and create `strategic-opportunity` issues
+
+**Key insight:** PM agent reads `pm-idea` issues → researches → creates `strategic-opportunity` issues for PO to consume.
+
+**See also**: [templates/pm-discovery-README.md](../../templates/pm-discovery-README.md) for step-by-step guide on autonomous PM discovery.
+
+---
+
+## Step 6 (10 minutes): Review the Product Owner agent
+
+The PO agent (`templates/agents/product-owner.agent.md`) walks you through:
+
+1. **Consumes:** `strategic-opportunity` issues from PM
+2. **Evaluates:** Value, business impact, complexity
+3. **Prioritizes:** Calculates priority score and backlog position
+4. **Creates:** `feature-request` issues with user stories, acceptance criteria, success metrics
+5. **Hands off:** `feature-request` issues ready for development
+
+**Key insight:** PO agent reads `strategic-opportunity` → creates `feature-request` for development to consume.
+
+---
+
+## Step 7 (15 minutes): Conduct PM discovery and create strategic opportunities
+
+Using your market anchor from Step 4, discover 2-3 market opportunities:
+
+**For each opportunity:**
+
+1. **Research:** Talk to customers (or stakeholders if you don't have customers). What problems do they mention unprompted? What frustrates them? What do they wish existed?
+
+2. **Validate:** Does this problem affect multiple people? Can you find 2-3 customers or stakeholders who mention it?
+
+3. **Assess strategic fit:** Does this align with your market anchor? Is it competitive? Is it unique?
+
+4. **Evaluate effort:** Is this a quick win (low effort) or a bigger investment? Is it even feasible?
+
+5. **Make decision:** CHAMPION (move to PO) / DEFER (real problem but not strategic now) / BLOCK (doesn't fit strategy)
+
+**Create 2-3 `strategic-opportunity` issues** using the template from Step 3 (or submit 2-3 `pm-idea` issues and let the PM agent autonomously create the strategic-opportunities):
+
+**Example `strategic-opportunity` issue created by PM agent:**
+
+```
+Title: Strategic Opportunity - Mobile app for field teams
+Labels: pm-opportunity
+
+## Research Findings
+- Found 12 support tickets mentioning field checkout issues
+- Talked to 4 facility managers; all confirmed pain point
+- Competitor X has no mobile; Competitor Y has basic iOS
+- Estimated 80% of enterprise field users affected
+
+## Validation Assessment
+- Strategic alignment: ✅ Aligns with "field operations" market anchor
+- Market opportunity: High (80%+ customer segment affected)
+- Competitive advantage: Real-time + FM integrations (competitors lag here)
+- Effort estimate: 3-4 weeks for MVP
+
+## Decision
+- **Decision:** CHAMPION
+- **Rationale:** Strong validation, strategic fit, achievable effort
+- **Next step:** Ready for PO prioritization
+```
+
+### Synthesize what you learned
+
+After discovery, update your market anchor into a fuller vision:
+
+- **Market definition:** Based on who you talked to, who's the core customer?
+- **Problem statement:** What problem kept coming up in research?
+- **Competitive advantage:** What are competitors missing? What's your angle?
+- **3-6 month priorities:** Which of your validated opportunities should ship first?
+
+**Example synthesis (after discovery):**
+```
+Market anchor (before): "Mid-market facility managers who manually track equipment checkout"
+
+Research findings:
+- 12 facility managers interviewed; 10 mentioned equipment checkout pain
+- Competitor X has no mobile; Competitor Y has basic iOS
+- Top 3 problems: mobile checkout, integration with FM systems, real-time visibility
+- Interest level: 4 customers willing to beta; strong repeat interest
+
+Updated vision (after discovery):
+Market: Mid-market facility managers (50-500 employee companies)
+Problem: Manual equipment checkout in field wastes 2-3 hours/day; mobile-first competitors emerging
+Advantage: Real-time checkout + integrations with existing FM systems (competitors don't have this combo)
+Q3 priorities: Mobile checkout (highest demand), FM integrations (quick win), analytics dashboard (strategic)
+```
+
+Your vision is now grounded in customer research, not guesses.
+
+---
+
+## Step 8 (20 minutes): Create feature issues as Product Owner
+
+Now switch roles. You're the PO receiving `strategic-opportunity` issues from the PM.
+
+**For each CHAMPION `strategic-opportunity` issue the PM validated:**
+
+1. **Read** the PM's research and validation (from the strategic-opportunity issue)
+2. **Assess value:** Based on PM's market data, what's the business value? User value? (Rate 1-5)
+3. **Assess complexity:** How much effort? Is it a quick build or a major project? (Rate 1-5)
+4. **Calculate priority score:** (User Value + Business Value) / (Complexity × 1.5)
+5. **Position in backlog:** Quick wins at top (score > 2.5), strategic bets next (1.5-2.5), defer lower-scoring items
+6. **Create `feature-request`:** Use the template from Step 3, link to strategic-opportunity, write user story and acceptance criteria
+
+**Example (as PO creating a feature-issue from strategic-opportunity):**
+
+```
+Strategic-opportunity Issue #42: "Strategic Opportunity - Mobile app for field teams"
+├─ Research findings: 12 support tickets, 4 customer confirmations
+├─ Strategic alignment: ✅ 
+├─ Competitive advantage: ✅ Real-time + FM integrations
+├─ Effort: 3-4 weeks
+
+PO reads this and creates feature-request:
+
+Title: Mobile app: iOS/Android checkout for field teams
+Labels: feature-request, po-prioritized
+
+**Strategic Context** (Linked to strategic-opportunity #42)
+- Market opportunity: Field teams lose 2-3 hours/day to equipment checkout. 80% of customers affected.
+- Customer validation: 4 customers confirmed; willing to beta-test
+- Competitive advantage: Real-time checkout + FM system integrations (competitors lack this combo)
+
+## User Story
+As a field manager, I want to check out equipment from my phone, 
+so that I don't lose 2+ hours running back to the office.
+
+## Acceptance Criteria (Testable)
+1. [ ] Mobile app (iOS + Android) loads in <2 seconds on 4G
+2. [ ] User can view and select equipment from device inventory
+3. [ ] Checkout data syncs to central system within 30 seconds
+4. [ ] Offline mode caches last 50 items for field use
+5. [ ] System shows "checkout successful" confirmation
+
+## Value Assessment
+- User value: 5 (all field teams need it; critical pain point)
+- Business value: 4 (upsell to field-heavy customers; retention impact)
+- Complexity: 4 (3-4 weeks estimated; new platform)
+- Priority score: (5 + 4) / (4 × 1.5) = 1.5 (strategic bet)
+
+## Success Metrics
+- 80% adoption by field users within 4 weeks
+- Time-to-checkout reduced by 50%
+- Churn from field-heavy segment reduced by 10%
+
+## Priority Position
+Strategic bet - Top 3 backlog
+```
+
+**Create 2-3 `feature-request` issues** for your CHAMPION strategic-opportunities. Each feature-request should reference its strategic-opportunity and include:
+- User story (from PM's research context)
+- Acceptance criteria (testable requirements)
+- Value scores and priority calculation
+- Success metrics
+Value: High business value (upsell opportunity) + High user value (critical pain point)
+Complexity: Moderate-high (3-4 week estimate)
+Success metrics: Mobile app adopted by 80% of active field users; time-to-checkout reduced by 50%
+
+Backlog position: Top 3 (after quick wins, this is highest business value)
+```
+
+**Create 2-3 GitHub issues for your prioritized opportunities.** Make them ready for BA to refine.
+
+---
+
+## Step 9 (15 minutes): Practice PM ↔ PO collaboration
+
+Real PM-PO work involves back-and-forth. The PM creates `strategic-opportunity` issues; the PO creates `feature-issue` issues; they collaborate to ensure alignment.
+
+**Simulate this collaboration:**
+
+1. **As PM:** On one of your `strategic-opportunity` issues, post the research findings, customer validation, strategic rationale in comments
+
+2. **As PO:** Review the `strategic-opportunity` issue. Ask clarifying questions in comments: "How many customers mentioned this?" "What's our competitive advantage?"
+
+3. **As PM:** Respond with additional context and analysis
+
+4. **As PO:** Based on PM's research, create the corresponding `feature-issue` linking back to the strategic-opportunity
+
+**Example dialogue:**
+
+```
+[PM creates strategic-opportunity #42]
+Research: 12 support tickets, 4 customer interviews
+Validation: Strong signal, competitive advantage
+Effort: 3-4 weeks
+
+[PO comments]
+"Great research. Mobile app or API integrations first?"
+
+[PM responds]
+"Mobile unblocks immediate revenue. Integrations can wait 2 sprints."
+
+[PO creates feature-issue #89]
+Linked to strategic-opportunity #42
+Ready for development pipeline
+```
 
 ---
 
@@ -202,54 +531,67 @@ This ordered backlog is what the orchestrator will process: highest-priority ite
 
 ✅ You have successfully completed Module 13 when:
 
-1. **Product vision defined** (Step 2)
-   - Clear articulation of: users, problem solved, differentiators, success metrics, 3-6 month roadmap
-   - Vision document exists and is accessible to the team
+1. **Market anchor defined** (Step 4)
+   - 1-2 sentence description of customer segment + problem space you're exploring
 
-2. **Product owner agent reviewed** (Step 3)
-   - You understand the decision framework for feature evaluation
-   - You know the prioritization criteria (user value, business value, complexity)
-   - You can explain what the PO does vs. what BA/Design/Build do
+2. **Three issue types understood** (Step 3)
+   - `pm-idea` (user input): 1-3 sentences
+   - `strategic-opportunity` (PM output): research, validation, decision
+   - `feature-issue` (PO output): user story, acceptance criteria, value scores
 
-3. **Backlog created with 3-5 feature ideas** (Step 4)
-   - GitHub issues created for each feature
-   - Each issue includes: description, user value assessment, business value assessment, complexity estimate
-   - Features are ordered by priority (highest value first)
+3. **Product Manager role understood** (Step 1)
+   - Can explain: strategic discovery, validation, opportunity evaluation, decision-making
+   - Understand what PM does (research, validate, create `strategic-opportunity` issues) vs. what PO does (create `feature-issue` issues for development)
 
-4. **Orchestration practiced with BA** (Step 5)
-   - At least 1-2 features went through PO ↔ BA iteration
-   - PO asked clarifying questions; BA responded
-   - Refined issues ready for Intake
+4. **Product Owner role understood** (Step 2)
+   - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-issue` issues
+   - Understand relationship: PM validates market opportunities; PO converts them to actionable development tasks
 
-5. **Backlog verified and ready** (Step 6)
-   - Top items are quick wins (high value + low complexity)
-   - Strategic bets are sequenced
-   - Dependencies noted
-   - Backlog ordered in GitHub Projects
+5. **2-3 `strategic-opportunity` issues created** (Step 7)
+   - Each includes: research findings, customer validation evidence, strategic alignment assessment, effort estimate, CHAMPION/DEFER/BLOCK decision
+   - Research documented with credible evidence
 
-6. **Product owner role understood**
-   - Can articulate: PO decides WHAT and WHY
-   - BA defines HOW requirements are structured
-   - Design handles technical architecture
-   - Build implements
-   - You know the boundaries of the PO role
+5. **2-3 `feature-request` issues created from strategic-opportunities** (Step 8)
+   - Each linked to its source `strategic-opportunity`
+   - Each includes: user story (from PM's market research), acceptance criteria (testable), value assessment, complexity estimate, priority score, success metrics
+   - Issues ordered in backlog by priority (quick wins → strategic bets)
+
+7. **PM ↔ PO collaboration demonstrated** (Step 9)
+   - Created `strategic-opportunity` issue with research
+   - PO asked clarifying questions in comments
+   - PM responded with additional context
+   - PO created `feature-issue` from the validated opportunity
+   - Shows full hand-off trail from market validation to development task
+
+8. **PM and PO agents reviewed**
+   - Can articulate: What PM discovers (creates `strategic-opportunity` issues), what PO prioritizes (creates `feature-issue` issues)
+   - Understand the two-tier leadership model and three-issue-type architecture
+   - Can explain PM ↔ PO collaboration pattern
+   - Understand autonomous PM discovery mode and quarterly re-checks
+
+9. **Orchestration reviewed** — Product Manager and Product Owner orchestrator
+    - Understand: Independent PM-PO loop (never blocks development)
+    - Understand: PM discovery trigger (Step 0.5) and quarterly re-evaluation
+    - Understand: PO backlog ordering and "Ready for Development" column
+    - Understand: Development consumes `feature-issue` issues independently (orchestrator.development.agent.md)
 
 ## Stretch Goals
 
-- Create a product roadmap showing quarterly goals and how backlog items map to them
-- Implement a user feedback loop: customers → feature ideas → backlog refinement
-- Add business metrics to each feature (revenue impact, user retention impact, etc.)
-- Define feature gates: criteria for when to pause development and reassess priorities
-- Build a competitive analysis showing how each feature differentiates you from alternatives
+- Run a 30-minute customer interview (in-person or simulated). Document what problems you discover.
+- Create a competitive analysis: What features do 3 competitors have? What don't they have? What's our differentiation?
+- Build a product roadmap showing quarterly goals and how backlog items map to them
+- Create a market sizing estimate: How many customers face this problem? What's the TAM (Total Addressable Market)?
+- Document a strategic trade-off decision: "We're not building X because Y is more strategic."
 
 ---
 
 ## Reflection
 
 After completing Module 13, reflect on:
-- **What defines a good feature idea?** What's your criteria?
-- **How did you prioritize?** What was your reasoning?
-- **How did you collaborate with BA?** What worked, what was unclear?
-- **How would you communicate priorities to the team?** How would you explain WHY something is prioritized high?
 
-Next: **Module 14 — Capstone: Full System End-to-End Run** — You'll run the complete agentic OS (PO → Intake → BA → Design → Build → Verification → QA → Policy → Release) with real features from your backlog.
+- **What makes a good market opportunity?** How do you differentiate between "real market problem" and "nice-to-have feature"?
+- **How does strategy guide decisions?** How would you explain your product vision to a new team member?
+- **How do PM and PO collaborate?** What questions should PO ask PM? When should PM escalate to leadership?
+- **What's the relationship between strategy and execution?** How does PM vision flow into PO prioritization into development pipeline?
+
+Next: **Module 14 — Capstone: Full System End-to-End Run** — You'll run 2-3 features through the complete 10-stage pipeline (PM → PO → Intake → BA → Design → Build → Verification → QA → Policy → Release) with real market opportunities and strategic context. By the end, you'll have a complete, strategic, production-ready product organization.

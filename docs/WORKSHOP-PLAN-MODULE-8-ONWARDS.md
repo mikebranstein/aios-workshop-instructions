@@ -181,83 +181,119 @@ Modules 8-12 add quality gates (Verification, QA) and policy governance, transfo
 
 ## Modules 13-14: Strategic Leadership and Capstone (new)
 
-Modules 13-14 add product ownership (strategic direction) and integrate the full end-to-end system.
+Modules 13-14 add product leadership (PM + PO strategy) and integrate the full end-to-end system.
 
-**Goal:** Add policy gates and human approval workflows to the agentic OS. Run issues through to see how policy shapes decisions.
+## Module 13: Product Leadership — Strategic Direction and Tactical Execution
 
-**Why this module matters:** Not all decisions should be automated. This module teaches you to define which gates require human approval, which stages have risk thresholds, and how to enforce policy in the workflow. By running issues through immediately, learners see how policy gates change the workflow shape and introduce review points.
+**Goal:** Learn the complete product leadership layer: Product Manager (strategic) and Product Owner (tactical). Understand how strategy flows into execution and practice the two-tier leadership model.
+
+**Why this module matters:** Every feature needs a "why." Product leaders ensure the development pipeline works on strategically important, market-validated features. This module teaches you to think like a Product Manager (discover market opportunities, validate with customers, set strategic direction) and like a Product Owner (prioritize the backlog, execute strategy tactically, collaborate with development).
 
 **Learning outcome:**
-- Learners understand role separation: which stages can be autonomous vs. which need approval.
-- Learners see how policy constraints shape the workflow and add oversight.
-- Learners experience escalation, approval requests, and review patterns in action.
+- Learners understand the PM role: strategic discovery, market research, opportunity validation
+- Learners understand the PO role: backlog prioritization, tactical execution, team collaboration
+- Learners see how strategy flows into execution (PM sets direction → PO executes → pipeline delivers)
+- Learners practice both roles and understand when each should make decisions
+- Learners grasp the PM ↔ PO collaboration pattern
 
 **What you do:**
-1. Define policy rules (e.g., "Medium+ risk requires architecture review" or "High-risk changes require product approval").
-2. Add approval gates to the workflow based on risk level or other criteria.
-3. Run an issue that triggers a policy gate and see approvals requested.
-4. Demonstrate approval and escalation decision-making.
-5. Document the decision trail including approvals and reviewer rationale.
-6. **Run 1–2 issues through the full 6-stage workflow (Intake → Design → Build → Verification → QA → Policy) with policy gates in effect. Show how different risk levels trigger different approval paths.**
+1. Define product vision (market, problem, advantage, goals, priorities, roadmap)
+2. Conduct market research and discover 2-3 feature opportunities
+3. Validate opportunities with customers/stakeholders
+4. Evaluate against strategy (CHAMPION / DEFER / BLOCK)
+5. Assume PO role: Prioritize using formula (User Value + Business Value) / (Complexity × 1.5)
+6. Create GitHub issues for prioritized features
+7. Practice PM ↔ PO collaboration
+8. Verify backlog is ordered and ready
 
 **Artifacts:**
-- Workflow with policy gates clearly defined and visible.
-- Issues showing approval requests and reviewer decisions.
-- Examples of issues that passed through policy gates and issues that escalated.
-- Full audit trail including who approved what, when, and why.
+- Product vision document
+- 2-3 market opportunities with validation evidence
+- PM decision comments with rationale
+- GitHub backlog with prioritized issues
+- Evidence of PM ↔ PO collaboration
 
-**Time box:** 75 minutes
+**Time box:** 90 minutes
 
 **Stretch:**
-- Create a policy dashboard showing approval SLAs and identify any bottlenecks.
+- Conduct customer interviews
+- Create competitive analysis
+- Build 12-month product roadmap
+- Document strategic trade-offs
 
 **Definition of done:**
-- Policy gates are defined and enforced in the workflow.
-- Approval decisions are logged and visible in issue comments.
-- You ran 1–2 issues through the full 6-stage workflow including policy gates.
-- Workflow includes both automation and human judgment in the right places.
+- Product vision documented
+- 2-3 market opportunities researched and evaluated
+- Backlog created with 2-3 GitHub issues ordered by priority
+- PM and PO agents reviewed
+- PM ↔ PO collaboration demonstrated
+- Both roles understood
+- PM-PO orchestrator reviewed (orchestrator.pm-po.agent.md)
 
 ---
 
-## Module 13: Capstone — Full System Run with 2–3 Issues
+## Module 14: Capstone — Full System End-to-End Run
 
-**Goal:** Run 2–3 complete issues through the full 8-stage workflow end-to-end: Product Owner → Intake → BA → Design → Build → Verification → QA → Policy → Release.
+**Goal:** Run 2–3 complete issues through both independent orchestrator loops end-to-end: 
+1. **PM-PO Orchestrator**: Product Manager discovery/validation → Product Owner prioritization → "Ready for Development"
+2. **Development Orchestrator**: Intake → BA → Design → Build → Verification → QA → Policy → Release
 
-**Why this module matters:** Learners prove they understand the entire system by running it successfully multiple times. This is the capstone: they built it, understand it, and can teach someone else.
+Prove mastery of the complete strategic product organization running concurrently.
+
+**Why this module matters:** Learners prove they understand the entire system by running it successfully multiple times with real strategic context. This is the capstone: they built it, understand it, and can teach someone else. Key insight: PM-PO and Development run **independently and concurrently**—neither blocks the other.
 
 **Learning outcome:**
-- Learners can run the full agentic OS without guidance, including the product owner stage
-- Learners see patterns, efficiency, and can identify opportunities for improvement
-- Learners have a working system they can extend or teach to others
-- Learners understand the full flow: from feature ideation through release
+- Learners can run both orchestrators concurrently without guidance
+- Learners see how product strategy flows into execution without blocking
+- Learners understand the backlog as the contract between PM-PO and Development
+- Learners observe patterns, efficiency, and opportunities for improvement
+- Learners have a working, production-ready strategic product organization
 
 **What you do:**
-1. Use backlog items from product owner work (features suggested and prioritized)
-2. Run 2–3 issues through the full pipeline: PO → Intake → BA → Design → Build → Verification → QA → Policy → Release
-3. Observe how product strategy flows into execution across all stages
-4. Compare runs; note patterns (risk level, approval path, flow time, decision distribution)
-5. Document system patterns, workflow efficiency, and opportunities for improvement
-6. Reflect: What worked? What would you change? Can you teach someone else?
+1. **PM-PO Orchestrator**: Use Module 13 backlog; discover and validate 1-2 new opportunities
+   - Submit as `pm-idea` issues
+   - Let PM agent autonomously research/validate
+   - Let PO agent prioritize and move to "Ready for Development"
+2. **Development Orchestrator**: Run 2-3 issues from "Ready for Development" through the 8-stage pipeline
+   - Pull one issue at a time
+   - Execute Intake → BA → Design → Build → Verification → QA → Policy → Release
+   - Never wait for PM-PO; PM-PO continues independently
+3. For each feature, observe and document:
+   - Flow time through pipeline
+   - Which gates add the most value
+   - How risk level affected policy routing
+   - How feedback loops worked
+4. Compare the runs: What patterns emerge? How efficient is the system?
+5. Document the overall system
+6. Reflect: What worked? What would you change?
 
 **Artifacts:**
-- 2–3 issues with complete decision trails and evidence for all 8 gates
-- System documentation: workflow diagram, routing logic, decision framework
-- Summary report: timing, decisions, who was involved, approval patterns
-- Reflection and lessons learned
+- 2-3 issues with complete decision trails for all 8 development stages
+- 1-2 PM-PO discovery/validation issues showing autonomous workflow
+- Summary report: timing, patterns, outcomes
+- System documentation: two-loop workflow, routing, frameworks
+- Reflection: lessons learned and evolution paths
 
 **Time box:** 120 minutes
 
 **Stretch:**
-- Add a 4th issue and intentionally trigger different scenarios (high-risk escalation, dependency blocking, feedback loops)
-- Create handoff documentation for onboarding a new team to the agentic OS
-- Propose system improvements or evolution paths
+- Run 4-5 features to show full throughput
+- Intentionally trigger high-risk escalation scenarios
+- Add metrics: decisions per stage, flow time, bottlenecks
+- Demonstrate PM-PO re-prioritization while development is in progress
+- Create onboarding/handoff documentation
+- Propose system improvements
 
 **Definition of done:**
-- 2–3 issues have traversed the full 8-stage workflow end-to-end
-- Decision trails complete and evidence attached at every gate
-- Workflow is repeatable and auditable
-- All gates and agents working together seamlessly
-- You can explain the system to someone else and they could run it independently
+- 2-3 issues traversed the full 8-stage development pipeline end-to-end
+- 1-2 PM-PO discoveries showing autonomous research + validation + prioritization
+- Complete decision trails with evidence at every gate
+- Low-risk and high-risk feature paths both demonstrated
+- Both orchestrators (PM-PO and Development) worked concurrently without blocking
+- All 10 agents (PM, PO, Intake, BA, Design, Build, Verification, QA, Policy, Release) worked together seamlessly
+- Strategic context clear: why was this feature built? How did it align with vision?
+- System demonstrated as production-ready and repeatable
+- System is teachable to someone else
 
 ---
 
@@ -268,11 +304,12 @@ Modules 13-14 add product ownership (strategic direction) and integrate the full
 | 8 | Intake → Design → Build workflow | End-to-end automation working | 1–2 |
 | 9 | GitHub project state tracking | State is auditable and queryable | 1–2 (new) |
 | 10 | Verification gate | Code quality gated automatically | 1–2 (new) |
-| 11 | QA gate | Scenarios tested and tracked | 1–2 (new) |
-| 12 | Policy & selective approvals | High-risk features reviewed; low-risk auto-merge | 1–2 (new) |
-| 13 | Full system capstone | Complete 8-stage pipeline with PO strategy | 2–3 (new) |
+| 11 | QA gate | Automated test execution | 1–2 (new) |
+| 12 | Policy & selective approvals | High-risk features reviewed; low-risk auto-merged | 1–2 (new) |
+| 13 | Product leadership (PM + PO) | Strategic vision flowing into execution | (backlog prep) |
+| 14 | Full system capstone | Complete 10-stage pipeline with strategy | 2–3 (new) |
 
-By the end of Module 13, learners will have run **11–13 issues through the system**, seeing each stage add value and building a working strategic product organization.
+By the end of Module 14, learners will have run **12–14 issues through the system**, managed a strategically-validated backlog, and built a working, production-ready strategic product organization they can teach and evolve.
 
 ---
 

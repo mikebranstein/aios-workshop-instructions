@@ -48,7 +48,7 @@ Design intent:
 11. [10-module-10-first-low-risk-automation.md](10-module-10-first-low-risk-automation.md) — Verification gate (code quality automation)
 12. [11-module-11-policy-boundaries-and-approvals.md](11-module-11-policy-boundaries-and-approvals.md) — QA gate (automated testing)
 13. [12-module-12-policy-and-approvals.md](12-module-12-policy-and-approvals.md) — Policy gate (selective human approval)
-14. [13-module-13-product-ownership-and-backlog.md](13-module-13-product-ownership-and-backlog.md) — Product ownership and strategic direction
+14. [13-module-13-product-ownership-and-backlog.md](13-module-13-product-ownership-and-backlog.md) — Product leadership (PM + PO)
 15. [14-module-14-capstone-end-to-end-run.md](14-module-14-capstone-end-to-end-run.md) — Full system capstone (coming soon)
 
 ## Scorecard template (copy into each issue comment)
