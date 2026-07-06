@@ -226,7 +226,11 @@ Facilitator (Director of Product): "We can't decide. Let's escalate to CEO."
 
 ## Decision Documentation Template
 
-Use this for all disagreements that get escalated.
+All strategic decisions must be documented and stored in your GitHub Wiki (in a **Decisions** folder alongside Personas and Journey Maps). This ensures decisions are traceable, revisitable, and accessible to future team members.
+
+**Storage Location:** Create a GitHub Wiki page like `Strategic-Decisions-2026` and add each decision as a section.
+
+**For each decision, use this template:**
 
 ```markdown
 # Decision: [Topic Name]
@@ -274,6 +278,12 @@ Use this for all disagreements that get escalated.
 - If [condition], we'll revisit this decision
 - Revisit date: [date]
 ```
+
+**Why GitHub Wiki for decisions?**
+- Version-controlled (audit trail of how thinking evolved)
+- Linked from GitHub issues (strategic opportunity → research → decision)
+- Searchable and archived for historical reference
+- Accessible to full product team (transparency)
 
 ---
 

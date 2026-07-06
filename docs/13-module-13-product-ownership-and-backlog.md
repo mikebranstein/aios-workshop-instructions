@@ -154,6 +154,102 @@ Once all 7 labels exist, they'll be available for your issue templates and orche
 
 ---
 
+## Step 3b (10 minutes): Set up Research Wiki on GitHub
+
+The PM needs a persistent place to store customer research — personas, journey maps, interview transcripts, and research findings. This becomes the strategic foundation for all opportunity validation.
+
+**Enable GitHub Wiki:**
+
+1. Go to your GitHub repository main page
+2. Click **Settings** (top right)
+3. Scroll down to **Features** section
+4. Check the box next to **Wiki**
+5. Click **Save**
+6. Click the **Wiki** tab (now visible in repo navigation)
+
+**Create the Research Wiki home page:**
+
+Click **Create the first page**, then:
+- **Title:** `Home`
+- **Content:**
+
+```markdown
+# Product Research Wiki
+
+This wiki is the source of truth for all customer research, personas, and journey maps. 
+It enables data-driven strategic decisions and ensures research persists across quarters.
+
+## Navigation
+
+- **Personas** — Customer segments and archetypes
+  - [Facility Manager Frank](Personas-Facility-Manager-Frank)
+  - [CFO Caroline](Personas-CFO-Caroline)
+  - [Technician Tyler](Personas-Technician-Tyler)
+
+- **Journey Maps** — Stage-by-stage customer experience
+  - [Facility Manager Journey](Journey-Maps-Facility-Manager)
+  - [CFO Journey](Journey-Maps-CFO)
+  - [Technician Journey](Journey-Maps-Technician)
+
+- **Interview Data** — Raw findings and transcripts
+  - [Q2 2026 Interviews](Interview-Transcripts-Q2-2026)
+  - [Q3 2026 Interviews](Interview-Transcripts-Q3-2026)
+
+- **Strategic Index** — Links research to opportunities
+  - [Research-to-Decision Index](Research-to-Decision-Index)
+
+- **Quarterly Summaries** — Themes and implications
+  - [Q2 2026 Summary](Quarterly-Summary-Q2-2026)
+  - [Q3 2026 Summary](Quarterly-Summary-Q3-2026)
+
+## How to Use This Wiki
+
+**For Product Managers:**
+- Update personas and journey maps every quarter (after conducting 15-20 customer interviews)
+- Add new interview data to the quarterly transcripts page
+- Maintain the Research-to-Decision Index to link customer problems to strategic opportunities
+
+**For Product Owners & Developers:**
+- Read personas to understand customer context
+- Check journey maps to understand friction points
+- Use Research-to-Decision Index to verify feature-request ideas have customer research backing
+
+## Quarterly Update Schedule
+
+- **Weeks 1-4:** Conduct 15-20 customer interviews (PM agent active)
+- **Week 5:** Synthesis sprint (summarize findings, identify themes)
+- **Week 6:** Update personas, journey maps, and quarterly summary
+- **Week 7-8:** Present findings to leadership; incorporate into strategic planning
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for detailed templates, update processes, and validation checklists.
+```
+
+Click **Save page**.
+
+**Next steps:**
+
+Create skeleton pages for each persona and journey map (you'll fill in content as research accumulates). In the GitHub Wiki, create new pages for:
+- `Personas-[Name]` (one per customer segment)
+- `Journey-Maps-[Segment]` (one per segment)
+- `Interview-Transcripts-Q2-2026` (start with current quarter)
+- `Research-to-Decision-Index` (create once you have 3+ opportunities)
+
+**Linking Research from GitHub Issues:**
+
+When creating a `pm-idea` or `strategic-opportunity` issue, link to the Research Wiki in the issue description:
+
+```markdown
+## Research Basis
+- **Persona:** [Facility Manager Frank](https://github.com/your-org/your-repo/wiki/Personas-Facility-Manager-Frank)
+- **Journey Stage:** Problem Resolution (friction point: manual search takes 20+ minutes)
+- **Interview Count:** 8 customers mentioned this problem in Q2-2026
+- **Key Quote:** "We lose $50K/year in equipment. If I could see where everything is in real-time, I'd pay for that."
+```
+
+This creates a **direct chain from customer interview → research wiki → strategic opportunity → feature-request → development**, so every feature is traceable back to customer need.
+
+---
+
 ### Issue Type 1: `pm-idea` — User Submission
 
 **Who creates:** Anyone (customer, sales, support, user, PM themselves)  
@@ -585,6 +681,14 @@ Ready for development pipeline
    - Can explain: strategic discovery, validation, opportunity evaluation, decision-making
    - Understand what PM does (research, validate, create `strategic-opportunity` issues) vs. what PO does (create `feature-issue` issues for development)
 
+3b. **Research Wiki on GitHub created** (Step 3b)
+   - GitHub Wiki enabled in Settings → Features
+   - "Home" page created with research wiki structure
+   - Skeleton pages created for personas, journey maps, interview data
+   - Understand: Research Wiki is persistent storage for customer research that persists across quarters
+   - Understand: How to link from strategic-opportunity GitHub issues to research wiki pages
+   - Familiar with [User Research & Personas Skill](../templates/skills/user-research-and-personas.md)
+
 4. **Product Owner role understood** (Step 2)
    - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-issue` issues
    - Understand relationship: PM validates market opportunities; PO converts them to actionable development tasks
@@ -592,8 +696,9 @@ Ready for development pipeline
 5. **2-3 `strategic-opportunity` issues created** (Step 7)
    - Each includes: research findings, customer validation evidence, strategic alignment assessment, effort estimate, CHAMPION/DEFER/BLOCK decision
    - Research documented with credible evidence
+   - Each links to relevant Research Wiki pages (personas, journey maps)
 
-5. **2-3 `feature-request` issues created from strategic-opportunities** (Step 8)
+6. **2-3 `feature-request` issues created from strategic-opportunities** (Step 8)
    - Each linked to its source `strategic-opportunity`
    - Each includes: user story (from PM's market research), acceptance criteria (testable), value assessment, complexity estimate, priority score, success metrics
    - Issues ordered in backlog by priority (quick wins → strategic bets)

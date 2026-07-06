@@ -349,6 +349,8 @@ Problem resolution (lost equipment)
   → Opportunity: Real-time GPS tracking
 ```
 
+**See [User Research & Personas](../skills/user-research-and-personas.md) for research storage structure, persona templates, journey map documentation, and quarterly update cycles. This ensures personas and research persist long-term and are accessible for future opportunity validation and strategic decisions.**
+
 ### Step 2c: Quantitative analysis and metrics framework
 
 Numbers tell you if your assumptions are correct. Set up systematic measurement.
@@ -908,7 +910,9 @@ Every strategic decision must be documented. Use a template:
 - Dependencies
 ```
 
-Store all decisions in a shared wiki (Notion, Confluence, or GitHub Wiki) with links from relevant issues.
+**Store all strategic decisions in your GitHub Wiki** (in a Decisions folder) with links from relevant `strategic-opportunity` GitHub issues. This creates a permanent record, enables version control, and allows future team members to understand the reasoning behind each decision.
+
+See [Stakeholder Alignment](../skills/stakeholder-alignment.md) for decision documentation templates and storage guidance.
 
 **Handling strategic disagreement (PM ↔ PO ↔ Exec):**
 
