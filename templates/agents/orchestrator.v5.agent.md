@@ -20,8 +20,7 @@ When you spawn specialist agents, they declare their required capability tier. T
 
 1. Run one cycle (see below)
 2. Output a brief cycle summary
-3. Wait 10 seconds: run the shell command `sleep 10`
-4. Go back to step 1
+3. Go back to step 1
 
 ## Cycle: pipeline routing (v5 - full pipeline + BA + verification, depth-first with requirements feedback and conflict handling)
 
@@ -108,5 +107,4 @@ For the first non-complete, non-blocked issue found, route based on its current 
    echo "Issues blocked: X"
    echo "Issues complete: X"
    echo ""
-6. Sleep 10 seconds: `sleep 10`
-7. Go back to step 1.
+6. Go back to step 1.

@@ -11,8 +11,7 @@ You run in a continuous self-directed loop. Do NOT call task_complete. Keep runn
 
 1. Run one cycle (see below)
 2. Output a brief cycle summary
-3. Wait 10 seconds: run the shell command `sleep 10`
-4. Go back to step 1
+3. Go back to step 1
 
 ## Cycle: pipeline routing (v3 - full pipeline, depth-first)
 
@@ -63,5 +62,4 @@ For the first non-complete, non-blocked issue found, route based on its current 
    echo "Issues blocked: X"
    echo "Issues complete: X"
    echo ""
-6. Sleep 10 seconds: `sleep 10`
-7. Go back to step 1.
+6. Go back to step 1.

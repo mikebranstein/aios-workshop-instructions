@@ -18,8 +18,7 @@ copilot --autopilot -p "Start the orchestrator..."
          - no labels     -> intake agent
          - intake-approved -> design agent
          - design-approved -> build agent
-    4. sleep 10 seconds
-    5. go back to step 1
+    4. go back to step 1
 ```
 
 You run this on your own machine. Nothing is in the cloud. No GitHub Actions. The orchestrator is a local process that uses GitHub as its state store - reading labels to know where each issue is, writing comments as decision records, updating labels to advance state.
@@ -35,7 +34,7 @@ You run this on your own machine. Nothing is in the cloud. No GitHub Actions. Th
 
 This means Feature 1 flows through intake, then design, then build before Feature 2 even starts intake. Each feature gets a complete workflow before the next one begins. This creates a focused, sequential delivery model rather than spread-out batch processing.
 **Depth-first workflow:** Each issue is advanced one stage per cycle, then the next issue is checked. This ensures Feature 1 completes intake → design → build before Feature 2 starts, creating a focused sequential delivery model.
-- **The orchestrator drives itself.** It does not wait for an external scheduler. It finishes a cycle, sleeps, and starts the next one. You start it with one command and stop it with Ctrl+C.
+- **The orchestrator drives itself.** It does not wait for an external scheduler. It finishes a cycle and starts the next one immediately. You start it with one command and stop it with Ctrl+C.
 - **The orchestrator is stateless.** Each cycle reads GitHub fresh. It does not remember the last run. Restart it any time and it picks up exactly where things left off.
 - **Specialists are composable.** You add a new stage by writing one agent file and adding one routing rule to the orchestrator. The existing agents do not change.
 
@@ -198,7 +197,7 @@ Flag meanings:
 - `--enable-all-github-mcp-tools` unlocks the full GitHub MCP toolset (label writes, comment writes)
 - `-p` passes the initial prompt that tells the orchestrator to begin its self-directed loop
 
-The orchestrator will start immediately. You will see it list open issues, process any qualifying ones, print a cycle summary, then sleep 10 seconds before starting the next cycle.
+The orchestrator will start immediately. You will see it list open issues, process any qualifying ones, then print a cycle summary and begin the next cycle.
 
 **What you just did:** You started a persistent local agent process. It drives itself. You do not issue any more commands. When you want to stop it, press Ctrl+C.
 
