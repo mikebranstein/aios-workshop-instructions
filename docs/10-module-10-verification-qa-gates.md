@@ -1,10 +1,10 @@
-# Module 09 - Adding Verification: Intake → Design → Build → Verify
+# Module 10 - Adding Verification: Intake → Design → Build → Verify
 
 ## Concept: Quality gates in the agentic OS
 
 In Module 8, you built an orchestrator that routes work through intake, design, and build. Each stage made a decision and posted it to GitHub. But what happens after code is built? Who verifies that the implementation actually works?
 
-Module 9 adds the next stage: **Verification**. This is where objective quality checks run automatically. Tests execute. Lint checks pass. The build passes. If all checks pass, the PR is approved. If any check fails, the issue returns to build for rework.
+Module 10 adds the next stage: **Verification**. This is where objective quality checks run automatically. Tests execute. Lint checks pass. The build passes. If all checks pass, the PR is approved. If any check fails, the issue returns to build for rework.
 
 **What makes this different from design/build:** Verification is not a judgment call. It is automated, repeatable, objective. Either tests pass or they don't. Either lint is clean or it has errors. The verification agent's job is to run these checks and report the facts—not to interpret or negotiate.
 
@@ -16,6 +16,8 @@ Issue Created
 [Intake Contract] → APPROVED
      ↓
 [Design Contract] → PASS
+     ↓
+[Business Analyst] → CLARIFIED (if needed)
      ↓
 [Build Contract] → COMPLETE (PR created)
      ↓
@@ -34,8 +36,8 @@ When verification passes, the PR is ready to be merged. When it fails, the failu
 
 1. Create the verification agent file in `.github/agents/`.
 2. Extend the orchestrator to include verification routing and conflict handling.
-3. Watch Features 1, 2, 3 flow from build → verification (already built from Module 8).
-4. Create Feature 4 and watch it flow through the complete intake → design → build → verify pipeline.
+3. Watch Features 1, 2, 3 flow from build → verification (already built from Module 8 & 9).
+4. Create Feature 4 and watch it flow through the complete intake → design → [ba] → build → verify pipeline.
 5. Merge Feature 1's PR and observe Feature 2's verification detect integration conflicts.
 6. Watch Feature 2 automatically re-route to design for re-evaluation with the new codebase changes.
 
@@ -82,10 +84,10 @@ cp templates/agents/verification.agent.md .github/agents/verification.agent.md
 Update the orchestrator to route completed builds to verification, and to handle integration conflicts by re-routing to design:
 
 ```bash
-cp templates/agents/orchestrator.v4.agent.md .github/agents/orchestrator.agent.md
+cp templates/agents/orchestrator.v5.agent.md .github/agents/orchestrator.agent.md
 ```
 
-**What v4 adds:**
+**What v5 adds:**
 - After `build-complete` label is applied, the next cycle routes the issue to verification
 - Verification runs the checks on the PR
 - If `verification-passed`: issue is done and ready for manual merge
@@ -98,7 +100,7 @@ cp templates/agents/orchestrator.v4.agent.md .github/agents/orchestrator.agent.m
 
 ## Step 4 (20 minutes): Phase 1 — Watch Features 1, 2, 3 verify
 
-At the end of Module 8, Features 1, 2, and 3 are sitting in `build-complete` state with open PRs. They've been designed and built, but not yet verified.
+At the end of Module 9, Features 1, 2, and 3 are sitting in `build-complete` state with open PRs. They've been designed and built, but not yet verified.
 
 Keep the orchestrator running (or restart it):
 
@@ -114,7 +116,7 @@ copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
 - Cycle N+3: Feature 3 verification decision posted; all three features now have `verification-passed` or `verification-failed` labels
 
 **On each issue, you should see:**
-- Four decision comments: Intake, Design, Build, Verification
+- Five decision comments: Intake, Design, [BA if needed], Build, Verification
 - Verification comment includes test/lint results in JSON details
 - Labels: `intake-approved`, `design-approved`, `build-complete`, `verification-passed` (or failed)
 
@@ -129,10 +131,10 @@ gh issue create --title "Feature 4: Add pagination to checkout history" \
   --body "Show checkout history for each item in a paginated list with 10 items per page."
 ```
 
-**Watch Feature 4 flow through all four stages depth-first:**
+**Watch Feature 4 flow through all stages depth-first:**
 - Cycle N: Feature 4 created, routes to intake
 - Cycle N+1: intake decision posted, routes to design
-- Cycle N+2: design decision posted, routes to build (creates PR)
+- Cycle N+2: design decision posted, [routes to BA if REVISE or blocks on requirements, or proceeds to] build
 - Cycle N+3: build decision posted, routes to verification
 - Cycle N+4: verification decision posted, complete
 
@@ -171,25 +173,23 @@ This is the key resilience pattern: **conflicts are not blockers, they're re-des
 
 ---
 
----
-
 ## Micro checks
 
 - Minute 10: Two verification labels created (`verification-passed`, `verification-failed`).
 - Minute 25: Verification agent file in `.github/agents/`.
-- Minute 40: Orchestrator v4 deployed with conflict handling; Features 1, 2, 3 route to verification on next cycles.
+- Minute 40: Orchestrator v5 deployed with conflict handling; Features 1, 2, 3 route to verification on next cycles.
 - Minute 50: Feature 1 verification decision posted (PASS or FAIL).
 - Minute 60: Feature 2 verification decision posted; Feature 3 routing to verification.
 - Minute 70: Feature 3 verification decision posted; all three features checked.
 - Minute 75: Feature 4 created; enters intake stage.
-- Minute 90: Feature 4 complete through all stages (intake → design → build → verify).
+- Minute 90: Feature 4 complete through all stages (intake → design → [ba] → build → verify).
 - Minute 100: Feature 1 PR merged; Feature 2 detects integration conflict, re-routes to design.
 
 ## You should see
 
-- `.github/agents/` now has five files (intake, design, build, verification, orchestrator)
-- **Features 1, 2, 3:** All have `verification-passed` or `verification-failed` labels and four decision comments
-- **Feature 4:** Complete pipeline with four decision comments and all labels (intake-approved → design-approved → build-complete → verification-passed)
+- `.github/agents/` now has six files (intake, design, build, verification, orchestrator, [business-analyst])
+- **Features 1, 2, 3:** All have `verification-passed` or `verification-failed` labels and decision comments
+- **Feature 4:** Complete pipeline with decision comments and all labels (intake-approved → design-approved → [maybe requirements-clarified] → build-complete → verification-passed)
 - **Feature 2 (after Feature 1 merge):** Re-routed to design with label sequence: `intake-approved` → `design-approved` → (returns from verification) → design re-evaluates
 - Verification decisions include test/lint results, or integration conflict details
 - Orchestrator running continuously, advancing one issue one stage per 10-second cycle
@@ -197,7 +197,7 @@ This is the key resilience pattern: **conflicts are not blockers, they're re-des
 ## What you learned
 
 - **Quality gates are objective, not judgment calls.** Verification runs automated checks (tests, lint, build). Pass or fail is binary.
-- **Depth-first orchestration scales across stages.** The orchestrator queues features and advances them one stage per cycle through intake → design → build → verify.
+- **Depth-first orchestration scales across stages.** The orchestrator queues features and advances them one stage per cycle through intake → design → [ba] → build → verify.
 - **Integration conflicts trigger re-design, not just rebuilds.** When Feature 2's PR conflicts with Feature 1's merged code, the orchestrator routes Feature 2 back to design so the design is re-evaluated against the new codebase state.
 - **Failures are actionable and recoverable.** When verification detects a merge conflict, the decision includes the root cause, triggering the re-design flow automatically.
 - **Contracts form a pipeline.** Each contract inherits the decisions of the previous stage and makes its own decision. Together, they form a complete workflow that handles both happy-path and conflict scenarios.
