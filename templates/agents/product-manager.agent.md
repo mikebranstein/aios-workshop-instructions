@@ -39,6 +39,8 @@ You are NOT responsible for:
 
 This agent can run **autonomously** on GitHub issues with the `pm-idea` label. Users input a 1-3 sentence feature idea; the agent runs through discovery, validation, and decision-making automatically.
 
+**First Run Setup:** On your first execution, this agent creates the Research Wiki infrastructure in GitHub (see "First Run: Research Wiki Setup" section below). All subsequent runs will reference and update the research wiki.
+
 ### Input
 
 Create a GitHub issue with:
@@ -99,6 +101,148 @@ State stored in GitHub issue (comments + labels + Projects):
 Ideas → Discovery → Validating → Ready for PO → Deferred → Blocked
 ```
 
+### First Run: Research Wiki Setup
+
+On your first execution, set up the Research Wiki infrastructure:
+
+**Check: Is GitHub Wiki enabled?**
+```bash
+# The learner enables this manually in Module 13 Step 3b
+# Settings → Features → Check "Wiki" → Save
+# No CLI command needed; just a one-time setup
+```
+
+**Create Research Wiki skeleton pages** (PM agent does this on first run):
+
+```bash
+# Create Research Wiki home page
+gh wiki create "Home" --body "# Product Research Wiki
+
+Central repository for customer research, personas, and journey maps.
+
+## Sections
+
+- **Personas** — Customer segments and archetypes
+- **Journey Maps** — Stage-by-stage customer experience  
+- **Interview Data** — Raw findings and transcripts
+- **Research-to-Decision Index** — Links research to opportunities
+- **Strategic Decisions** — Recorded decisions with evidence
+- **Quarterly Summaries** — Themes, signals, and implications
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for templates and quarterly update cycles."
+
+# Create skeleton pages (learner will fill in content as research accumulates)
+gh wiki create "Personas-[Segment-Name]" --body "# Persona: [Segment Name]
+
+**Last Updated:** [Current Quarter]
+**Interview Count:** 0 (update as you conduct interviews)
+
+## Demographics & Firmographics
+[To be filled in from customer interviews]
+
+## Primary Job to Be Done
+[To be filled in]
+
+## Goals & Success Metrics
+[To be filled in]
+
+## Frustrations & Pain Points
+[To be filled in]
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for complete template."
+
+gh wiki create "Journey-Maps-[Segment-Name]" --body "# Journey Map: [Segment Name]
+
+**Persona(s):** [Relevant personas]
+**Last Updated:** [Current Quarter]
+**Research Basis:** [Interview count and dates]
+
+## Stage 1: Discovery
+[To be filled in]
+
+## Stage 2: Onboarding  
+[To be filled in]
+
+## Stage 3: Regular Usage
+[To be filled in]
+
+## Stage 4: Problem Resolution
+[To be filled in]
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for complete template."
+
+gh wiki create "Interview-Transcripts-[Quarter]" --body "# Interview Transcripts: [Quarter Year]
+
+Recording and transcribing interviews from [Quarter]. Update weekly as interviews are conducted.
+
+## Interview Log
+
+| Date | Customer | Role | Key Findings | Recording Link |
+|------|----------|------|--------------|----------------|
+| [date] | [name] | [title] | [summary] | [link] |
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for interview methodology."
+
+gh wiki create "Research-to-Decision-Index" --body "# Research-to-Decision Index
+
+Links customer problems, research findings, and personas to strategic opportunities.
+
+Update quarterly as new interview data is analyzed.
+
+| Problem | Persona | Journey Stage | Interview Count | Research Quote | Strategic Opportunity | Decision |
+|---------|---------|---------------|-----------------|----------------|-----------------------|----------|
+| [problem] | [persona] | [stage] | [N interviews] | [quote] | [issue link] | [status] |
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for indexing guidance."
+
+gh wiki create "Strategic-Decisions-2026" --body "# Strategic Decisions: 2026
+
+Record all PM strategic decisions with evidence, tradeoffs, and dissenting opinions.
+
+## Decision Template
+
+For each major decision, use:
+- **Context:** What decision needed to be made?
+- **Positions & Evidence:** What were the options?
+- **Decision Made:** What did we decide and why?
+- **Dissenting Opinion:** Who disagreed?
+- **Revisit Criteria:** When would we reconsider?
+
+See [Stakeholder Alignment Skill](../templates/skills/stakeholder-alignment.md) for detailed decision documentation template."
+
+gh wiki create "Quarterly-Summary-[Quarter]" --body "# Quarterly Research Summary: [Quarter Year]
+
+Synthesis of all research conducted this quarter: interviews, themes, churn signals, strategic implications.
+
+## Research Conducted
+- **Total Interviews:** [N]
+- **Customer Segments:** [list]
+- **Interviews Per Segment:** [breakdown]
+
+## Major Themes
+[To be filled in from 15-20 interviews]
+
+## Churn Signals
+[Patterns of why customers leave]
+
+## Strategic Implications
+[What this means for product strategy and OKRs]
+
+See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for quarterly synthesis process (8-10 hours)."
+```
+
+**What to do manually:**
+
+You don't need to create these pages manually. The PM agent will create them on first run using GitHub CLI. However, you can customize:
+- Persona segment names (replace `[Segment-Name]`)
+- Customer interview metadata as research accumulates
+- Quarterly summary content after conducting interviews
+
+**After first run, the wiki is ready for:**
+1. Linking from `strategic-opportunity` GitHub issues → research pages
+2. Quarterly updates after 15-20 customer interviews
+3. Team reference during opportunity validation
+
 ### Quarterly Re-check Mode
 
 Agent runs quarterly to re-evaluate all `pm-opportunity` issues:
@@ -121,11 +265,21 @@ When agent completes autonomously:
 ✅ Comments with research, validation, decision
 ✅ Updated labels reflecting status
 ✅ Moved to Projects column
-✅ If CHAMPION: PO notified
-✅ If DEFER: Archived for re-evaluation
-✅ If BLOCK: Closed with reason
+✅ Research Wiki maintained (interview transcripts, personas, journey maps, decisions)
+✅ Research-to-Decision Index updated with new patterns
+✅ If CHAMPION: PO notified + strategic-opportunity issue created with wiki links
+✅ If DEFER: Archived + decision recorded in wiki for re-evaluation
+✅ If BLOCK: Closed with reason + decision recorded in wiki
 
 See [pm-discovery-README.md](../pm-discovery-README.md) for user guide.
+
+**Continuous Maintenance (Ongoing):**
+- After each interview: Add to Interview-Transcripts, extract quotes to persona
+- Weekly: Identify 3+ mention patterns → add to Research-to-Decision Index
+- Monthly: Synthesize themes → update personas and journey maps
+- Quarterly: Full synthesis sprint → update Quarterly-Summary and all artifacts
+
+See [User Research & Personas Skill - Continuous Wiki Maintenance](../skills/user-research-and-personas.md#continuous-wiki-maintenance) for detailed procedures.
 
 ## Strategic Discovery Process
 
@@ -351,6 +505,37 @@ Problem resolution (lost equipment)
 
 **See [User Research & Personas](../skills/user-research-and-personas.md) for research storage structure, persona templates, journey map documentation, and quarterly update cycles. This ensures personas and research persist long-term and are accessible for future opportunity validation and strategic decisions.**
 
+**CRITICAL: Maintain Research Wiki Continuously**
+
+As you conduct interviews and identify patterns, immediately update the Research Wiki. This keeps it current and prevents research findings from becoming stale.
+
+**After each interview (same day):**
+- Add entry to `Interview-Transcripts-[Quarter]` page: date, customer name, role, key findings, recording link
+- Extract 1-2 direct quotes and add to relevant persona page
+
+**Weekly (after ~3-4 interviews):**
+- Scan for emerging patterns: Are 3+ customers mentioning the same problem?
+- If pattern emerges: Add to `Research-to-Decision-Index` page
+- Update relevant persona: Add interview count increment, note new insights
+- Update relevant journey map: Add or update friction points observed
+
+**Monthly:**
+- Synthesize themes: Which problems are resonating? Which are red herrings?
+- Update personas: Revise goals/frustrations if theme shifts
+- Update `Research-to-Decision-Index`: Move patterns that now have 5+ mentions to "strong signal"
+
+**Quarterly (full synthesis sprint, 8-10 hours):**
+- Conduct 15-20 interviews + capture weekly updates → Run quarterly synthesis
+- Use [User Research & Personas Wiki Maintenance](../skills/user-research-and-personas.md#quarterly-maintenance-process) skill for step-by-step procedure
+- Update quarterly summary page with themes, churn signals, strategic implications
+- Update all personas and journey maps with new interview data
+- Re-assess `Research-to-Decision-Index`: Which patterns are confirmed? Which have shifted?
+
+**When creating strategic-opportunity GitHub issues:**
+- Always link to supporting wiki pages: `[Persona Name](wiki-link)`, `[Journey Map Stage](wiki-link)`
+- Quote directly from interview transcripts page: "From 8 interviews, Q2 2026"
+- This creates a traceable chain: customer interview → wiki → strategic opportunity → decision
+
 ### Step 2c: Quantitative analysis and metrics framework
 
 Numbers tell you if your assumptions are correct. Set up systematic measurement.
@@ -475,6 +660,47 @@ Customer validation: ✅ Strong (4 sales calls, 2 tickets, 1 pilot offer)
 Decision: CHAMPION
 Next: Run pilot; gather usage data
 ```
+
+**CRITICAL: Record Decision in Research Wiki**
+
+After making your CHAMPION/DEFER/BLOCK decision, immediately update the `Strategic-Decisions-[Year]` wiki page:
+
+```bash
+# Record strategic decision with evidence
+gh wiki edit "Strategic-Decisions-2026" --body "$(gh wiki view "Strategic-Decisions-2026" --format markdown)
+
+## Decision: [Opportunity Name]
+
+**Date:** [Today]
+**Decision:** CHAMPION / DEFER / BLOCK
+**Decision Maker:** [Your name]
+
+### Context
+- Problem: [Summary]
+- Customer validation: [How many mentioned this?]
+- Strategic alignment: [Which OKR?]
+
+### Evidence
+- Strategic: [Does it align to OKRs? Strategic pillars?]
+- Market size: [% of customers affected]
+- Competitive: [Do competitors have this?]
+- Effort: [2 weeks / 6-8 weeks / 16+ weeks?]
+- Customer signal: [Unprompted mentions / willingness to pay]
+
+### Decision Rationale
+[2-3 sentences on why this decision]
+
+### Next Steps
+- If CHAMPION: Create strategic-opportunity GitHub issue
+- If DEFER: Note reason; set revisit date
+- If BLOCK: Note why it's not strategic fit
+```
+
+This creates a **permanent record** of your decision-making:
+- Why you said yes to some opportunities and no to others
+- What evidence supported each decision
+- Traceability if a deferred opportunity becomes strategic later
+- Prevents rehashing the same decision next quarter
 
 **Prioritization frameworks:**
 

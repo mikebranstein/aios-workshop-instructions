@@ -349,6 +349,133 @@ Maintain a living index that links research findings directly to strategic oppor
 
 ---
 
+## Continuous Wiki Maintenance
+
+Research Wiki maintenance is not a quarterly task—it's an **ongoing responsibility**. The PM agent must keep the wiki current in real-time as it discovers customer insights. This ensures:
+
+- Research findings don't get lost between quarterly reviews
+- PO, BA, and dev teams have access to current research
+- Strategic decisions are always traceable to customer evidence
+- New team members can learn customer context from the wiki
+- Themes and patterns emerge while interviews are still fresh
+
+### Maintenance Schedule
+
+**After Every Interview (Same Day)**
+
+1. Add interview entry to `Interview-Transcripts-[Current-Quarter]` page:
+
+```bash
+# Update interview transcripts with new entry
+gh wiki edit "Interview-Transcripts-Q3-2026" --body "
+| Date | Customer | Role | Key Findings | Recording Link |
+|------|----------|------|--------------|----------------|
+| [Today] | [Name] | [Title] | [Summary of 3-5 key insights] | [Recording URL] |
+```
+
+2. Extract 1-2 direct customer quotes and add to the relevant persona page:
+
+```bash
+# Add quote to existing persona (append to "Key Quotes" section)
+gh wiki edit "Personas-Facility-Manager-Frank" --body "
+## Key Quotes from Interviews
+- \"[Direct quote]\" — [Customer Name, Today's Date]
+- [Other quotes...]
+```
+
+3. If interview reveals new friction point: Update relevant journey map stage immediately
+
+---
+
+**Weekly (After 3-4 Interviews)**
+
+1. Scan interview notes for **emerging patterns**: Are 3+ customers mentioning the same problem?
+2. If yes, add to `Research-to-Decision-Index` page with pattern count:
+
+```bash
+# Add new pattern to index
+gh wiki edit "Research-to-Decision-Index" --body "
+| Pattern | Persona | Stage | Count | Status |
+| [New Pattern] | [Affected Personas] | [Journey Stage] | 3/4 mentions | EMERGING |
+```
+
+3. Increment persona interview count:
+
+```bash
+# Update persona interview metadata
+gh wiki edit "Personas-Facility-Manager-Frank" --body "
+**Interview Sources**
+- Q2 2026: 8 interviews
+- Q3 2026: [Updated count - e.g., 5 so far]
+- Cumulative: [Running total - e.g., 13]
+```
+
+4. If journey map friction points confirmed: Update journey map stage notes
+
+---
+
+**Monthly (Week 4 of Month)**
+
+1. Synthesize weekly updates into themes: Which patterns are "signal" vs. "noise"?
+   - 5+ mentions of same problem = strong signal → Move to "Confirmed" status
+   - 2-3 mentions = emerging → Keep as "Emerging"
+   - 1 mention = outlier → Note but don't prioritize
+
+2. Update personas with any theme shifts:
+   - Add "Evolution Notes" if customer segment behavior changed
+   - Move friction points up/down in priority based on frequency
+   - Update "Churn Signals" section if you're seeing new patterns
+
+3. Update Research-to-Decision Index: Promote patterns with 5+ mentions to "STRONG_SIGNAL"
+
+---
+
+**Quarterly (Full Synthesis Sprint, 8-10 Hours)**
+
+Execute the full 5-step quarterly update process (documented above):
+
+1. Synthesize all interviews from the quarter
+2. Create/update `Quarterly-Summary-[Quarter]` page with themes, signals, implications
+3. Update all personas with cumulative interview data
+4. Revise all journey maps with new friction points
+5. Re-assess Research-to-Decision Index: confirm patterns, note resolved items
+
+---
+
+### Wiki Update Checklist
+
+Before moving a `strategic-opportunity` issue to "Ready for PO":
+
+- [ ] All interview transcripts added to wiki (same day)
+- [ ] Customer quotes extracted and linked to personas
+- [ ] Pattern added to Research-to-Decision Index (if 3+ mentions)
+- [ ] Strategic-opportunity GitHub issue links to wiki pages (persona, journey map, interview transcript)
+- [ ] Example: "Research basis: [Facility Manager Frank](wiki-link) | [Problem Resolution](journey-map-wiki-link) | 8 interviews mention this"
+
+---
+
+### Sample Maintenance Commands (GitHub CLI)
+
+```bash
+# Add new interview to transcripts page
+gh wiki edit "Interview-Transcripts-Q3-2026" --body "$(gh wiki view "Interview-Transcripts-Q3-2026" --format markdown)
+
+**New Entry:**
+| 2026-07-07 | Frank Johnson | Facility Manager | \"We lose \$50K/year in equipment. Mobile app would save us thousands\" | [recording-link] |"
+
+# Update persona with new quote
+gh wiki edit "Personas-Facility-Manager-Frank" --body "$(gh wiki view "Personas-Facility-Manager-Frank" --format markdown)
+
+- \"We need real-time GPS visibility\" — Frank Johnson, 2026-07-07"
+
+# Update Research-to-Decision Index with new pattern
+gh wiki edit "Research-to-Decision-Index" --body "$(gh wiki view "Research-to-Decision-Index" --format markdown)
+
+| Equipment Loss | Frank + Tyler | Problem Res | 5/8 interviews | \"We lose \$50K...\" | #12 Equipment Loss Prevention | STRONG_SIGNAL |"
+```
+
+---
+
 ## Tool Recommendations
 
 ### Primary: GitHub Wiki ✅ (Recommended for This Workshop)
