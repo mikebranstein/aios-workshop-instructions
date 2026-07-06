@@ -23,10 +23,10 @@ Issue Created
      ↓
 [Verification Contract] → PASS (tests pass, lint clean, build successful)
      ↓
-Ready for Merge
+PR Automatically Merged to Main
 ```
 
-When verification passes, the PR is ready to be merged. When it fails, the failure report goes back to build with clear guidance on what went wrong.
+When verification passes, the PR is automatically merged to main and the feature branch is deleted. When it fails, the failure report goes back to build with clear guidance on what went wrong.
 
 ## Time Box
 
@@ -61,21 +61,39 @@ These labels tell the orchestrator that a feature has passed (or failed) quality
 
 ---
 
-## Step 2 (15 minutes): Create the verification agent file
+## Step 2 (15 minutes): Understand the verification agent
 
-The verification agent is like the other specialists—it reads the PR, runs objective checks (tests, lint, build), and posts a decision.
+The verification agent is the quality gate. Unlike intake (which validates requirements), design (which evaluates architecture), and build (which implements code), **verification runs objective, automated checks** on the built PR.
 
-Create the file `.github/agents/verification.agent.md`:
+**What the verification agent does:**
+
+1. **Rebases the PR onto the current main branch** — Main is the authoritative source of truth. Before running any checks, pull in all the latest code from main to ensure this PR integrates with what's currently deployed/merged.
+   - If rebase succeeds cleanly: This PR is compatible with current main → continue with verification
+   - If rebase fails with conflicts: This PR conflicts with what's currently in main → route back to design/build to resolve
+
+2. **Runs objective checks against the rebased code:**
+   - Tests: Executes your test suite
+   - Lint: Validates code style and quality
+   - Build: Confirms the code compiles and builds successfully
+   
+3. **Reports results:** Either all checks pass (ready to merge) or identifies what failed
+
+4. **Routes appropriately:**
+   - **Rebase conflicts?** → Issue returns to design for re-evaluation with updated main
+   - **Test/lint/build failures after rebase?** → Issue returns to build for rework
+   - **All pass?** → PR is automatically merged to main
+
+**Key principle:** Main is always the source of truth. Every PR verifies against the current state of main, and verification ensures the code will work when merged.
+
+---
+
+Now copy the pre-created verification agent file to your repo:
 
 ```bash
 cp templates/agents/verification.agent.md .github/agents/verification.agent.md
 ```
 
-**Or** if it doesn't exist yet, create it manually in VS Code. The agent will:
-1. Read the PR created by build
-2. Run test commands, lint checks, build validation
-3. Post a decision: PASS or FAIL
-4. Apply the appropriate label
+This file contains the full workflow for running checks, detecting failures, and routing decisions based on the verification contract.
 
 ---
 
@@ -90,7 +108,7 @@ cp templates/agents/orchestrator.v5.agent.md .github/agents/orchestrator.agent.m
 **What v5 adds:**
 - After `build-complete` label is applied, the next cycle routes the issue to verification
 - Verification runs the checks on the PR
-- If `verification-passed`: issue is done and ready for manual merge
+- If `verification-passed`: the verification agent **automatically merges the PR to main** and deletes the feature branch (no manual step needed)
 - **If `verification-failed` with integration conflict:** issue returns to `design-approved` (keeps design label, removes build/verification labels) so design can be re-evaluated with the new codebase state
 - **If `verification-failed` with test/lint failure:** issue returns to build for rework
 
@@ -142,26 +160,26 @@ Each stage decision will include the full JSON trail, so you can see how each ag
 
 ---
 
-## Step 6 (15 minutes): Phase 3 — Merge Feature 1, trigger Feature 2 re-design on conflict
+## Step 6 (10 minutes): Phase 3 — Observe rebase handling and integration conflicts
 
-This step shows how the orchestrator handles integration conflicts.
+This step shows how the orchestrator handles rebasing and integration conflicts when multiple features are in flight.
 
-**Manually merge Feature 1's PR:**
+Create or track two or more features that are progressing through the pipeline simultaneously. When one feature's PR is merged by the verification agent, other features' PRs need to be rebased onto the updated main branch.
 
-Go to GitHub UI or use:
-```bash
-gh pr merge PR_NUMBER --squash --delete-branch
-```
-
-When Feature 1 is merged, its code changes are now in `main`. This may conflict with Feature 2's open PR if both changed overlapping code.
+**Here's the scenario:**
+- Feature 1 passes verification and is **automatically merged by the verification agent** to main
+- Feature 2 is in verification or build stage with its own PR open
+- Feature 2's code may need updates to work with Feature 1's merged changes
 
 **On the next orchestrator cycle:**
-- Orchestrator re-checks Feature 2's open PR against the now-updated main branch
-- Verification agent detects a merge conflict or integration failure
-- Verification posts FAIL with root cause: `integration_conflict` or `merge_conflict`
+- Orchestrator routes Feature 2 to verification
+- **Verification agent rebases Feature 2's PR onto the updated main branch**
+  - If rebase succeeds cleanly: Tests and lint run against the rebased code
+  - If rebase fails with conflicts: Verification posts FAIL with root cause `integration_conflict`
 - **Orchestrator routes Feature 2 back to design** (keeps `design-approved` label, removes `build-complete` and `verification-failed` labels)
-- On the next cycle, design re-evaluates Feature 2 against the new codebase state and suggests adjustments
-- Design posts updated decision, build executes new implementation, verification checks again
+- Design re-evaluates Feature 2 against the new codebase state and suggests adjustments
+- Build executes the new implementation with the updated code
+- Verification rebases again and checks the new implementation
 
 **You should see:**
 - Feature 1: merged, complete
@@ -183,7 +201,7 @@ This is the key resilience pattern: **conflicts are not blockers, they're re-des
 - Minute 70: Feature 3 verification decision posted; all three features checked.
 - Minute 75: Feature 4 created; enters intake stage.
 - Minute 90: Feature 4 complete through all stages (intake → design → [ba] → build → verify).
-- Minute 100: Feature 1 PR merged; Feature 2 detects integration conflict, re-routes to design.
+- Minute 100: Feature 1 automatically merged by verification agent; Feature 2 detects integration conflict on next cycle, re-routes to design.
 
 ## You should see
 
