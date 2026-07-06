@@ -370,7 +370,7 @@ Before moving a `feature-request` to the "Ready for Development" column in your 
 - [ ] **Problem statement:** Explains why this matters (market signal, customer feedback, internal need)
 - [ ] **Scope is bounded:** MVP clearly defined; Phase 2+ features explicitly deferred
 - [ ] **Value assessment:** User value (1-5), Business value (1-5), Technical complexity (1-5) all rated
-- [ ] **Priority score:** Calculated using formula; interpreted as QUICK_WIN / STRATEGIC_BET / DEFER
+- [ ] **Priority score (REQUIRED):** MUST be calculated using formula `(User Value + Business Value) / (Technical Complexity × 1.5)` and included as a standalone line in the issue body. Format: `Priority Score: [NUMBER]` (e.g., `Priority Score: 2.1`). Interpreted as: QUICK_WIN (>2.5) / STRATEGIC_BET (1.5-2.5) / DEFER (<1.5). **Issues without a priority score cannot move to Ready for Development.**
 - [ ] **Success metrics:** Defined (how will we measure this feature's success? Usage rate? Revenue? Retention?)
 - [ ] **Draft acceptance criteria:** Included (3-5 initial criteria; BA will refine during Intake)
 - [ ] **Dependencies identified:** Is this blocked by other work? Does it block others?
@@ -378,6 +378,8 @@ Before moving a `feature-request` to the "Ready for Development" column in your 
 - [ ] **Note clarity:** Any edge cases or constraints documented for BA
 
 **Why this matters:** If any item is missing, dev will reject the issue and escalate back to you. A complete handoff prevents rework and keeps velocity high.
+
+**Critical:** The Development Orchestrator parses the priority score from every issue in "Ready for Development" and pulls them in order of highest priority first (highest score first). If your priority score is missing or malformed, the orchestrator cannot determine pull order and will flag it as an error. Always include the priority score as a standalone parseable line.
 
 **If you're unsure:** Ask in comments before moving to "Ready for Development". Better to clarify now than have dev blocked during Intake.
 

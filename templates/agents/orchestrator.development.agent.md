@@ -31,28 +31,52 @@ git pull origin main
 
 ### Step 1: Pull Next-Priority Issue from Backlog
 
-Continuously pull the highest-priority `feature-request` ready for development:
+Continuously pull the highest-priority `feature-request` ready for development by parsing priority scores:
 
 ```bash
-# Step 1: Check for issues in "Ready for Development" column (already prioritized by PM-PO)
-# These are feature-request issues created by PO with links to strategic-opportunity issues
-NEXT_ISSUE=$(gh project item-list 1 --format json | \
-  jq '.items[] | select(.column == "Ready for Development") | .[0]')
+# Step 1: Fetch all issues in "Ready for Development" column
+READY_ITEMS=$(gh project item-list 1 --format json | \
+  jq '.items[] | select(.column == "Ready for Development")')
 
-if [ ! -z "$NEXT_ISSUE" ]; then
-  echo "Starting development on: $NEXT_ISSUE"
-  INTAKE_AGENT process $NEXT_ISSUE
-else
+if [ -z "$READY_ITEMS" ]; then
   echo "No issues in Ready for Development. Waiting for PM-PO backlog..."
   sleep 3600  # Check again in 1 hour
+  exit 0
 fi
+
+# Step 2: Parse priority score from each issue and sort by highest score first
+NEXT_ISSUE=$(echo "$READY_ITEMS" | while IFS= read -r item; do
+  ISSUE_NUM=$(echo "$item" | jq -r '.number')
+  ISSUE_BODY=$(gh issue view "$ISSUE_NUM" --json body -q '.body')
+  
+  # Extract priority score from issue body (format: "Priority Score: 2.1")
+  PRIORITY=$(echo "$ISSUE_BODY" | grep -oP 'Priority Score:\s*\K[0-9.]+' || echo "")
+  
+  if [ -z "$PRIORITY" ]; then
+    echo "ERROR: Issue #$ISSUE_NUM in Ready for Development missing Priority Score. Skipping." >&2
+    echo "0 $ISSUE_NUM"  # Assign 0 so it sorts to end
+  else
+    echo "$PRIORITY $ISSUE_NUM"
+  fi
+done | sort -rn | head -1 | cut -d' ' -f2)
+
+if [ -z "$NEXT_ISSUE" ] || [ "$NEXT_ISSUE" = "0" ]; then
+  echo "ERROR: All issues in Ready for Development are missing Priority Score. Orchestrator cannot determine pull order." >&2
+  echo "ACTION REQUIRED: PO must add Priority Score to all issues before orchestrator can proceed." >&2
+  exit 1
+fi
+
+echo "Starting development on: Issue #$NEXT_ISSUE (highest priority in Ready for Development)"
+INTAKE_AGENT process "$NEXT_ISSUE"
 ```
 
 **Why**: 
 - Pulls `feature-request` issues from PM-PO backlog (already researched, prioritized, linked to strategic-opportunity)
-- FIFO order (highest priority first)
+- **Parses priority score from each issue** and sorts by highest score first (descending order)
+- Validates that priority score exists; errors if missing
 - No re-negotiation; issue stays in development until complete
 - If backlog is empty, development waits (normal state; PM-PO will add more)
+- **Deterministic ordering:** Same run always pulls the same highest-priority issue
 
 **What happens**:
 1. Issue (type `feature-request`) is moved from "Ready for Development" to "In Development"
