@@ -158,7 +158,30 @@ Modules 0–7 built three skill contracts (intake, design, build) in isolation. 
 
 ---
 
-## Module 12: Policy, Boundaries, and Approvals
+---
+
+## Modules 1-7: Foundation (not shown; pre-module content)
+
+Modules 1-7 build the foundational agents (Intake, BA, Design, Build) and establish the basic Agentic OS structure: orchestration, GitHub state management, and depth-first workflow routing.
+
+**Previous modules covered:**
+- Module 0: Shared app foundation (starter project template)
+- Modules 1-7: Individual agents (Intake, BA, Design, Build, with state tracking and basic orchestration)
+
+## Modules 8-12: Quality Gates and Governance (core workshop focus)
+
+Modules 8-12 add quality gates (Verification, QA) and policy governance, transforming the system from basic agent routing into a mature, controlled release pipeline.
+
+**New modules (8-12) covered above:**
+- Module 8: Orchestrator & end-to-end workflow
+- Module 9: GitHub state tracking as source of truth
+- Module 10: Verification gate (automated code quality)
+- Module 11: QA gate (automated test validation)
+- Module 12: Policy gate (selective human approval)
+
+## Modules 13-14: Strategic Leadership and Capstone (new)
+
+Modules 13-14 add product ownership (strategic direction) and integrate the full end-to-end system.
 
 **Goal:** Add policy gates and human approval workflows to the agentic OS. Run issues through to see how policy shapes decisions.
 
@@ -198,39 +221,43 @@ Modules 0–7 built three skill contracts (intake, design, build) in isolation. 
 
 ## Module 13: Capstone — Full System Run with 2–3 Issues
 
-**Goal:** Run 2–3 complete issues through the full 6-stage workflow end-to-end, demonstrating all gates working together and proving mastery.
+**Goal:** Run 2–3 complete issues through the full 8-stage workflow end-to-end: Product Owner → Intake → BA → Design → Build → Verification → QA → Policy → Release.
 
 **Why this module matters:** Learners prove they understand the entire system by running it successfully multiple times. This is the capstone: they built it, understand it, and can teach someone else.
 
 **Learning outcome:**
-- Learners can run the full agentic OS without guidance.
-- Learners see patterns, efficiency, and can identify opportunities for improvement.
-- Learners have a working system they can extend or teach to others.
+- Learners can run the full agentic OS without guidance, including the product owner stage
+- Learners see patterns, efficiency, and can identify opportunities for improvement
+- Learners have a working system they can extend or teach to others
+- Learners understand the full flow: from feature ideation through release
 
 **What you do:**
-1. Create 2–3 new issues with realistic scope and varying risk levels.
-2. Run all of them through the full workflow: Intake → Design → Build → Verification → QA → Policy → Release.
-3. Compare the runs; note what was different (risk level, complexity, approval path), what was the same (core gates, state transitions).
-4. Document the overall system, workflow patterns, decision distribution, and timing.
-5. Reflect: What worked well? What would you improve?
+1. Use backlog items from product owner work (features suggested and prioritized)
+2. Run 2–3 issues through the full pipeline: PO → Intake → BA → Design → Build → Verification → QA → Policy → Release
+3. Observe how product strategy flows into execution across all stages
+4. Compare runs; note patterns (risk level, approval path, flow time, decision distribution)
+5. Document system patterns, workflow efficiency, and opportunities for improvement
+6. Reflect: What worked? What would you change? Can you teach someone else?
 
 **Artifacts:**
-- 2–3 issues with complete decision trails and evidence for every gate.
-- A summary report of the workflow including timing, decisions made, who was involved, and approval patterns.
-- Documentation of the agentic OS that you built, suitable for onboarding a new user.
-- Proof that the system is reproducible, teachable, and ready for evolution.
+- 2–3 issues with complete decision trails and evidence for all 8 gates
+- System documentation: workflow diagram, routing logic, decision framework
+- Summary report: timing, decisions, who was involved, approval patterns
+- Reflection and lessons learned
 
 **Time box:** 120 minutes
 
 **Stretch:**
-- Add a fourth issue and automate one of the manual gates (e.g., QA scenarios → automated test suite) to show how the system can evolve.
+- Add a 4th issue and intentionally trigger different scenarios (high-risk escalation, dependency blocking, feedback loops)
+- Create handoff documentation for onboarding a new team to the agentic OS
+- Propose system improvements or evolution paths
 
 **Definition of done:**
-- 2–3 issues have traversed the full 6-stage workflow.
-- Decision trails are complete and evidence is attached at every gate.
-- Workflow is repeatable and auditable.
-- All gates (intake, design, build, verification, QA, policy) are working together seamlessly.
-- You can explain the system to someone else and they could run issues through it independently.
+- 2–3 issues have traversed the full 8-stage workflow end-to-end
+- Decision trails complete and evidence attached at every gate
+- Workflow is repeatable and auditable
+- All gates and agents working together seamlessly
+- You can explain the system to someone else and they could run it independently
 
 ---
 
@@ -242,10 +269,10 @@ Modules 0–7 built three skill contracts (intake, design, build) in isolation. 
 | 9 | GitHub project state tracking | State is auditable and queryable | 1–2 (new) |
 | 10 | Verification gate | Code quality gated automatically | 1–2 (new) |
 | 11 | QA gate | Scenarios tested and tracked | 1–2 (new) |
-| 12 | Policy & approvals | Human review where it matters | 1–2 (new) |
-| 13 | Full system capstone | Working agentic OS you built | 2–3 (new) |
+| 12 | Policy & selective approvals | High-risk features reviewed; low-risk auto-merge | 1–2 (new) |
+| 13 | Full system capstone | Complete 8-stage pipeline with PO strategy | 2–3 (new) |
 
-By the end of Module 13, learners will have run **11–13 issues through the system**, seeing each new stage add value, not just theory. They have not just contracts—they have a working platform they built incrementally and can teach.
+By the end of Module 13, learners will have run **11–13 issues through the system**, seeing each stage add value and building a working strategic product organization.
 
 ---
 

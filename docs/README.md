@@ -35,25 +35,21 @@ Design intent:
 
 ## Module index
 
-1. [00-module-0-shared-app-foundation.md](00-module-0-shared-app-foundation.md)
-2. [01-module-1-tiny-end-to-end-run.md](01-module-1-tiny-end-to-end-run.md)
-3. [02-module-2-intake-quality-template.md](02-module-2-intake-quality-template.md)
-4. [03-module-3-first-ess.md](03-module-3-first-ess.md)
-5. [04-module-4-objective-gates.md](04-module-4-objective-gates.md)
-6. [05-module-5-loop-safety-and-escalation.md](05-module-5-loop-safety-and-escalation.md)
-7. [06-module-6-first-intake-skill-contract.md](06-module-6-first-intake-skill-contract.md)
-8. [07-module-7-design-build-skill-contracts.md](07-module-7-design-build-skill-contracts.md)
-9. [08-module-8-first-agentic-os-run.md](08-module-8-first-agentic-os-run.md)
-
-## Modules 9-13 (being rebuilt)
-
-The following modules are being rebuilt based on the new agentic OS architecture. Legacy versions are in `docs/legacy/` for reference.
-
-- 09. Module 09 - GitHub State as Source of Truth (coming soon)
-- 10. Module 10 - Add Verification to the Agentic OS (coming soon)
-- 11. Module 11 - Add QA to the Agentic OS (coming soon)
-- 12. Module 12 - Policy, Boundaries, and Approvals (coming soon)
-- 13. Module 13 - Capstone: Full System Run with 2–3 Issues (coming soon)
+1. [00-module-0-shared-app-foundation.md](00-module-0-shared-app-foundation.md) — Baseline project and app setup
+2. [01-module-1-tiny-end-to-end-run.md](01-module-1-tiny-end-to-end-run.md) — First orchestration
+3. [02-module-2-intake-quality-template.md](02-module-2-intake-quality-template.md) — Intake agent and skill contracts
+4. [03-module-3-first-ess.md](03-module-3-first-ess.md) — Evidence specification and state tracking
+5. [04-module-4-objective-gates.md](04-module-4-objective-gates.md) — Gate contracts and routing
+6. [05-module-5-loop-safety-and-escalation.md](05-module-5-loop-safety-and-escalation.md) — Feedback loops and escalation
+7. [06-module-6-first-intake-skill-contract.md](06-module-6-first-intake-skill-contract.md) — Intake skill contract refinement
+8. [07-module-7-design-build-skill-contracts.md](07-module-7-design-build-skill-contracts.md) — Design and Build contracts
+9. [08-module-8-first-agentic-os-run.md](08-module-8-first-agentic-os-run.md) — First agentic OS end-to-end
+10. [09-module-9-github-state-source-of-truth.md](09-module-9-github-state-source-of-truth.md) — GitHub project state as authoritative
+11. [10-module-10-first-low-risk-automation.md](10-module-10-first-low-risk-automation.md) — Verification gate (code quality automation)
+12. [11-module-11-policy-boundaries-and-approvals.md](11-module-11-policy-boundaries-and-approvals.md) — QA gate (automated testing)
+13. [12-module-12-policy-and-approvals.md](12-module-12-policy-and-approvals.md) — Policy gate (selective human approval)
+14. [13-module-13-product-ownership-and-backlog.md](13-module-13-product-ownership-and-backlog.md) — Product ownership and strategic direction
+15. [14-module-14-capstone-end-to-end-run.md](14-module-14-capstone-end-to-end-run.md) — Full system capstone (coming soon)
 
 ## Scorecard template (copy into each issue comment)
 
