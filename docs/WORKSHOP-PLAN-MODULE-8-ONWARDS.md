@@ -148,7 +148,7 @@ Modules 0–7 built three skill contracts (intake, design, build) in isolation. 
 **Time box:** 75 minutes
 
 **Stretch:**
-- Automate a subset of QA scenarios (e.g., UI clicks via Playwright) and run them as part of verification.
+- Automate a subset of QA scenarios using a UI automation framework chosen by your tech stack (e.g., UI interaction tests) and run them as part of verification.
 
 **Definition of done:**
 - QA results are posted and visible in issue comments.
