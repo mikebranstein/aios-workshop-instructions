@@ -34,26 +34,38 @@ For the first non-complete, non-blocked issue found, route based on its current 
 |---------------------------------------|-----------------------------------------------------------------|
 | No pipeline labels                    | Spawn intake: task(description="Run intake on issue #N", agent_id="intake") |
 | intake-approved (no design label)     | Spawn design: task(description="Run design on issue #N", agent_id="design") |
+| design-blocked (decision: REVISE)     | Re-route to intake: remove design-blocked/design-approved, keep intake-approved, spawn intake with design clarifications |
+| design-blocked (decision: BLOCKED)    | Skip to next issue. Needs human escalation.                     |
 | design-approved (no build label)      | Spawn build: task(description="Run build on issue #N", agent_id="build") |
 | build-complete (no verification label)| Spawn verification: task(description="Run verification on issue #N", agent_id="verification") |
 | verification-failed + integration issue | Remove build-complete and verification-failed labels; keep design-approved; route back to design for re-evaluation |
 | verification-failed + test/lint failure | Keep design-approved and build-complete; route back to build for rework |
-| Any blocked label                     | Skip to next issue. Needs human revision.                       |
+| Any other blocked label                | Skip to next issue. Needs human revision.                       |
 | verification-passed                   | Skip to next issue. Done and approved for merge.                |
 
 ## Cycle steps
 
 1. List all open issues using the `list_issues` GitHub MCP tool in creation order.
 2. At the start of the cycle, determine which model you are currently using and log it.
-3. Iterate through issues. For the FIRST issue that is not blocked and not verification-passed:
+3. Iterate through issues. For the FIRST issue that is not verification-passed:
    - Run: `echo "Checking issue #N: TITLE"`
    - Read the issue details and current labels using `issue_read`
+   - If design-blocked label is present:
+     a) Read the issue comments to find the latest Design Decision comment
+     b) Extract the `decision` field from the JSON (should be "REVISE" or "BLOCKED")
+     c) If decision is "REVISE": route back to intake (see step 3e-g below)
+     d) If decision is "BLOCKED": skip to next issue (human escalation needed)
    - Read issue comments to check for verification decision JSON (if verification-failed, check root cause)
    - Determine routing based on the table above
    - Run: `echo "  -> Action: ROUTING DECISION"`
    - If routing to an agent:
      a) Post a routing decision comment to the issue
      b) Spawn the task: `task(description="Run [agent_name] on issue #N", agent_id="[agent_name]")`
+   - If re-routing from design-blocked (REVISE) back to intake:
+     a) Remove labels: `gh issue label NUMBER --remove design-blocked --remove design-approved`
+     b) Keep `intake-approved` label
+     c) Post a comment: "Design decision requires clarification. Re-routing to intake to address: [list from clarifications_needed]"
+     d) Spawn intake: `task(description="Re-clarify requirements on issue #N after design feedback", agent_id="intake")`
    - If routing back to design due to integration conflict:
      a) Post a comment: "Verification detected integration conflict. Re-routing to design for re-evaluation against updated codebase."
      b) Remove labels: `gh issue label NUMBER --remove build-complete --remove verification-failed`

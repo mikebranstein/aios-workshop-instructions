@@ -106,7 +106,15 @@ Replace `your-org/your-repo` with your actual GitHub repository path (e.g., `mik
 
 For each label: type the name, paste the hex code into the color field, add the description, then click **Create label**.
 
-These six labels represent the full pipeline state space. An issue moves through them in order. A blocked label means it needs human attention before the orchestrator will touch it again.
+These six labels represent the full pipeline state space. An issue moves through them in order.
+
+**When design says "REVISE"** (not "PASS" or escalation required), it applies `design-blocked` but includes clarifications in the decision comment. The orchestrator recognizes this and **automatically re-routes the issue back to intake** so intake can clarify requirements based on design feedback. Then design runs again. This creates a feedback loop: design feedback → intake clarification → re-design.
+
+**When design says "BLOCKED"** (escalation required), it also applies `design-blocked` but indicates a problem that needs human decision. The orchestrator skips this issue until human intervention.
+
+**When intake says "BLOCKED"** (acceptance criteria unclear), or **build says "BLOCKED"** (scope creep detected), the orchestrator also skips and waits for human review.
+
+Summary: `design-blocked` is actionable (if REVISE) or blocked (if BLOCKED). Other `-blocked` labels always need human attention.
 
 ---
 
@@ -296,17 +304,26 @@ cp templates/agents/orchestrator.v2.agent.md .github/agents/orchestrator.agent.m
 
 This expands the routing table to include design: issues with `intake-approved` (and no design label yet) will now be routed to the design agent on the next cycle.
 
+**What design can decide:** Design evaluates the intake decision and may return one of three decisions:
+- **PASS:** Design is sound, ready for build. Applies `design-approved` label. Orchestrator routes to build on next cycle.
+- **REVISE:** Design needs clarification or scope narrowing, but not escalation. Applies `design-blocked` label with clarifications in the JSON. **The orchestrator recognizes REVISE, re-routes back to intake**, and intake clarifies based on design feedback. Then design runs again. This creates a feedback loop.
+- **BLOCKED:** Design is blocked and requires escalation (breaking API changes, cross-team dependencies, etc.). Applies `design-blocked` label. Orchestrator skips and waits for human decision.
+
 ### Watch the next cycle
 
-On the next 90-second cycle, the orchestrator will:
+On the next cycle, the orchestrator will:
 - See your issue now has `intake-approved`
-- Match the second routing row
+- Match the design routing rule
 - Spawn the design agent
 - The design agent reads the issue and the intake decision comment
 - Posts a Design Decision comment with the design contract JSON output
-- Applies `design-approved` or `design-blocked`
+- Applies `design-approved` (if PASS), `design-blocked` (if REVISE or BLOCKED)
 
-Check your GitHub issue again. It should now have both an Intake Decision comment and a Design Decision comment, with two labels applied.
+Check your GitHub issue again. It should now have both an Intake Decision comment and a Design Decision comment.
+
+**If design returns REVISE:** You'll see the issue's labels change. The orchestrator will remove `design-blocked` and `design-approved`, keep `intake-approved`, and re-spawn the intake agent to clarify based on the design feedback. The issue will then flow back through design with the updated requirements.
+
+**If design returns PASS:** The issue will have `design-approved` label, and the orchestrator will route it to build on the next cycle.
 
 ---
 
@@ -496,6 +513,7 @@ This is your agentic OS running. One command started it. The orchestrator reads 
 - **Depth-first orchestration:** The orchestrator focuses on one issue at a time, taking it through all available stages before moving to the next issue. This creates sequential, focused delivery instead of scattered batch processing.
 - **Continuous orchestration:** V3 running continuously picks up new features and queues them in order, processing them depth-first as capacity allows.
 - **Build agent creates PRs:** The build stage is fully autonomous—it creates branches, implements code, commits, and opens PRs without human intervention.
+- **Design can request clarification:** When design says REVISE, the orchestrator recognizes this as actionable feedback (not a blocker), and re-routes the issue back to intake. Intake clarifies requirements based on design feedback, then design runs again. This creates a feedback loop.
 - **Agents vs skills:** Skills are contract documents. Agents are executable actors that apply those contracts. The orchestrator spawns agents as tasks.
 - **Labels as state:** The full pipeline is driven by label state, readable at a glance, and auditable in comments.
 
