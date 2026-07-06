@@ -93,8 +93,10 @@ What is included in this change?
 ## Non-Goals
 What is explicitly out of scope?
 
-## Acceptance Criteria
-Write each criterion as pass/fail behavior.
+## Acceptance Criteria (Draft - for discussion framing)
+Include 3-5 initial acceptance criteria as discussion starters. 
+These will be refined by BA during Intake to "Confirmation" state (Given/When/Then format).
+Focus on outcomes, not implementation details.
 
 - [ ] AC1:
 - [ ] AC2:
@@ -130,7 +132,7 @@ Create a complete GitHub feature request draft using this structure:
 - Problem Statement
 - Scope
 - Non-Goals
-- Acceptance Criteria (3 binary pass/fail criteria)
+- Acceptance Criteria (draft, 3-5 criteria for BA to refine)
 - Test Scenarios (happy path + failure path)
 - Risk Level (Low/Medium/High with one-line reason)
 - Dependencies
@@ -141,15 +143,14 @@ Context: Web checkout form currently allows blank email submission in some flows
 Constraints:
 - Keep scope small enough for one pull request.
 - Keep the feature tiny and concrete so it can be implemented in Module 3.
-- Acceptance criteria must be observable and testable.
-- Write acceptance criteria in PASS/FAIL style.
-- Include at least one explicit PASS and one explicit FAIL acceptance criterion.
-- Include at least one explicit FAIL case.
+- Acceptance criteria are DRAFT (BA will refine to testable Given/When/Then format during Intake).
+- Write draft criteria focused on outcomes, not implementation.
+- Include both happy path (valid email) and failure path (empty email error).
 
-Acceptance criteria style example:
-- PASS: submitting empty email shows validation message
-- PASS: valid email allows submission
-- FAIL: form submits when email is empty
+Draft acceptance criteria style example:
+- User can submit checkout with valid email
+- User sees validation error when email is empty
+- System prevents checkout with blank email field
 
 Return only markdown content for the issue body.
 Do not include commentary before or after the markdown.
@@ -159,20 +160,21 @@ After Copilot generates the draft, refine it using one of these options:
 
 Option A (manual):
 - remove vague words like "improve," "better," or "as needed"
-- make every acceptance criterion binary and observable
+- make every acceptance criterion focused on outcomes (what user can do), not implementation (how system works)
 - keep non-goals explicit so scope does not drift
+- remember: BA will refine these to Given/When/Then format during Intake
 
 Option B (Copilot-assisted):
 Paste your draft into Copilot Chat with this prompt:
 
 ```text
-Rewrite this feature request draft to make it execution-ready.
+Rewrite this feature request draft to make it intake-ready.
 
 Requirements:
 - Keep the same feature intent and scope.
-- Remove vague wording.
-- Make all acceptance criteria binary pass/fail and observable.
-- Keep acceptance criteria written in explicit PASS/FAIL style.
+- Remove vague wording (avoid "improve," "better," "as needed").
+- Make all acceptance criteria focused on outcomes (what users can do), not implementation details.
+- Keep acceptance criteria as DRAFT (BA will refine to Given/When/Then during Intake).
 - Keep non-goals explicit and specific.
 - Keep risk level and dependencies concise.
 
@@ -182,7 +184,7 @@ Output format:
 	- Problem Statement
 	- Scope
 	- Non-Goals
-	- Acceptance Criteria
+	- Acceptance Criteria (keep as draft, outcome-focused)
 	- Test Scenarios
 	- Risk Level
 	- Dependencies
@@ -249,7 +251,7 @@ One issue that can move to design without clarification churn.
 ## If this fails, do this
 
 If template does not render in GitHub, confirm file path and frontmatter format.
-If criteria are vague, rewrite each criterion as observable pass/fail behavior.
+If criteria are vague, rewrite each criterion focused on outcomes (what users can do), not implementation.
 If issue scope is too broad, split into a smaller first issue and move the rest to backlog.
 
 ## Definition of done
@@ -259,7 +261,7 @@ Module 2 is complete when all are true:
 - template enforces required intake fields
 - one Copilot-generated draft was reviewed and used to create a real issue
 - one real issue is created from that template
-- acceptance criteria are binary and testable
+- acceptance criteria are outcome-focused and clear (draft for BA to refine)
 - intake-quality check comment is posted
 - module scorecard is posted
 

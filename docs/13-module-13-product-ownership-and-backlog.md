@@ -309,6 +309,44 @@ The PO agent (`templates/agents/product-owner.agent.md`) walks you through:
 
 **Key insight:** PO agent reads `strategic-opportunity` → creates `feature-request` for development to consume.
 
+### Key PO Frameworks and Skill References
+
+The PO agent includes five specialized skill contracts for different aspects of tactical execution:
+
+**[Release Coordination](../templates/skills/release-coordination.md)**
+- Multi-team dependencies and staging gates
+- Feature flag strategy (1% → 10% → 100% rollout)
+- Launch readiness checklists
+- Rollback planning and post-launch monitoring
+- Use when: Feature involves multiple teams or requires staged deployment
+
+**[Metrics and Experimentation](../templates/skills/metrics-and-experimentation.md)**
+- AARRR framework (identify which funnel stage is broken: Acquisition, Activation, Retention, Referral, Revenue?)
+- Cohort analysis (are new users better than old?)
+- A/B testing for high-risk features
+- Post-launch adoption tracking and kill decision frameworks
+- Use when: Making data-driven backlog decisions or measuring feature success
+
+**[Stakeholder Alignment - PO](../templates/skills/stakeholder-alignment-po.md)**
+- Three frameworks for saying "no" strategically (explicit priority list, impact vs. effort, strategic alignment)
+- Stakeholder communication cadences (weekly, monthly, quarterly)
+- Trade-off communication templates
+- Use when: Managing competing priorities or executive pressure
+
+**[Feedback Loops and Learning](../templates/skills/feedback-loops-and-learning.md)**
+- A.C.A.F. framework (Ask → Categorize → Act → Follow-up)
+- NPS/CSAT/CES metrics and support ticket categorization
+- "5+ customer rule" (when feedback becomes signal vs. edge case)
+- Churn analysis and close-the-loop communication
+- Use when: Capturing customer feedback signals and converting to backlog priorities
+
+**[Cross-Functional Workflows](../templates/skills/cross-functional-workflows.md)**
+- PM ↔ PO workflow (strategic opportunity review)
+- PO ↔ BA workflow (acceptance criteria refinement)
+- PO ↔ Design, Engineering, QA, Marketing workflows
+- Meeting cadences (weekly refinement, daily standups, release planning, post-launch review)
+- Use when: Coordinating with any downstream function
+
 ---
 
 ## Step 6 (15 minutes): Conduct PM discovery and create strategic opportunities
@@ -453,7 +491,38 @@ Success metrics: Mobile app adopted by 80% of active field users; time-to-checko
 Backlog position: Top 3 (after quick wins, this is highest business value)
 ```
 
-**Create 2-3 GitHub issues for your prioritized opportunities.** Make them ready for BA to refine.
+**Before moving to "Ready for Development":** Use the [Ready for Development Checklist](../templates/agents/product-owner.agent.md#handoff-to-development-ready-for-development-checklist) to ensure your feature-request includes:
+- Strategic context (links to strategic-opportunity)
+- User story (As a... I want... so that...)
+- Problem statement
+- Bounded scope (MVP defined, Phase 2+ deferred)
+- Value assessment (user, business, complexity)
+- Priority score calculated
+- Success metrics
+- Draft acceptance criteria (for BA to refine)
+- Dependencies identified
+- No ambiguities
+
+**Create 2-3 GitHub issues for your prioritized opportunities.** Verify each against the checklist before moving to "Ready for Development".
+
+---
+
+## Step 8b (5 minutes): Understand BA-PO Collaboration During Intake
+
+After you create a `feature-request` and move it to "Ready for Development", the Development orchestrator pulls it for Intake. Here's what happens:
+
+**BA will refine your acceptance criteria** during Intake using the "3 C's Framework":
+1. **Card** → Your written user story (placeholder for conversation)
+2. **Conversation** → BA asks clarifying questions (what if network drops? how many items at once?)
+3. **Confirmation** → BA writes testable Given/When/Then criteria
+
+**Your role during this time:**
+- **Respond promptly** to BA questions (within 1-2 hours if possible)
+- **Make trade-off decisions** (Is this MVP or Phase 2? What's acceptable performance?)
+- **Approve the refined AC** when BA shows you the final Given/When/Then criteria
+- **Stay engaged** — If dev has questions mid-sprint, respond to keep build unblocked
+
+This is not a handoff-and-disappear moment. PO availability during Intake prevents rework and keeps velocity high.
 
 ---
 
@@ -528,17 +597,34 @@ Ready for development pipeline
    - PO created `feature-issue` from the validated opportunity
    - Shows full hand-off trail from market validation to development task
 
-8. **PM and PO agents reviewed**
-   - Can articulate: What PM discovers (creates `strategic-opportunity` issues), what PO prioritizes (creates `feature-issue` issues)
+8. **PM and PO agents reviewed** (Step 5)
+   - Can articulate: What PM discovers (creates `strategic-opportunity` issues), what PO prioritizes (creates `feature-request` issues)
    - Understand the two-tier leadership model and three-issue-type architecture
    - Can explain PM ↔ PO collaboration pattern
    - Understand autonomous PM discovery mode and quarterly re-checks
 
-9. **Orchestration reviewed** — Product Manager and Product Owner orchestrator
-    - Understand: Independent PM-PO loop (never blocks development)
-    - Understand: PM discovery trigger (Step 0.5) and quarterly re-evaluation
+9. **PO Skill Files understood** (Step 5)
+   - Familiar with [Release Coordination](../templates/skills/release-coordination.md) (multi-team dependencies, feature flags, launch checklists)
+   - Familiar with [Metrics and Experimentation](../templates/skills/metrics-and-experimentation.md) (AARRR framework, data-driven decisions, kill frameworks)
+   - Familiar with [Stakeholder Alignment](../templates/skills/stakeholder-alignment-po.md) (saying no, communication cadences)
+   - Familiar with [Feedback Loops and Learning](../templates/skills/feedback-loops-and-learning.md) (A.C.A.F., NPS/CSAT, 5+ rule)
+   - Familiar with [Cross-Functional Workflows](../templates/skills/cross-functional-workflows.md) (PM↔PO, PO↔BA, team coordination)
+
+10. **"Ready for Development" Checklist verified** (Step 8)
+   - All feature-requests pass the 11-item checklist before moving to "Ready for Development" column
+   - Understand: Incomplete handoffs create rework downstream; this checklist prevents it
+
+11. **BA-PO Collaboration During Intake understood** (Step 8b)
+   - Understand: You stay engaged during Intake (BA will ask clarifying questions)
+   - Understand: Your role (respond to Qs, make trade-offs, approve AC, keep build unblocked)
+   - Understand: Quick PO responses = faster builds = better outcomes
+
+12. **Orchestration reviewed** — PM-PO and Development orchestrators
+    - Understand: Two independent loops (PM-PO researches continuously; Dev executes continuously)
+    - Understand: PM discovery trigger and quarterly re-evaluation (orchestrator.pm-po.agent.md)
     - Understand: PO backlog ordering and "Ready for Development" column
-    - Understand: Development consumes `feature-issue` issues independently (orchestrator.development.agent.md)
+    - Understand: Development consumes `feature-request` issues from "Ready for Development" (orchestrator.development.agent.md)
+    - Understand: Both orchestrators run concurrently without blocking each other
 
 ## Stretch Goals
 
