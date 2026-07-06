@@ -26,8 +26,15 @@ You run this on your own machine. Nothing is in the cloud. No GitHub Actions. Th
 
 **What makes this an agentic OS:**
 
-- **Labels are the state machine.** An issue with no label is new. `intake-approved` means design can start. `design-approved` means build can start (which creates a PR). Any agent anywhere can read this state without needing memory or shared context.
-- **Build agent creates PRs autonomously.** When routed to build, the agent creates a feature branch (`issue-N-slug`), implements the code, commits, pushes, and opens a PR without human intervention.
+- **Depth-first routing:** Unlike batch systems that process all issues through intake, then all through design, then all through build, this orchestrator takes a **depth-first approach**. On each cycle:
+
+1. Find the FIRST issue that hasn't been completed or blocked
+2. Advance it ONE step through the pipeline (intake → design → build)
+3. On the next cycle, find the next issue needing work
+4. Repeat
+
+This means Feature 1 flows through intake, then design, then build before Feature 2 even starts intake. Each feature gets a complete workflow before the next one begins. This creates a focused, sequential delivery model rather than spread-out batch processing.
+**Depth-first workflow:** Each issue is advanced one stage per cycle, then the next issue is checked. This ensures Feature 1 completes intake → design → build before Feature 2 starts, creating a focused sequential delivery model.
 - **The orchestrator drives itself.** It does not wait for an external scheduler. It finishes a cycle, sleeps, and starts the next one. You start it with one command and stop it with Ctrl+C.
 - **The orchestrator is stateless.** Each cycle reads GitHub fresh. It does not remember the last run. Restart it any time and it picks up exactly where things left off.
 - **Specialists are composable.** You add a new stage by writing one agent file and adding one routing rule to the orchestrator. The existing agents do not change.
@@ -467,27 +474,27 @@ This is your agentic OS running. One command started it. The orchestrator reads 
 
 - Minute 5: Six pipeline labels created in GitHub.
 - Minute 20: Four agent files created in `.github/agents/`.
-- Minute 35: Orchestrator V1 started, first issue (Feature 1) processed by intake agent within 10-15 seconds.
-- Minute 45: Orchestrator V2 deployed, Feature 1 advances to design agent on next cycle (10 seconds).
-- Minute 60: Orchestrator V3 deployed, Feature 1 completes build stage with PR created.
-- Minute 80: Feature 2 and Feature 3 created; both routing through intake on next cycle.
-- Minute 85: Both features advancing through design and build stages (10-second cycles mean rapid progression).
+- Minute 35: Orchestrator V1 started, Feature 1 processed by intake agent (depth-first: Feature 1 intake only).
+- Minute 45: Orchestrator V2 deployed, Feature 1 advances to design (Feature 2 hasn't started yet).
+- Minute 60: Orchestrator V3 deployed, Feature 1 completes build stage with PR (Features 2 & 3 not yet started).
+- Minute 80: Feature 2 enters intake while Feature 1 is complete.
+- Minute 100: Feature 2 in design, Feature 3 starting intake (depth-first: sequential progression).
 
 ## You should see
 
 - `.github/agents/` contains four agent files
 - **Feature 1 (Prevent double checkout):** Complete with three labels, three comments, and a PR
-- **Feature 2 (Show checkout history):** In progress through intake → design → build pipeline
-- **Feature 3 (Flag overdue items):** In progress through intake → design → build pipeline
+- **Feature 2 (Show checkout history):** Behind Feature 1 (just starting or in middle stages)
+- **Feature 3 (Flag overdue items):** Further behind, waiting its turn (depth-first queueing)
+- Each issue flows through all stages sequentially, not in parallel
 - Copilot CLI autopilot session running continuously in the terminal
-- All PRs created automatically by the build agent
-- No manual prompting after the initial orchestrator launch
 
 ## What you learned
 
 - **V1 → V2 → V3 progression:** Each version is a working system. You add one new routing rule at a time.
 - **Feature 1 as the pilot:** Running one issue through V1, then V2, then V3 validates the entire pipeline before adding new work.
-- **Continuous orchestration:** V3 running continuously means new issues are picked up immediately and routed through all stages automatically.
+- **Depth-first orchestration:** The orchestrator focuses on one issue at a time, taking it through all available stages before moving to the next issue. This creates sequential, focused delivery instead of scattered batch processing.
+- **Continuous orchestration:** V3 running continuously picks up new features and queues them in order, processing them depth-first as capacity allows.
 - **Build agent creates PRs:** The build stage is fully autonomous—it creates branches, implements code, commits, and opens PRs without human intervention.
 - **Agents vs skills:** Skills are contract documents. Agents are executable actors that apply those contracts. The orchestrator spawns agents as tasks.
 - **Labels as state:** The full pipeline is driven by label state, readable at a glance, and auditable in comments.
