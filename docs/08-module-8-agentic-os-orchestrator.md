@@ -26,7 +26,8 @@ You run this on your own machine. Nothing is in the cloud. No GitHub Actions. Th
 
 **What makes this an agentic OS:**
 
-- **Labels are the state machine.** An issue with no label is new. `intake-approved` means design can start. `design-approved` means build can start. Any agent anywhere can read this state without needing memory or shared context.
+- **Labels are the state machine.** An issue with no label is new. `intake-approved` means design can start. `design-approved` means build can start (which creates a PR). Any agent anywhere can read this state without needing memory or shared context.
+- **Build agent creates PRs autonomously.** When routed to build, the agent creates a feature branch (`issue-N-slug`), implements the code, commits, pushes, and opens a PR without human intervention.
 - **The orchestrator drives itself.** It does not wait for an external scheduler. It finishes a cycle, sleeps, and starts the next one. You start it with one command and stop it with Ctrl+C.
 - **The orchestrator is stateless.** Each cycle reads GitHub fresh. It does not remember the last run. Restart it any time and it picks up exactly where things left off.
 - **Specialists are composable.** You add a new stage by writing one agent file and adding one routing rule to the orchestrator. The existing agents do not change.
@@ -37,16 +38,18 @@ You run this on your own machine. Nothing is in the cloud. No GitHub Actions. Th
 
 ## Time Box
 
-- Target: 65 minutes
+- Target: 90 minutes
 
 ## Required tasks
 
 1. Set up GitHub labels for the pipeline state machine.
 2. Create the intake, design, and build agent files in `.github/agents/`.
 3. Create the orchestrator agent (v1 - intake only) and start the loop.
-4. Watch intake process a live GitHub issue.
-5. Extend the orchestrator to design and verify.
-6. Extend the orchestrator to build and run 2 issues through the full pipeline.
+4. Watch Feature 1 process through intake (v1).
+5. Extend to v2, watch Feature 1 advance through design.
+6. Extend to v3, watch Feature 1 complete through build (creates PR).
+7. Add Feature 2 and Feature 3 to run through v3 pipeline.
+8. Verify all three features in the pipeline with appropriate labels, comments, and PRs.
 
 ---
 
@@ -118,7 +121,7 @@ cp templates/agents/design.agent.md .github/agents/
 cp templates/agents/build.agent.md .github/agents/
 cp templates/agents/orchestrator.v1.agent.md .github/agents/orchestrator.agent.md
 
-# Copy skill contract files (agents reference these)
+# Copy skill contract files (agents reference these to apply decision rules)
 cp templates/skills/intake-agent.md templates/skills/
 cp templates/skills/design-agent.md templates/skills/
 cp templates/skills/build-agent.md templates/skills/
@@ -131,15 +134,20 @@ This creates the directory structure in your repo:
   intake.agent.md
   design.agent.md
   build.agent.md
-  orchestrator.agent.md
+  orchestrator.agent.md           (v1 - intake only routing)
 
 templates/skills/
-  intake-agent.md     (referenced by intake.agent.md)
-  design-agent.md     (referenced by design.agent.md)
-  build-agent.md      (referenced by build.agent.md)
+  intake-agent.md     (evaluated by intake.agent.md)
+  design-agent.md     (evaluated by design.agent.md)
+  build-agent.md      (evaluated by build.agent.md)
 ```
 
-Each agent file is a specialist. The agent reads its corresponding skill contract (e.g., intake.agent.md reads templates/skills/intake-agent.md), applies the contract rules to the issue, and posts a JSON decision comment with the result.
+**How they work together:** Each agent file is an executable specialist. When the orchestrator spawns the intake agent on an issue, that agent:
+1. Reads the GitHub issue
+2. Loads the rules from `templates/skills/intake-agent.md`
+3. Applies the contract rules
+4. Posts a readable decision comment with collapsible JSON details
+5. Applies the appropriate label (`intake-approved` or `intake-blocked`)
 
 **Checkpoint:** Before continuing, confirm your `.github/agents/` directory has four files:
 - `intake.agent.md`
@@ -224,19 +232,46 @@ Coordinators are accidentally creating duplicate checkout records for the same d
 
 **Also try this:** Create a second issue that is deliberately incomplete - skip Risk Level and Non-Goals. Watch the intake agent return BLOCKED and list the missing fields. That is the gate working exactly as designed.
 
+**Important for v1:** The v1 orchestrator only routes issues with NO pipeline labels to intake. Issues that already have `intake-approved` label will be ignored in v1 - they're waiting for the design routing that comes in Step 4 (v2). This is intentional. You'll see something like:
+
+```
+Checking issue #1: Prevent double checkout of the same item
+  -> Action: Skip (has intake-approved label - design routing not yet available in v1)
+```
+
 ### Watch the first cycle
 
 Within 90 seconds, the orchestrator's next cycle will pick up your new issue. You should see:
-- Copilot reading open issues via the GitHub MCP `list_issues` tool
-- The orchestrator routing your new issue (no labels) to the intake agent
-- A `task` spawned with `agent_id="intake"`
-- The intake agent reading the issue, evaluating against `templates/skills/intake-agent.md`
-- A comment posted on your GitHub issue with the intake JSON decision
-- The `intake-approved` or `intake-blocked` label applied automatically
 
-Go look at your GitHub issue. You should see an Intake Decision comment with the contract JSON output and a label applied - with no manual prompting from you.
+**In the terminal (CLI output):**
+```
+Checking issue #1: Prevent double checkout of the same item
+  -> Action: Routing to intake agent
 
-**Micro-check:** If intake returns BLOCKED, read the `missing_fields` array in the JSON. Fix the issue body and wait for the next cycle. The orchestrator will retry it once the blocking label is cleared.
+--- Orchestrator Cycle Summary ---
+Issues checked: 1
+Issues advanced to intake: 1
+Issues blocked or complete: 0
+```
+
+Each issue check and routing decision appears on its own line for readability.
+
+**On your GitHub issue (comment section):**
+You should see two new comments:
+
+1. **Orchestrator Routing Decision** comment:
+   - Shows a readable summary: "Routing to intake"
+   - Lists current labels and reasoning
+   - Collapsible JSON details for future agent parsing
+
+2. **Intake Decision** comment (posted after intake agent completes):
+   - Shows a readable summary: "READY" or "BLOCKED"
+   - Shows confidence level
+   - Collapsible JSON with full decision details
+
+The `intake-approved` or `intake-blocked` label is also applied automatically to your issue.
+
+**Micro-check:** If intake returns BLOCKED, click "Evaluation Details (JSON)" to expand and read the `missing_fields` array. Fix the issue body, delete the `intake-blocked` label, and wait for the next cycle. The orchestrator will retry it.
 
 ---
 
@@ -268,7 +303,7 @@ Check your GitHub issue again. It should now have both an Intake Decision commen
 
 ---
 
-## Step 5 (15 minutes): Extend the orchestrator to build - run two issues through
+## Step 5 (15 minutes): Extend the orchestrator to build
 
 ### Update `.github/agents/orchestrator.agent.md`
 
@@ -280,9 +315,40 @@ cp templates/agents/orchestrator.v3.agent.md .github/agents/orchestrator.agent.m
 
 This adds the final routing rule: issues with both `intake-approved` and `design-approved` will now be routed to the build agent on the next cycle.
 
-### Create a second issue and watch the full pipeline
+### Watch Feature 1 complete the full pipeline
 
-Create one more issue using the template. Use a different feature scope:
+Watch the next 2-3 cycles as Feature 1 ("Prevent double checkout") completes the build stage:
+
+1. The orchestrator sees your issue has both `intake-approved` and `design-approved`
+2. Spawns the build agent
+3. The build agent creates a branch, implements code, commits, pushes, and opens a PR
+4. Posts Build Decision comment with PR link and `build-complete` label
+
+**On your GitHub issue,** you should now see:
+- **Three labels:** `intake-approved`, `design-approved`, `build-complete`
+- **Three comments:** Intake Decision, Design Decision, Build Decision (each with JSON)
+- **One PR:** Linked from the Build Decision comment
+
+**In the terminal,** you should see output like:
+```
+Checking issue #1: Prevent double checkout of the same item
+  -> Action: Routing to build agent (creates PR)
+
+--- Orchestrator Cycle Summary ---
+Issues checked: 1
+Issues advanced to build: 1
+Issues complete: 0
+```
+
+---
+
+## Step 6 (20 minutes): Add two more features and run through V3 orchestrator
+
+Now that V3 is running continuously, create two additional features. They will both run through the full intake → design → build pipeline automatically while the orchestrator continues.
+
+### Feature 2: Show checkout history for each item
+
+Create a new issue using the template:
 
 ```markdown
 Title: Show checkout history for each item
@@ -320,24 +386,79 @@ None
 Coordinators need audit capability for equipment disputes.
 ```
 
-Now watch the orchestrator run this issue through all three stages automatically across two or three cycles.
+### Feature 3: Flag overdue checkout items
+
+Create a third new issue:
+
+```markdown
+Title: Flag overdue checkout items in the list
+
+## Problem Statement
+Coordinators cannot see at a glance which items have been checked out past
+their expected return date. Equipment disappears, disputes arise, and no one
+knows who to follow up with.
+
+## Scope
+Add a visual indicator (badge or icon) to items in the checkout list that
+show which items are currently overdue for return. Show the holder name and
+days overdue in a tooltip.
+
+## Non-Goals
+- No automatic notifications or reminders sent
+- No enforcement or lockout mechanism
+- No changes to the checkout/return flow
+- No email or SMS alerts
+
+## Acceptance Criteria
+- [ ] PASS: Items checked out past return date show an overdue badge
+- [ ] PASS: Badge includes holder name and days overdue
+- [ ] PASS: Items returned on time do not show a badge
+- [ ] PASS: Overdue badge is clearly visible in the item list
+
+## Test Scenarios
+- Scenario 1 (overdue item): Item checked out 2 days past return date - badge shows "John D. - 2 days overdue"
+- Scenario 2 (on-time item): Item due back tomorrow - no badge shown
+- Scenario 3 (empty state): No items checked out - list shows normally
+
+## Risk Level
+Low - display-only feature, no changes to checkout logic or data model
+
+## Dependencies
+None
+
+## Notes
+This helps coordinators prioritize follow-up on missing equipment.
+```
+
+### Watch both features run through the full pipeline
+
+As you create each issue, the orchestrator will pick them up on the next cycle and route them through intake → design → build automatically.
+
+On the GitHub issues list, you should see:
+- **Feature 1:** Three labels, three comments, PR created (build-complete)
+- **Feature 2:** Starting at intake, advancing through design, eventually reaching build
+- **Feature 3:** Starting at intake, advancing through design, eventually reaching build
+
+The orchestrator continues running, reading fresh state on each 90-second cycle. No manual intervention needed.
 
 ---
 
-## Step 6 (5 minutes): Verify the full system
+## Step 7 (5 minutes): Verify the full system
 
 Go to your GitHub repository and look at the issues list. You should see:
 
 - **Labels** showing exactly where each issue is in the pipeline
 - **Comments** on each issue with the JSON decision from each contract
-- **Two or more issues** that moved from no label through all three stages without any manual work
+- **Three issues** that have moved through the pipeline: Feature 1 complete (build-complete), Features 2 & 3 in progress
 
 This is your agentic OS running. One command started it. The orchestrator reads state, routes work, and writes results. You did not touch it once the loop started.
 
 **What to notice:**
+- Feature 1 shows the full journey: intake-approved → design-approved → build-complete with PR
+- Features 2 & 3 are progressing through the same stages automatically
 - Each issue's label trail is the pipeline state - readable at a glance from the issues list
 - Each issue's comment trail is the decision record - auditable and traceable
-- The orchestrator processed each issue across multiple cycles, not all at once
+- The orchestrator processed all three issues across multiple cycles, not all at once
 - Issues that returned BLOCKED were correctly skipped until you intervene
 
 ---
@@ -346,24 +467,30 @@ This is your agentic OS running. One command started it. The orchestrator reads 
 
 - Minute 5: Six pipeline labels created in GitHub.
 - Minute 20: Four agent files created in `.github/agents/`.
-- Minute 35: Orchestrator started, first issue processed by intake agent.
-- Minute 45: Orchestrator extended to design, second cycle shows intake then design.
-- Minute 60: Full pipeline running, two issues with `build-complete` label and three decision comments each.
+- Minute 35: Orchestrator V1 started, first issue (Feature 1) processed by intake agent.
+- Minute 45: Orchestrator V2 deployed, Feature 1 advances to design agent.
+- Minute 60: Orchestrator V3 deployed, Feature 1 completes build stage with PR created.
+- Minute 80: Feature 2 and Feature 3 created; both routing through intake on next cycle.
+- Minute 85: Both features advancing through design and build stages continuously.
 
 ## You should see
 
 - `.github/agents/` contains four agent files
-- Two or more GitHub issues have all three pipeline labels set
-- Each issue has three comments (Intake Decision, Design Decision, Build Decision) with JSON from the contracts
-- The Copilot CLI autopilot session is still running in the terminal
-- No manual prompting was required after the initial launch command
+- **Feature 1 (Prevent double checkout):** Complete with three labels, three comments, and a PR
+- **Feature 2 (Show checkout history):** In progress through intake → design → build pipeline
+- **Feature 3 (Flag overdue items):** In progress through intake → design → build pipeline
+- Copilot CLI autopilot session running continuously in the terminal
+- All PRs created automatically by the build agent
+- No manual prompting after the initial orchestrator launch
 
 ## What you learned
 
-- **Agents vs skills:** A skill is a prompt module. An agent is a specialized actor with a role, tools, and a scope. The same contract content works in both, but agents can be spawned by an orchestrator using the `task` tool.
-- **Labels as state machine:** Labels let any agent read current state without memory. The orchestrator does not track history - it reads GitHub fresh on every cycle.
-- **Incremental orchestration:** You built v1 (intake only), verified it, added v2 (design), verified it, added v3 (full pipeline). Each version was a working system.
-- **The autopilot loop:** Copilot CLI with `--autopilot` is a persistent self-directed agent process. No external scheduler, no GitHub Actions, no cloud services. One command starts it; the agent drives itself from there.
+- **V1 → V2 → V3 progression:** Each version is a working system. You add one new routing rule at a time.
+- **Feature 1 as the pilot:** Running one issue through V1, then V2, then V3 validates the entire pipeline before adding new work.
+- **Continuous orchestration:** V3 running continuously means new issues are picked up immediately and routed through all stages automatically.
+- **Build agent creates PRs:** The build stage is fully autonomous—it creates branches, implements code, commits, and opens PRs without human intervention.
+- **Agents vs skills:** Skills are contract documents. Agents are executable actors that apply those contracts. The orchestrator spawns agents as tasks.
+- **Labels as state:** The full pipeline is driven by label state, readable at a glance, and auditable in comments.
 
 ## If something fails
 

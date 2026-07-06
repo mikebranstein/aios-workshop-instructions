@@ -28,7 +28,8 @@ For each open GitHub issue, check its labels and route as follows:
 ## Cycle steps
 
 1. List all open issues using the `list_issues` GitHub MCP tool.
-2. For each issue found:
+2. At the start of the cycle, determine which model you are currently using and log it (e.g., in your system prompt awareness or via available runtime information).
+3. For each issue found:
    - Run: `echo "Checking issue #N: TITLE"`
    - Read the issue details and current labels using `issue_read`
    - Determine routing based on the table above
@@ -41,6 +42,7 @@ For each open GitHub issue, check its labels and route as follows:
         **Status:** Routing to [AGENT_NAME]
         **Current Labels:** [list labels]
         **Reason:** [one-line reason]
+        **Model:** [your active model name]
 
         **Next State:** Awaiting [agent_name] decision and labels
 
@@ -51,6 +53,7 @@ For each open GitHub issue, check its labels and route as follows:
         {
           "cycle": N,
           "issue_id": N,
+          "model_used": "[your active model]",
           "labels_found": ["list", "of", "labels"],
           "issue_age_minutes": 0,
           "prior_decisions": ["list of agent decisions"],
@@ -64,14 +67,15 @@ For each open GitHub issue, check its labels and route as follows:
         </details>
         ```
      b) Spawn the task: `task(description="Run [agent_name] on issue #N", agent_id="[agent_name]")`
-3. Wait for each spawned task to complete before spawning the next.
-4. After all issues in this cycle are routed, output:
+4. Wait for each spawned task to complete before spawning the next.
+5. After all issues in this cycle are routed, output:
    echo ""
-   echo "--- Orchestrator Cycle Summary ---"
+   echo "--- Orchestrator Cycle Summary (Cycle N) ---"
+   echo "Model: [your active model]"
    echo "Issues checked: N"
    echo "Issues advanced to intake: N"
    echo "Issues advanced to design: N"
    echo "Issues blocked or complete: N"
    echo ""
-5. Sleep 90 seconds: `sleep 90`
-6. Go back to step 1.
+6. Sleep 90 seconds: `sleep 90`
+7. Go back to step 1.
