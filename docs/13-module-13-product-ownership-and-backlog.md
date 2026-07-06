@@ -144,11 +144,26 @@ gh label create pm-opportunity --description "Validated market opportunity ready
 
 Once both labels exist, they'll be available for your issue templates to auto-apply.
 
-### Setting Up Custom GitHub Issue Types
+---
 
-Create two custom issue templates by adding files directly to your repository.
+### Issue Type 1: `pm-idea` — User Submission
 
-**To create the `pm-idea` template:**
+**Who creates:** Anyone (customer, sales, support, user, PM themselves)  
+**What it is:** Lightweight feature idea (1-3 sentences)  
+**When it's created:** Anytime someone thinks of a feature worth exploring
+
+**Example:**
+```
+Title: Mobile app for field teams
+Labels: pm-idea
+Body: 
+- 4 support tickets this week about "can't checkout from field"
+- 2 enterprise customers mentioned in recent calls
+- Competitor X doesn't have mobile; Competitor Y has basic iOS
+- Fits Q3 priority "mobile-first experience"
+```
+
+**Now create the `pm-idea` template:**
 
 1. Go to your repository main page on GitHub
 2. Click **Add file** → **Create new file**
@@ -179,7 +194,35 @@ assignees: ''
 
 5. Click **Commit changes** at the bottom right
 
-**To create the `strategic-opportunity` template:**
+---
+
+### Issue Type 2: `strategic-opportunity` — PM's Research & Validation
+
+**Who creates:** Product Manager agent (after autonomous research/validation)  
+**What it is:** Market research findings, customer validation evidence, strategic decision  
+**When it's created:** After PM completes discovery, validation, and makes CHAMPION/DEFER/BLOCK decision
+
+**Example:**
+```
+Title: Strategic Opportunity - Mobile app for field teams
+
+Research Findings:
+- 12 support tickets about field checkout over 4 weeks
+- 4 customers interviewed; all confirmed critical pain point
+- Competitor A has basic mobile; Competitor B doesn't
+- Affects ~35% of enterprise customer base
+
+Validation Assessment:
+- Strategic alignment: ✅ (aligns with Q3 mobile-first priority)
+- Market opportunity: High (multiple enterprise upsell opportunities)
+- Competitive advantage: Real-time + FM system integration (competitors lack this combo)
+- Effort estimate: 3-4 weeks
+- Customer validation: Strong (4/4 customers volunteered to beta-test)
+
+Decision: CHAMPION → Ready for PO prioritization
+```
+
+**Now create the `strategic-opportunity` template:**
 
 1. Click **Add file** → **Create new file** again
 2. In the filename field, type exactly: `.github/ISSUE_TEMPLATE/strategic-opportunity.md`
@@ -218,81 +261,23 @@ assignees: ''
 
 4. Click **Commit changes** at the bottom right
 
-**Verify templates are working:**
-
-Go to your repository, click **New issue**, and you should see both **PM Idea** and **Strategic Opportunity** in the template list.
-
-**Note on `feature-request`**
-   - `feature-request` is a standard GitHub issue type (built-in)
-   - You've already customized it in Module 2 (Intake Quality Template)
-   - No additional setup needed; use it as you've already configured it
-
 ---
-
-### Issue Type 1: `pm-idea` — User Submission
-
-**Who creates:** Anyone (customer, sales, support, user, PM themselves)  
-**What it is:** Lightweight feature idea (1-3 sentences)  
-**When it's created:** Anytime someone thinks of a feature worth exploring
-
-**To create one:** Click **New issue** → Choose **pm-idea** template → Fill in the 1-3 sentence idea → Add optional context → Submit
-
-**Example:**
-```
-Title: Mobile app for field teams
-Labels: pm-idea
-Body: 
-- 4 support tickets this week about "can't checkout from field"
-- 2 enterprise customers mentioned in recent calls
-- Competitor X doesn't have mobile; Competitor Y has basic iOS
-- Fits Q3 priority "mobile-first experience"
-```
-
-### Issue Type 2: `strategic-opportunity` — PM's Research & Validation
-
-**Who creates:** Product Manager agent (after autonomous research/validation)  
-**What it is:** Market research findings, customer validation evidence, strategic decision  
-**When it's created:** After PM completes discovery, validation, and makes CHAMPION/DEFER/BLOCK decision
-
-**To create one manually:** Click **New issue** → Choose **strategic-opportunity** template → Fill in research findings, validation, and decision → Submit (or let PM agent create automatically from `pm-idea` labels)
-
-**Example:**
-```
-Title: Strategic Opportunity - Mobile app for field teams
-
-Research Findings:
-- 12 support tickets about field checkout over 4 weeks
-- 4 customers interviewed; all confirmed critical pain point
-- Competitor A has basic mobile; Competitor B doesn't
-- Affects ~35% of enterprise customer base
-
-Validation Assessment:
-- Strategic alignment: ✅ (aligns with Q3 mobile-first priority)
-- Market opportunity: High (multiple enterprise upsell opportunities)
-- Competitive advantage: Real-time + FM system integration (competitors lack this combo)
-- Effort estimate: 3-4 weeks
-- Customer validation: Strong (4/4 customers volunteered to beta-test)
-
-Decision: CHAMPION → Ready for PO prioritization
-```
 
 ### Issue Type 3: `feature-request` — PO's Prioritized Task
 
 **Who creates:** Product Owner (after reading strategic-opportunity)  
-**What it is:** Ready-to-build development task (user story, acceptance criteria, priority score)  
+**What it is:** Ready-to-build development task  
 **When it's created:** After PO prioritizes a CHAMPION strategic-opportunity
 
-**To create one:** Click **New issue** → Choose **feature-request** template → Fill in user story, acceptance criteria, value assessment → Submit
+**The hand-off:** PO creates `feature-request` issues → Development pulls them from "Ready for Development" → Executes the 8-stage pipeline.
 
-**Template and customization:** You've already created and customized the `feature-request` template in previous modules. Use that same structure:
-- Link to source `strategic-opportunity` 
-- User story: "As [user], I want [action], so that [benefit]"
-- Acceptance criteria (testable requirements)
-- Value assessment (user value, business value, complexity scores)
-- Priority score: (User Value + Business Value) / (Complexity × 1.5)
-- Success metrics
+You've already created and customized the `feature-request` template in Module 2. Use it as-is, and add a **Strategic Context** line at the top linking back to the source `strategic-opportunity`.
 
-**Example:** See [Module 2 - Intake Quality Template](02-module-2-intake-quality-template.md) for the feature-request template you've already created and customized.
+See [Module 2 - Intake Quality Template](02-module-2-intake-quality-template.md) for the template.
+
+**Verify all templates are working:**
+
+Go to your repository, click **New issue**, and you should see **PM Idea**, **Strategic Opportunity**, and **Feature Request** in the template list.
 
 ---
 
