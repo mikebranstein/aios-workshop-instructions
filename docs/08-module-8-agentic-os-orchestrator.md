@@ -18,7 +18,7 @@ copilot --autopilot -p "Start the orchestrator..."
          - no labels     -> intake agent
          - intake-approved -> design agent
          - design-approved -> build agent
-    4. sleep 90 seconds
+    4. sleep 10 seconds
     5. go back to step 1
 ```
 
@@ -183,7 +183,7 @@ Flag meanings:
 - `--enable-all-github-mcp-tools` unlocks the full GitHub MCP toolset (label writes, comment writes)
 - `-p` passes the initial prompt that tells the orchestrator to begin its self-directed loop
 
-The orchestrator will start immediately. You will see it list open issues, process any qualifying ones, print a cycle summary, then sleep 90 seconds before starting the next cycle.
+The orchestrator will start immediately. You will see it list open issues, process any qualifying ones, print a cycle summary, then sleep 10 seconds before starting the next cycle.
 
 **What you just did:** You started a persistent local agent process. It drives itself. You do not issue any more commands. When you want to stop it, press Ctrl+C.
 
@@ -241,7 +241,7 @@ Checking issue #1: Prevent double checkout of the same item
 
 ### Watch the first cycle
 
-Within 90 seconds, the orchestrator's next cycle will pick up your new issue. You should see:
+Within 10-20 seconds, the orchestrator's next cycle will pick up your new issue. You should see:
 
 **In the terminal (CLI output):**
 ```
@@ -467,11 +467,11 @@ This is your agentic OS running. One command started it. The orchestrator reads 
 
 - Minute 5: Six pipeline labels created in GitHub.
 - Minute 20: Four agent files created in `.github/agents/`.
-- Minute 35: Orchestrator V1 started, first issue (Feature 1) processed by intake agent.
-- Minute 45: Orchestrator V2 deployed, Feature 1 advances to design agent.
+- Minute 35: Orchestrator V1 started, first issue (Feature 1) processed by intake agent within 10-15 seconds.
+- Minute 45: Orchestrator V2 deployed, Feature 1 advances to design agent on next cycle (10 seconds).
 - Minute 60: Orchestrator V3 deployed, Feature 1 completes build stage with PR created.
 - Minute 80: Feature 2 and Feature 3 created; both routing through intake on next cycle.
-- Minute 85: Both features advancing through design and build stages continuously.
+- Minute 85: Both features advancing through design and build stages (10-second cycles mean rapid progression).
 
 ## You should see
 

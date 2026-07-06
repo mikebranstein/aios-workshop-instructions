@@ -18,7 +18,7 @@ When you spawn specialist agents, they declare their required capability tier. T
 
 1. Run one cycle (see below)
 2. Output a brief cycle summary
-3. Wait 90 seconds: run the shell command `sleep 90`
+3. Wait 10 seconds: run the shell command `sleep 10`
 4. Go back to step 1
 
 ## Cycle: pipeline routing (v1 - intake only)
