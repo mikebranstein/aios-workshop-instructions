@@ -446,28 +446,27 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    Create this issue in your GitHub repo. The PM agent will read it from the backlog.
 
-2. **Invoke the PM-PO Orchestrator** (the continuous autonomous loop):
+2. **Invoke the PM-PO Orchestrator** via CLI:
+
+   First, copy the PM-PO orchestrator template to your active agent location:
 
    ```bash
-   copilot --autopilot pm-po --pm-concurrency 1 --po-concurrency 1
+   cp templates/agents/orchestrator.pm-po.agent.md .github/agents/orchestrator.agent.md
    ```
 
-   **Parameters:**
-   - `--pm-concurrency 1`: Single PM agent processes pm-ideas sequentially (one at a time). No wiki write conflicts.
-   - `--po-concurrency 1`: Single PO agent processes strategic-opportunities sequentially (one at a time). No duplicate work.
+   Then run the orchestrator:
 
-   **Important: Two independent tracks run in parallel:**
-   - **PM track:** Reads pm-idea → researches → creates strategic-opportunity → updates Research Wiki (sequential, one at a time)
-   - **PO track:** Reads strategic-opportunity → prioritizes → creates feature-request (sequential, one at a time)
-   - **Both tracks run concurrently** — PM is not blocked waiting for PO, and PO is not blocked waiting for PM. If PM is slow on one pm-idea, PO can still process the strategic-opportunities that are waiting. If PO is fast, it doesn't wait for PM.
+   ```bash
+   copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
+     -p "Start the PM-PO orchestrator."
+   ```
 
-   **What this does (continuous loop):**
-   - Scans for new `pm-idea` issues and processes them sequentially through the PM agent
-   - Monitors for new strategic-opportunity issues created by PM agent and processes them sequentially through the PO agent
-   - Both loops run continuously and independently
-   - Safe: No wiki conflicts, no duplicate work assignments
-   
-   Let this run until it has processed your pm-idea issue. You'll see it create the strategic-opportunity and then the feature-request.
+   The orchestrator will (autonomously, from its contract in orchestrator.pm-po.agent.md):
+   - Scan for pm-idea issues
+   - Invoke the PM agent to research and create strategic-opportunity issues
+   - Invoke the PO agent to prioritize and create feature-requests with priority scores
+   - Move feature-requests to Ready for Development
+   - Report what was created
 
 3. **Wait for the PM-PO Orchestrator to finish.** Review what it created:
    
@@ -484,18 +483,28 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
    - Is it linked to the strategic-opportunity?
    - Is it in "Ready for Development" column?
 
-4. **Invoke the Development Orchestrator** to pull and route the feature-request:
+4. **Invoke the Development Orchestrator** via CLI:
+
+   In a second terminal, copy the Development orchestrator template to your active agent location:
 
    ```bash
-   copilot --autopilot development
+   cp templates/agents/orchestrator.development.agent.md .github/agents/orchestrator.agent.md
    ```
 
-   **What this does:**
-   - Parses priority score from all issues in "Ready for Development" column
-   - Pulls the highest-priority feature-request (sorted by priority score descending)
-   - Routes through Intake → Design → Build
-   - Creates full intake and design documentation
-   - Stops before QA (we'll review design artifacts)
+   Then run the orchestrator:
+
+   ```bash
+   copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
+     -p "Start the Development orchestrator."
+   ```
+
+   The orchestrator will (autonomously, from its contract in orchestrator.development.agent.md):
+   - Parse priority scores from all Ready for Development issues
+   - Pull the highest-priority issue
+   - Route it through Intake → Design → Build
+   - Create design documentation and architecture decisions
+   - Generate build task breakdown and code scaffolding
+   - Report all decisions and artifacts created
 
 5. **Observe the output.** What you should see:
    - Intake: Issue validated, moved to "In Development"
