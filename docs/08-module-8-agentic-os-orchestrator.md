@@ -35,6 +35,10 @@ You run this on your own machine. Nothing is in the cloud. No GitHub Actions. Th
 This means Feature 1 flows through intake, then design, then build before Feature 2 even starts intake. Each feature gets a complete workflow before the next one begins. This creates a focused, sequential delivery model rather than spread-out batch processing.
 **Depth-first workflow:** Each issue is advanced one stage per cycle, then the next issue is checked. This ensures Feature 1 completes intake → design → build before Feature 2 starts, creating a focused sequential delivery model.
 - **The orchestrator drives itself.** It does not wait for an external scheduler. It finishes a cycle and starts the next one immediately. You start it with one command and stop it with Ctrl+C.
+- **The orchestrator returns to main at the start of each cycle.** After build creates a feature branch, the orchestrator resets to main via `git checkout main && git pull origin main`. This ensures:
+  - The orchestrator references the authoritative skill files and agent definitions (which live on main)
+  - Fresh GitHub state is read for each new issue
+  - No context is lost when jumping between work items
 - **The orchestrator is stateless.** Each cycle reads GitHub fresh. It does not remember the last run. Restart it any time and it picks up exactly where things left off.
 - **Specialists are composable.** You add a new stage by writing one agent file and adding one routing rule to the orchestrator. The existing agents do not change.
 
