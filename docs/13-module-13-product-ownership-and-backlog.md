@@ -392,215 +392,102 @@ The PO agent includes five specialized skill contracts for different aspects of 
 
 ---
 
-## Step 6 (15 minutes): Conduct PM discovery and create strategic opportunities
+## Step 6 (20 minutes): Run end-to-end orchestration with one feature
 
-Using market anchor definition (from PM agent), discover 2-3 market opportunities:
+Now invoke the agents and watch the full orchestration work. Your role is to observe and understand the flow—the agents do the work.
 
-**For each opportunity:**
+**Workflow:**
+1. **PM Agent runs** (discovers 1 market opportunity, validates it, creates `strategic-opportunity` issue)
+2. **PO Agent runs** (reads the strategic-opportunity, prioritizes it, creates `feature-request` issue)  
+3. **Development Orchestrator runs** (pulls the feature-request, routes to Intake → Design → Build)
+4. **You observe** the end-to-end flow and results
 
-1. **Research:** Talk to customers (or stakeholders if you don't have customers). What problems do they mention unprompted? What frustrates them? What do they wish existed?
+**What you're testing:**
+- Can the PM agent find a real opportunity and document it with research?
+- Can the PO agent convert it to a shippable feature-request?
+- Does the Development orchestrator pull it and route it correctly?
 
-2. **Validate:** Does this problem affect multiple people? Can you find 2-3 customers or stakeholders who mention it?
+**Steps:**
 
-3. **Assess strategic fit:** Does this align with your market anchor? Is it competitive? Is it unique?
+1. **Invoke the PM agent** with your market anchor and a prompt like:
 
-4. **Evaluate effort:** Is this a quick win (low effort) or a bigger investment? Is it even feasible?
+   ```
+   Market anchor: [Your customer segment + problem]
+   
+   Task: 
+   - Discover 1 strategic opportunity related to this anchor
+   - Research it (check support tickets, customer interviews if possible, competitive landscape)
+   - Create a strategic-opportunity GitHub issue with findings, validation, and CHAMPION/DEFER/BLOCK decision
+   - Record findings in the Research Wiki (personas, journey maps, decision reasoning)
+   ```
 
-5. **Make decision:** CHAMPION (move to PO) / DEFER (real problem but not strategic now) / BLOCK (doesn't fit strategy)
+2. **Wait for the PM agent to finish.** Review the `strategic-opportunity` issue it created. Check:
+   - Does it have research findings?
+   - Is validation credible (data, customer mentions, competitive context)?
+   - Is the decision clear (CHAMPION/DEFER/BLOCK)?
+   - Are Research Wiki pages linked?
 
-**Create 2-3 `strategic-opportunity` issues** using the template from Step 3 (or submit 2-3 `pm-idea` issues and let the PM agent autonomously create the strategic-opportunities):
+3. **Invoke the PO agent** with the PM's strategic-opportunity issue:
 
-**Example `strategic-opportunity` issue created by PM agent:**
+   ```
+   PM has created strategic-opportunity issue #X with research findings.
+   
+   Task:
+   - Read the strategic-opportunity issue
+   - Assess user value and business value (1-5 each)
+   - Calculate priority score
+   - Create a feature-request issue linked to the strategic-opportunity
+   - Move feature-request to "Ready for Development" column
+   ```
 
-```
-Title: Strategic Opportunity - Mobile app for field teams
-Labels: pm-opportunity
+4. **Wait for the PO agent to finish.** Review the `feature-request` issue it created. Check:
+   - Does it have a clear user story?
+   - Are acceptance criteria testable?
+   - Is it linked to the strategic-opportunity?
+   - Is it in "Ready for Development"?
 
-## Research Findings
-- Found 12 support tickets mentioning field checkout issues
-- Talked to 4 facility managers; all confirmed pain point
-- Competitor X has no mobile; Competitor Y has basic iOS
-- Estimated 80% of enterprise field users affected
+5. **Invoke the Development Orchestrator** with a simple prompt:
 
-## Validation Assessment
-- Strategic alignment: ✅ Aligns with "field operations" market anchor
-- Market opportunity: High (80%+ customer segment affected)
-- Competitive advantage: Real-time + FM integrations (competitors lag here)
-- Effort estimate: 3-4 weeks for MVP
+   ```
+   Pull the next "Ready for Development" feature-request.
+   Route it through Intake → Design → Build.
+   Create the full intake and design documentation.
+   ```
 
-## Decision
-- **Decision:** CHAMPION
-- **Rationale:** Strong validation, strategic fit, achievable effort
-- **Next step:** Ready for PO prioritization
-```
-
-### Synthesize what you learned
-
-After discovery, update your market anchor into a fuller vision:
-
-- **Market definition:** Based on who you talked to, who's the core customer?
-- **Problem statement:** What problem kept coming up in research?
-- **Competitive advantage:** What are competitors missing? What's your angle?
-- **3-6 month priorities:** Which of your validated opportunities should ship first?
-
-**Example synthesis (after discovery):**
-```
-Market anchor (before): "Mid-market facility managers who manually track equipment checkout"
-
-Research findings:
-- 12 facility managers interviewed; 10 mentioned equipment checkout pain
-- Competitor X has no mobile; Competitor Y has basic iOS
-- Top 3 problems: mobile checkout, integration with FM systems, real-time visibility
-- Interest level: 4 customers willing to beta; strong repeat interest
-
-Updated vision (after discovery):
-Market: Mid-market facility managers (50-500 employee companies)
-Problem: Manual equipment checkout in field wastes 2-3 hours/day; mobile-first competitors emerging
-Advantage: Real-time checkout + integrations with existing FM systems (competitors don't have this combo)
-Q3 priorities: Mobile checkout (highest demand), FM integrations (quick win), analytics dashboard (strategic)
-```
-
-Your vision is now grounded in customer research, not guesses.
+6. **Observe the output.** What you should see:
+   - Intake: BA refines acceptance criteria, asks clarifying questions
+   - Design: Designer creates wireframes, interaction model
+   - Build: Developer code scaffolding and task breakdown
+   - All stages linked back to the original strategic-opportunity (full traceability)
 
 ---
 
-## Step 8 (20 minutes): Create feature issues as Product Owner
+## Step 7 (10 minutes): Review what the orchestration produced
 
-Now switch roles. You're the PO receiving `strategic-opportunity` issues from the PM.
+After the end-to-end run, review the artifacts and understand the flow:
 
-**For each CHAMPION `strategic-opportunity` issue the PM validated:**
+**What happened:**
+1. Market opportunity → `strategic-opportunity` issue → Research Wiki  
+2. `strategic-opportunity` issue → `feature-request` issue → Backlog
+3. `feature-request` → Intake/Design/Build documentation → Development starts
 
-1. **Read** the PM's research and validation (from the strategic-opportunity issue)
-2. **Assess value:** Based on PM's market data, what's the business value? User value? (Rate 1-5)
-3. **Assess complexity:** How much effort? Is it a quick build or a major project? (Rate 1-5)
-4. **Calculate priority score:** (User Value + Business Value) / (Complexity × 1.5)
-5. **Position in backlog:** Quick wins at top (score > 2.5), strategic bets next (1.5-2.5), defer lower-scoring items
-6. **Create `feature-request`:** Use the template from Step 3, link to strategic-opportunity, write user story and acceptance criteria
+**What you learned:**
+- The PM agent found a real problem, documented research, made a clear decision
+- The PO agent turned that research into a shippable feature with acceptance criteria
+- The Development orchestrator pulled it and created intake, design, and build artifacts
+- Everything is linked and traceable (issue → wiki → intake → design → code)
 
-**Example (as PO creating a feature-issue from strategic-opportunity):**
+**Verify traceability:**
+- Click on the strategic-opportunity issue → see Research Wiki links (personas, journey maps, interview transcripts)
+- Click on the feature-request issue → see the link to strategic-opportunity
+- Click on the intake issue → see the link to feature-request
+- All artifacts reference each other; no decision is orphaned
 
-```
-Strategic-opportunity Issue #42: "Strategic Opportunity - Mobile app for field teams"
-├─ Research findings: 12 support tickets, 4 customer confirmations
-├─ Strategic alignment: ✅ 
-├─ Competitive advantage: ✅ Real-time + FM integrations
-├─ Effort: 3-4 weeks
-
-PO reads this and creates feature-request:
-
-Title: Mobile app: iOS/Android checkout for field teams
-Labels: feature-request, po-prioritized
-
-**Strategic Context** (Linked to strategic-opportunity #42)
-- Market opportunity: Field teams lose 2-3 hours/day to equipment checkout. 80% of customers affected.
-- Customer validation: 4 customers confirmed; willing to beta-test
-- Competitive advantage: Real-time checkout + FM system integrations (competitors lack this combo)
-
-## User Story
-As a field manager, I want to check out equipment from my phone, 
-so that I don't lose 2+ hours running back to the office.
-
-## Acceptance Criteria (Testable)
-1. [ ] Mobile app (iOS + Android) loads in <2 seconds on 4G
-2. [ ] User can view and select equipment from device inventory
-3. [ ] Checkout data syncs to central system within 30 seconds
-4. [ ] Offline mode caches last 50 items for field use
-5. [ ] System shows "checkout successful" confirmation
-
-## Value Assessment
-- User value: 5 (all field teams need it; critical pain point)
-- Business value: 4 (upsell to field-heavy customers; retention impact)
-- Complexity: 4 (3-4 weeks estimated; new platform)
-- Priority score: (5 + 4) / (4 × 1.5) = 1.5 (strategic bet)
-
-## Success Metrics
-- 80% adoption by field users within 4 weeks
-- Time-to-checkout reduced by 50%
-- Churn from field-heavy segment reduced by 10%
-
-## Priority Position
-Strategic bet - Top 3 backlog
-```
-
-**Create 2-3 `feature-request` issues** for your CHAMPION strategic-opportunities. Each feature-request should reference its strategic-opportunity and include:
-- User story (from PM's research context)
-- Acceptance criteria (testable requirements)
-- Value scores and priority calculation
-- Success metrics
-Value: High business value (upsell opportunity) + High user value (critical pain point)
-Complexity: Moderate-high (3-4 week estimate)
-Success metrics: Mobile app adopted by 80% of active field users; time-to-checkout reduced by 50%
-
-Backlog position: Top 3 (after quick wins, this is highest business value)
-```
-
-**Before moving to "Ready for Development":** Use the [Ready for Development Checklist](../templates/agents/product-owner.agent.md#handoff-to-development-ready-for-development-checklist) to ensure your feature-request includes:
-- Strategic context (links to strategic-opportunity)
-- User story (As a... I want... so that...)
-- Problem statement
-- Bounded scope (MVP defined, Phase 2+ deferred)
-- Value assessment (user, business, complexity)
-- Priority score calculated
-- Success metrics
-- Draft acceptance criteria (for BA to refine)
-- Dependencies identified
-- No ambiguities
-
-**Create 2-3 GitHub issues for your prioritized opportunities.** Verify each against the checklist before moving to "Ready for Development".
-
----
-
-## Step 8b (5 minutes): Understand BA-PO Collaboration During Intake
-
-After you create a `feature-request` and move it to "Ready for Development", the Development orchestrator pulls it for Intake. Here's what happens:
-
-**BA will refine your acceptance criteria** during Intake using the "3 C's Framework":
-1. **Card** → Your written user story (placeholder for conversation)
-2. **Conversation** → BA asks clarifying questions (what if network drops? how many items at once?)
-3. **Confirmation** → BA writes testable Given/When/Then criteria
-
-**Your role during this time:**
-- **Respond promptly** to BA questions (within 1-2 hours if possible)
-- **Make trade-off decisions** (Is this MVP or Phase 2? What's acceptable performance?)
-- **Approve the refined AC** when BA shows you the final Given/When/Then criteria
-- **Stay engaged** — If dev has questions mid-sprint, respond to keep build unblocked
-
-This is not a handoff-and-disappear moment. PO availability during Intake prevents rework and keeps velocity high.
-
----
-
-## Step 9 (15 minutes): Practice PM ↔ PO collaboration
-
-Real PM-PO work involves back-and-forth. The PM creates `strategic-opportunity` issues; the PO creates `feature-issue` issues; they collaborate to ensure alignment.
-
-**Simulate this collaboration:**
-
-1. **As PM:** On one of your `strategic-opportunity` issues, post the research findings, customer validation, strategic rationale in comments
-
-2. **As PO:** Review the `strategic-opportunity` issue. Ask clarifying questions in comments: "How many customers mentioned this?" "What's our competitive advantage?"
-
-3. **As PM:** Respond with additional context and analysis
-
-4. **As PO:** Based on PM's research, create the corresponding `feature-issue` linking back to the strategic-opportunity
-
-**Example dialogue:**
-
-```
-[PM creates strategic-opportunity #42]
-Research: 12 support tickets, 4 customer interviews
-Validation: Strong signal, competitive advantage
-Effort: 3-4 weeks
-
-[PO comments]
-"Great research. Mobile app or API integrations first?"
-
-[PM responds]
-"Mobile unblocks immediate revenue. Integrations can wait 2 sprints."
-
-[PO creates feature-issue #89]
-Linked to strategic-opportunity #42
-Ready for development pipeline
-```
+**Identify any gaps:**
+- If research was thin, note what was missing
+- If feature-request wasn't detailed enough, note what BA needed to ask
+- If design was incomplete, note what builder needs to clarify
+- This is normal—no first pass is perfect. What matters is the loop works.
 
 ---
 
@@ -608,17 +495,17 @@ Ready for development pipeline
 
 ✅ You have successfully completed Module 13 when:
 
-1. **Market anchor defined** (Step 4)
+1. **Market anchor defined** (Steps 1-2)
    - 1-2 sentence description of customer segment + problem space you're exploring
 
 2. **Three issue types understood** (Step 3)
    - `pm-idea` (user input): 1-3 sentences
    - `strategic-opportunity` (PM output): research, validation, decision
-   - `feature-issue` (PO output): user story, acceptance criteria, value scores
+   - `feature-request` (PO output): user story, acceptance criteria, value scores
 
 3. **Product Manager role understood** (Step 1)
    - Can explain: strategic discovery, validation, opportunity evaluation, decision-making
-   - Understand what PM does (research, validate, create `strategic-opportunity` issues) vs. what PO does (create `feature-issue` issues for development)
+   - Understand what PM does (research, validate, create `strategic-opportunity` issues) vs. what PO does (create `feature-request` issues for development)
 
 3b. **GitHub Wiki enabled** (Step 3b)
    - GitHub Wiki feature enabled in Repository Settings → Features
@@ -627,52 +514,43 @@ Ready for development pipeline
    - Familiar with [User Research & Personas Skill](../templates/skills/user-research-and-personas.md)
 
 4. **Product Owner role understood** (Step 2)
-   - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-issue` issues
+   - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-request` issues
    - Understand relationship: PM validates market opportunities; PO converts them to actionable development tasks
 
-5. **2-3 `strategic-opportunity` issues created** (Step 7)
-   - Each includes: research findings, customer validation evidence, strategic alignment assessment, effort estimate, CHAMPION/DEFER/BLOCK decision
-   - Research documented with credible evidence
-   - Each links to relevant Research Wiki pages (personas, journey maps)
+5. **PM and PO agent capabilities reviewed** (Step 5)
+   - Can articulate: What PM agent discovers (research, validation, strategic-opportunity creation)
+   - Can articulate: What PO agent does (read strategy, prioritize, create feature-request)
+   - Can articulate: What Development orchestrator does (intake, design, build routing)
+   - Understand: Your role is to invoke agents and respond to clarifying questions, not to do expert work
+   - Understand: Orchestration is autonomous; you guide with market anchor and review decisions
 
-6. **2-3 `feature-request` issues created from strategic-opportunities** (Step 8)
-   - Each linked to its source `strategic-opportunity`
-   - Each includes: user story (from PM's market research), acceptance criteria (testable), value assessment, complexity estimate, priority score, success metrics
-   - Issues ordered in backlog by priority (quick wins → strategic bets)
-
-7. **PM ↔ PO collaboration demonstrated** (Step 9)
-   - Created `strategic-opportunity` issue with research
-   - PO asked clarifying questions in comments
-   - PM responded with additional context
-   - PO created `feature-issue` from the validated opportunity
-   - Shows full hand-off trail from market validation to development task
-
-8. **PM and PO agents reviewed** (Step 5)
-   - Can articulate: What PM discovers (creates `strategic-opportunity` issues), what PO prioritizes (creates `feature-request` issues)
-   - Understand the two-tier leadership model and three-issue-type architecture
-   - Can explain PM ↔ PO collaboration pattern
-   - Understand autonomous PM discovery mode and quarterly re-checks
-
-9. **PO Skill Files understood** (Step 5)
+6. **PO Skill Files understood** (Step 5)
    - Familiar with [Release Coordination](../templates/skills/release-coordination.md) (multi-team dependencies, feature flags, launch checklists)
    - Familiar with [Metrics and Experimentation](../templates/skills/metrics-and-experimentation.md) (AARRR framework, data-driven decisions, kill frameworks)
    - Familiar with [Stakeholder Alignment](../templates/skills/stakeholder-alignment-po.md) (saying no, communication cadences)
    - Familiar with [Feedback Loops and Learning](../templates/skills/feedback-loops-and-learning.md) (A.C.A.F., NPS/CSAT, 5+ rule)
    - Familiar with [Cross-Functional Workflows](../templates/skills/cross-functional-workflows.md) (PM↔PO, PO↔BA, team coordination)
 
-10. **"Ready for Development" Checklist verified** (Step 8)
-   - All feature-requests pass the 11-item checklist before moving to "Ready for Development" column
-   - Understand: Incomplete handoffs create rework downstream; this checklist prevents it
+7. **End-to-end orchestration completed** (Step 6)
+   - PM agent created 1 `strategic-opportunity` issue with research findings, validation, and wiki links
+   - PO agent created 1 `feature-request` issue from the strategic-opportunity  
+   - Development orchestrator pulled feature-request and created Intake/Design/Build artifacts
+   - Full traceability verified: strategic-opportunity → feature-request → intake → design → code
 
-11. **BA-PO Collaboration During Intake understood** (Step 8b)
-   - Understand: You stay engaged during Intake (BA will ask clarifying questions)
-   - Understand: Your role (respond to Qs, make trade-offs, approve AC, keep build unblocked)
-   - Understand: Quick PO responses = faster builds = better outcomes
+8. **Artifacts reviewed and traceability verified** (Step 7)
+   - Research findings are credible and linked to Research Wiki
+   - Feature-request has clear user story, acceptance criteria, and value scoring
+   - Intake documentation includes BA questions and refinements
+   - Design documentation includes wireframes and interaction model
+   - Build documentation includes task breakdown and dependencies
+   - All artifacts reference each other (no orphaned decisions)
 
-12. **Orchestration reviewed** — PM-PO and Development orchestrators
-    - Understand: Two independent loops (PM-PO researches continuously; Dev executes continuously)
-    - Understand: PM discovery trigger and quarterly re-evaluation (orchestrator.pm-po.agent.md)
-    - Understand: PO backlog ordering and "Ready for Development" column
+9. **Orchestration architecture understood** (Step 7)
+   - Two independent loops: PM-PO researches continuously; Dev executes continuously
+   - PM agent discovers market opportunities and creates strategic-opportunities
+   - PO agent prioritizes and creates feature-requests
+   - Development orchestrator routes feature-requests through intake → design → build
+   - Each stage feeds into the next; you invoke agents and respond to questions
     - Understand: Development consumes `feature-request` issues from "Ready for Development" (orchestrator.development.agent.md)
     - Understand: Both orchestrators run concurrently without blocking each other
 
