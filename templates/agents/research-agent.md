@@ -22,6 +22,15 @@ Every finding must include source tier, methodology notes, and confidence level.
 
 **IMPORTANT:** Research Agent instances are executed **sequentially, one at a time**, NOT in parallel.
 
+**Wiki Operations:** All wiki management is handled by the `wiki-manager` skill (templates/skills/wiki-manager.skill.md). The skill manages:
+- Cloning the GitHub Wiki repository to an isolated temp directory
+- Creating/updating markdown pages
+- Committing and pushing changes
+- Automatic cleanup
+- Error handling and retries
+
+You do not need to manage git operations directly. Simply call the skill in Step 4b with page content, and the skill handles the rest.
+
 **What this means for you:**
 - You are the ONLY Research Agent updating the Research Wiki right now
 - No other Research Agents are simultaneously editing wiki pages
@@ -703,89 +712,99 @@ Create/Update Research Wiki pages with **explicit evidence hierarchy and confide
 - Next research questions needed
 - Validation experiments to run
 
-#### Step 4b: Wiki Update Procedure (CRITICAL - Execute Before Closing)
+#### Step 4b: Wiki Update Procedure (Using wiki-manager Skill)
 
 **⚠️ MANDATORY:** Complete ALL wiki updates BEFORE closing the research issue. If no wiki pages are updated, PM Phase 2 will have no research data and cannot validate the decision.
 
+Use the centralized `wiki-manager` skill for all wiki operations. This skill handles cloning, updating, pushing, and cleanup automatically.
+
+**PRE-FLIGHT CHECK: Verify Wiki is Accessible**
+
+Before starting wiki updates, verify GitHub Wiki is enabled:
+
+CALL SKILL: `wiki-manager`
+```json
+{
+  "action": "init-check",
+  "repo": "[owner]/[repo]"
+}
+```
+
+Expected response:
+```json
+{
+  "status": "success",
+  "has_wiki": true,
+  "can_clone": true,
+  "token_valid": true
+}
+```
+
+If `has_wiki` is false, GitHub Wiki is not enabled. Enable it in repo Settings → Features → Wiki, then retry.
+
 **For each Wiki page needed (Personas-[Name], Journey-Maps-[Name], Research-to-Decision-Index, Strategic-Findings-[Quarter]):**
 
-1. **CHECK: Does the wiki page exist?**
-   ```bash
-   gh wiki list | grep "Personas-[PersonaName]"
-   ```
-   - If page is listed: PROCEED TO STEP 2 (UPDATE)
-   - If page is NOT listed: PROCEED TO STEP 1b (CREATE)
+**1. CREATE OR UPDATE: Personas-[PersonaName]**
 
-2. **IF PAGE DOESN'T EXIST - CREATE IT:**
-   
-   Create the new wiki page with research content:
-   ```bash
-   gh wiki create "Personas-[PersonaName]" --body "[content from Step 4 above]"
-   ```
-   
-   Then verify it was created:
-   ```bash
-   gh wiki view "Personas-[PersonaName]"
-   ```
-   
-   Post comment on research issue:
-   ```
-   ✅ Wiki page created: Personas-[PersonaName]
-   [Include link to wiki page]
-   ```
+CALL SKILL: `wiki-manager`
+```json
+{
+  "action": "write-page",
+  "repo": "[owner]/[repo]",
+  "page_name": "Personas-[PersonaName]",
+  "content": "# [PersonaName]\n\n## Demographics\n[from Step 4a]\n\n## Jobs to be Done\n[from Step 4a]\n\n## Frustrations\n[from Step 4a]\n\nResearch Source: Issue #[this-issue-number]"
+}
+```
 
-3. **IF PAGE EXISTS - UPDATE/APPEND IT:**
-   
-   Read the current wiki page content:
-   ```bash
-   gh wiki view "Personas-[PersonaName]" > current_content.md
-   ```
-   
-   Append new research findings (keep existing content, add new findings with research round date):
-   ```
-   ## Research Update: [Date] - Research Round [N]
-   
-   [New findings from this research item]
-   - Evidence: [N support tickets, N case studies, N interviews]
-   - Confidence: [HIGH/MEDIUM/LOW]
-   - Sources: [specific sources]
-   
-   Updated by research issue: #[this-issue-number]
-   ```
-   
-   Update the wiki page:
-   ```bash
-   gh wiki update "Personas-[PersonaName]" --body "[combined old + new content]"
-   ```
-   
-   Verify the update worked:
-   ```bash
-   gh wiki view "Personas-[PersonaName]" | grep "[keyword from new findings]"
-   ```
-   
-   Post comment on research issue:
-   ```
-   ✅ Wiki page updated: Personas-[PersonaName]
-   - Added [X] new research findings
-   - Total evidence count: N=[Y] data points
-   - Confidence level: [HIGH/MEDIUM/LOW]
-   [Include link to wiki page]
-   ```
+Expected response:
+```json
+{
+  "status": "success",
+  "page": "Personas-[PersonaName]",
+  "wiki_url": "https://github.com/[owner]/[repo]/wiki/Personas-[PersonaName]",
+  "committed": true,
+  "message": "Created/updated Personas-[PersonaName].md"
+}
+```
 
-4. **LINK BACK TO RESEARCH ISSUE:**
-   
-   In wiki page, add link back to research issue:
-   ```
-   **Research Source:** Issue #[this-issue-number]
-   ```
-   
-   In research issue, add link to wiki page:
-   ```
-   Wiki pages updated:
-   - [Link to Personas-[Name]] ✅
-   - [Link to Journey-Maps-[Name]] ✅
-   - [Link to Research-to-Decision-Index] ✅
-   ```
+If status is "error": Post comment "Wiki update failed for Personas-[PersonaName]: [error message]. Aborting research task." and close issue with label `wiki-error`.
+
+**2. CREATE OR UPDATE: Journey-Maps-[PersonaName]**
+
+CALL SKILL: `wiki-manager`
+```json
+{
+  "action": "write-page",
+  "repo": "[owner]/[repo]",
+  "page_name": "Journey-Maps-[PersonaName]",
+  "content": "# [PersonaName] - Journey Map\n\n## Stage 1: Discovery\n[findings from Step 4a]\n\n## Stage 2: Consideration\n[findings from Step 4a]\n\n## Stage 3: Regular Usage\n[findings from Step 4a]\n\nResearch Source: Issue #[this-issue-number]"
+}
+```
+
+**3. CREATE OR UPDATE: Research-to-Decision-Index**
+
+CALL SKILL: `wiki-manager`
+```json
+{
+  "action": "update-page",
+  "repo": "[owner]/[repo]",
+  "page_name": "Research-to-Decision-Index",
+  "content": "## [PersonaName] - [Decision]\n| Problem | Persona | Stage | Research Finding | Evidence Source | Confidence | Strategic Implication |\n|---------|---------|-------|-----------------|-----------------|------------|----------------------|\n| [Problem] | [PersonaName] | [Stage] | [Finding] | Issue #[this-issue-number], N=X | [HIGH/MEDIUM/LOW] | [Implication] |",
+  "append": true
+}
+```
+
+**4. Verify All Updates**
+
+Post comment on research issue:
+```
+✅ Wiki pages updated successfully
+- Personas-[PersonaName]: https://github.com/[owner]/[repo]/wiki/Personas-[PersonaName]
+- Journey-Maps-[PersonaName]: https://github.com/[owner]/[repo]/wiki/Journey-Maps-[PersonaName]
+- Research-to-Decision-Index: https://github.com/[owner]/[repo]/wiki/Research-to-Decision-Index
+
+All research findings documented and committed to GitHub Wiki. Ready for PM Phase 2 validation.
+```
 
 5. **VERIFY ALL PAGES UPDATED:**
    

@@ -43,7 +43,7 @@ This is a **strategic product leadership role**. You will:
 
 This agent can run **autonomously** on GitHub issues with the `pm-idea` label. Users input a 1-3 sentence feature idea; the agent runs through discovery, validation, and decision-making automatically.
 
-**First Run Setup:** On your first execution, this agent creates the Research Wiki infrastructure in GitHub (see "First Run: Research Wiki Setup" section below). All subsequent runs will reference and update the research wiki.
+**First Run Setup:** On your first execution, verify Research Wiki is accessible using the `wiki-manager` skill (templates/skills/wiki-manager.skill.md). All subsequent runs will reference and read the research wiki. The wiki-manager skill handles all cloning, reading, and verification automatically.
 
 ### Input & Output Contract
 
@@ -173,78 +173,84 @@ Execute when: Orchestrator detects all linked research items on `pm-idea` are no
    - Document confidence level (N interviews, which segments covered)
    - Identify any gaps or contradictions
 
-2b. **Verify and Read Completed Research Wiki - Procedural Steps:**
+2b. **Verify and Read Completed Research Wiki - Using wiki-manager Skill:**
 
    **CRITICAL:** Do NOT skip this. Research Wiki contains all data needed to validate CHAMPION decision.
 
-   **Access GitHub Wiki:**
-   ```bash
-   # Open the repository Wiki (usually at: github.com/[owner]/[repo]/wiki)
-   gh wiki view Home  # Verify Wiki is accessible
+   **Use wiki-manager skill to list and read all research pages:**
+
+   CALL SKILL: `wiki-manager`
+   ```json
+   {
+     "action": "list-pages",
+     "repo": "[owner]/[repo]"
+   }
    ```
 
-   **For each research: item that was closed, find corresponding Wiki pages:**
-
-   Research item closed: `research: [Persona Name] for [Idea]`
-   → Look for these Wiki pages:
-   - `Personas-[PersonaName]`
-   - `Journey-Maps-[PersonaName]` (if created)
-   - `Interview-Transcripts-[Quarter]` (if created)
-   - `Research-to-Decision-Index` (main findings index)
-   - `Strategic-Findings-[Quarter]` (top 3 insights)
-
-   **Read each page - Verify Update:**
-   ```bash
-   # Check Personas page was updated
-   gh wiki view "Personas-[PersonaName]"
-   
-   # Look for:
-   # ✅ Timestamp showing recent update (last 2 weeks)
-   # ✅ Evidence counts (N=[X] support tickets, N=[Y] interviews)
-   # ✅ Confidence levels (HIGH/MEDIUM/LOW assigned to each finding)
-   # ✅ Research source link (reference to research: issue #[N])
+   Expected response:
+   ```json
+   {
+     "status": "success",
+     "pages": ["Personas-[Name]", "Journey-Maps-[Name]", "Research-to-Decision-Index", ...],
+     "count": 4
+   }
    ```
 
-   If page NOT found or NOT updated:
+   **Read each research page:**
+
+   For each page (Personas-[Name], Journey-Maps-[Name], Research-to-Decision-Index):
+
+   CALL SKILL: `wiki-manager`
+   ```json
+   {
+     "action": "read-page",
+     "repo": "[owner]/[repo]",
+     "page_name": "Personas-[PersonaName]"
+   }
    ```
-   Post comment on strategic-opportunity: "ERROR: Expected Wiki page not found or not updated: Personas-[PersonaName]. Research may not be complete. Investigating..."
+
+   Expected response:
+   ```json
+   {
+     "status": "success",
+     "page": "Personas-[PersonaName]",
+     "content": "# [PersonaName]...\nResearch Source: Issue #[N]",
+     "exists": true,
+     "size_bytes": 2048
+   }
+   ```
+
+   If `exists` is false or status is "error":
+   ```
+   Post comment: "ERROR: Expected Wiki page not found: Personas-[PersonaName]. Research may not be complete. Investigating..."
    DO NOT PROCEED. Return to Orchestrator to check if research: item actually closed properly.
    ```
 
    **Extract Key Data from Each Page:**
 
    **From Personas-[PersonaName]:**
-   - Primary job to be done (copy exact phrasing)
+   - Primary job to be done (copy exact phrasing from page)
    - Top 3 frustrations (with frequency % if available)
-   - Evidence count: N=[X] (how many support tickets/interviews)
+   - Evidence count: N=[X] (from Research Source: Issue #[N] link)
    - Confidence: [HIGH/MEDIUM/LOW] assigned by Research Agent
 
    **From Journey-Maps-[PersonaName]:**
    - Stage with highest friction (e.g., "Stage 3: Regular Usage, 60% of users hit blocker X")
-   - Churn signals (if noted)
+   - Churn signals (if noted in page)
    - Customer impact quantified (if available: % affected, time lost, revenue impact)
 
    **From Research-to-Decision-Index:**
-   ```
-   Find row(s) matching this opportunity:
-   | Problem | Persona | Stage | Research Finding | Evidence Source | Confidence | Strategic Implication |
-   | [Match] | [Pers]  | [S]   | [Finding]        | [Source, N=X]   | [HIGH]     | [Action implication] |
-   ```
-
-   **From Strategic-Findings-[Quarter]:**
-   - Top 3 research findings for this topic
-   - Market opportunity quantification (TAM/SAM/SOM with confidence)
-   - Risk assessment (technical/org/timing barriers)
+   - Find row(s) matching this pm-idea opportunity
+   - Verify: Problem, Persona, Stage, Research Finding, Evidence Source (Issue #[N]), Confidence level
 
    **Post Wiki Verification Comment:**
    ```
    ✅ Research Wiki Verified - Ready for Phase 2 Validation
 
    Wiki Pages Reviewed:
-   - Personas-[Name]: Evidence N=[X], Confidence [HIGH]
-   - Journey-Maps-[Name]: [X%] users hit Stage [N] friction
-   - Research-to-Decision-Index: [X] findings linked to decision
-   - Strategic-Findings-[Quarter]: Market opportunity quantified
+   - Personas-[Name]: Found + contains evidence and confidence level
+   - Journey-Maps-[Name]: Found + documents customer friction points
+   - Research-to-Decision-Index: Found + entry linked to this opportunity
 
    Proceeding to final validation with research evidence.
    ```

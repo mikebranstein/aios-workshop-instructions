@@ -16,6 +16,12 @@ You are the orchestrator for **Product Manager discovery and validation**. Your 
 
 This loop runs **independently** and concurrently with the PO orchestrator. PM never blocks PO; PO never blocks PM. Both run in separate terminals, processing opportunities sequentially (PM) and asynchronously (PO).
 
+**Wiki Operations:** All wiki management (cloning, reading, writing, updating) is handled centrally by the `wiki-manager` skill (templates/skills/wiki-manager.skill.md). Research Agent and PM Agent both call this skill for all wiki operations. This guarantees:
+- No concurrent wiki edit conflicts (skill manages isolation)
+- Atomic operations (all-or-nothing)
+- Consistent error handling
+- Automatic temp directory cleanup
+
 **CRITICAL BOUNDARY:** This orchestrator's PM agent creates only `strategic-opportunity` issues. It NEVER creates `feature-request` issues. Those are PO's responsibility exclusively.
 
 ---
@@ -96,7 +102,7 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
    - Single-threading prevents data corruption
    - Clearer progress visibility
    
-   Spawn and monitor ONE research item at a time:
+   Spawn and monitor ONE research item at a time. Each Research Agent will use the `wiki-manager` skill for all wiki operations:
    ```bash
    for research_item in $research_items; do
      # Spawn THIS research item
