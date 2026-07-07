@@ -616,6 +616,41 @@ GitHub issue with:
 
 ### Execution Steps
 
+#### Step 0 (MANDATORY - NEW): Check Wiki for Existing Research
+
+**CRITICAL:** Before starting any research, check if this work has already been done. This prevents redundant interviews and wasted effort.
+
+```bash
+# Check if persona/topic already researched
+CALL SKILL: wiki-manager
+{
+  "action": "check-index-status",
+  "repo": "[owner]/[repo]",
+  "search_type": "persona", // or "competitive", "trend", etc.
+  "search_term": "[Persona Name or Topic]"
+}
+
+# Possible outcomes:
+#
+# A. Found AND status="Complete":
+#    - Read existing wiki page (get all findings)
+#    - POST COMMENT: "✅ Research already complete. Using existing findings from [Wiki Link]"
+#    - Link issue to existing wiki page
+#    - CLOSE research work item (reason: "completed - used existing research")
+#
+# B. Found AND status="In Progress":
+#    - POST COMMENT: "Research already underway. This issue is a duplicate."
+#    - Link issues together
+#    - CLOSE this research item (reason: "duplicate of #[existing-issue]")
+#
+# C. Found AND status="Deferred":
+#    - POST COMMENT: "Research deferred until [date]. Deferring this item too."
+#    - CLOSE with reason: "deferred"
+#
+# D. NOT found OR similarity <0.7:
+#    - Proceed to Step 1 (research scoping)
+```
+
 #### Step 1: Research Scoping & Hypothesis Formation
 1. Read research task
 2. Identify research questions
@@ -716,43 +751,19 @@ Create/Update Research Wiki pages with **explicit evidence hierarchy and confide
 
 **⚠️ MANDATORY:** Complete ALL wiki updates BEFORE closing the research issue. If no wiki pages are updated, PM Phase 2 will have no research data and cannot validate the decision.
 
-Use the centralized `wiki-manager` skill for all wiki operations. This skill handles cloning, updating, pushing, and cleanup automatically.
+Use the `wiki-manager` skill with the **librarian model** — the skill executes exactly what you tell it. You decide what to write, where to write it, and what metadata to register.
 
-**PRE-FLIGHT CHECK: Verify Wiki is Accessible**
+**For each Wiki page needed (Personas/[Name], Journey-Maps/[Name], and Research-to-Decision-Index):**
 
-Before starting wiki updates, verify GitHub Wiki is enabled:
-
-CALL SKILL: `wiki-manager`
-```json
-{
-  "action": "init-check",
-  "repo": "[owner]/[repo]"
-}
-```
-
-Expected response:
-```json
-{
-  "status": "success",
-  "has_wiki": true,
-  "can_clone": true,
-  "token_valid": true
-}
-```
-
-If `has_wiki` is false, GitHub Wiki is not enabled. Enable it in repo Settings → Features → Wiki, then retry.
-
-**For each Wiki page needed (Personas-[Name], Journey-Maps-[Name], Research-to-Decision-Index, Strategic-Findings-[Quarter]):**
-
-**1. CREATE OR UPDATE: Personas-[PersonaName]**
+**1. WRITE: Personas/[PersonaName]**
 
 CALL SKILL: `wiki-manager`
 ```json
 {
   "action": "write-page",
   "repo": "[owner]/[repo]",
-  "page_name": "Personas-[PersonaName]",
-  "content": "# [PersonaName]\n\n## Demographics\n[from Step 4a]\n\n## Jobs to be Done\n[from Step 4a]\n\n## Frustrations\n[from Step 4a]\n\nResearch Source: Issue #[this-issue-number]"
+  "page_path": "Personas/[Persona-Name]",
+  "content": "# [PersonaName]\n\n## Demographics\n[from research findings]\n\n## Jobs to be Done\n[primary JTBD statement]\n\n## Frustrations\n[top 3 with frequency %]\n\n## Research Source\nIssue #[this-issue-number]\nEvidence Count: N=[X] interviews"
 }
 ```
 
@@ -760,37 +771,49 @@ Expected response:
 ```json
 {
   "status": "success",
-  "page": "Personas-[PersonaName]",
-  "wiki_url": "https://github.com/[owner]/[repo]/wiki/Personas-[PersonaName]",
+  "page_path": "Personas/[Persona-Name]",
+  "wiki_url": "https://github.com/[owner]/[repo]/wiki/Personas/[Persona-Name]",
   "committed": true,
-  "message": "Created/updated Personas-[PersonaName].md"
+  "commit_message": "Create Personas/[Persona-Name].md"
 }
 ```
 
-If status is "error": Post comment "Wiki update failed for Personas-[PersonaName]: [error message]. Aborting research task." and close issue with label `wiki-error`.
+If status is "error": Post comment "Wiki write failed: [error]. Aborting." and close with label `wiki-error`.
 
-**2. CREATE OR UPDATE: Journey-Maps-[PersonaName]**
+**2. WRITE: Journey-Maps/[PersonaName]**
 
 CALL SKILL: `wiki-manager`
 ```json
 {
   "action": "write-page",
   "repo": "[owner]/[repo]",
-  "page_name": "Journey-Maps-[PersonaName]",
-  "content": "# [PersonaName] - Journey Map\n\n## Stage 1: Discovery\n[findings from Step 4a]\n\n## Stage 2: Consideration\n[findings from Step 4a]\n\n## Stage 3: Regular Usage\n[findings from Step 4a]\n\nResearch Source: Issue #[this-issue-number]"
+  "page_path": "Journey-Maps/[Persona-Name]-[Journey-Type]",
+  "content": "# [PersonaName] - [Journey Type]\n\n## Stage 1: Discovery\n[findings]\n\n## Stage 2: Consideration\n[findings]\n\n## Stage 3: Regular Usage\n[findings]\n\n## Research Source\nIssue #[this-issue-number]\nEvidence Count: N=[X] interviews"
 }
 ```
 
-**3. CREATE OR UPDATE: Research-to-Decision-Index**
+**3. UPDATE: Research-to-Decision-Index**
 
 CALL SKILL: `wiki-manager`
 ```json
 {
-  "action": "update-page",
+  "action": "update-index",
   "repo": "[owner]/[repo]",
-  "page_name": "Research-to-Decision-Index",
-  "content": "## [PersonaName] - [Decision]\n| Problem | Persona | Stage | Research Finding | Evidence Source | Confidence | Strategic Implication |\n|---------|---------|-------|-----------------|-----------------|------------|----------------------|\n| [Problem] | [PersonaName] | [Stage] | [Finding] | Issue #[this-issue-number], N=X | [HIGH/MEDIUM/LOW] | [Implication] |",
-  "append": true
+  "subject": "[PersonaName]",
+  "status": "Complete",
+  "wiki_page": "Personas/[Persona-Name]",
+  "github_issue": "#[this-issue-number]",
+  "confidence": "HIGH|MEDIUM|LOW",
+  "findings_summary": "N=[X] interviews completed. Key finding: [one-liner]"
+}
+```
+
+Expected response:
+```json
+{
+  "status": "success",
+  "message": "Index entry added: [PersonaName]",
+  "index_entry_added": true
 }
 ```
 
@@ -798,21 +821,22 @@ CALL SKILL: `wiki-manager`
 
 Post comment on research issue:
 ```
-✅ Wiki pages updated successfully
-- Personas-[PersonaName]: https://github.com/[owner]/[repo]/wiki/Personas-[PersonaName]
-- Journey-Maps-[PersonaName]: https://github.com/[owner]/[repo]/wiki/Journey-Maps-[PersonaName]
-- Research-to-Decision-Index: https://github.com/[owner]/[repo]/wiki/Research-to-Decision-Index
+✅ Wiki pages created successfully
+- Personas/[Persona-Name]: https://github.com/[owner]/[repo]/wiki/Personas/[Persona-Name]
+- Journey-Maps/[Persona-Name]-[Journey-Type]: https://github.com/[owner]/[repo]/wiki/Journey-Maps/[Persona-Name]-[Journey-Type]
+- Research-to-Decision-Index: updated with entry
 
-All research findings documented and committed to GitHub Wiki. Ready for PM Phase 2 validation.
+All research findings documented and indexed. Ready for PM Phase 2 validation.
 ```
 
 5. **VERIFY ALL PAGES UPDATED:**
    
    Before proceeding to Step 5 (closure), confirm:
-   - ✅ All required wiki pages exist (create if missing)
-   - ✅ All new research findings are added to wiki
-   - ✅ All wiki pages include evidence counts (N=[X])
-   - ✅ All wiki pages include confidence levels (HIGH/MEDIUM/LOW)
+   - ✅ All wiki pages were created (check success response)
+   - ✅ All new research findings are in wiki pages
+   - ✅ All pages include evidence counts (N=[X])
+   - ✅ All pages include confidence levels (HIGH/MEDIUM/LOW)
+   - ✅ Research-to-Decision-Index has been updated
    - ✅ All wiki pages link back to research issue
    - ✅ Research issue links to all updated wiki pages
    
