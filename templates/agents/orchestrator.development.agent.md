@@ -44,25 +44,79 @@ if [ -z "$READY_ITEMS" ]; then
   exit 0
 fi
 
+# Step 1a: Validate all issues have Priority Score (quality gate)
+MISSING_SCORES=$(gh project item-list 1 --format json | \
+  jq '.items[] | select(.column == "Ready for Development") | .number' | while read ISSUE; do
+  BODY=$(gh issue view "$ISSUE" --json body -q '.body')
+  PRIORITY=$(echo "$BODY" | grep -oP 'Priority Score:\s*\K[0-9.]+' || echo "")
+  if [ -z "$PRIORITY" ]; then
+    echo $ISSUE
+  fi
+done)
+
+if [ -n "$MISSING_SCORES" ]; then
+  for ISSUE in $MISSING_SCORES; do
+    gh issue comment $ISSUE --body "⚠️ ERROR: Missing Priority Score. Cannot determine pull order. PO must add Priority Score (format: 'Priority Score: X.X') before dev orchestrator can proceed."
+  done
+  echo "ERROR: Issues in Ready for Development missing Priority Score. Waiting for PO to fix..." >&2
+  sleep 600
+  exit 1
+fi
+
+# Step 1b: Check for blocked-on dependencies (skip blocked issues)
+BLOCKED_ISSUES=$(gh project item-list 1 --format json | \
+  jq '.items[] | select(.column == "Ready for Development") | .number' | while read ISSUE; do
+  LABELS=$(gh issue view "$ISSUE" --json labels --jq '.labels[].name | select(. == "blocked-on")')
+  if [ -n "$LABELS" ]; then
+    # Find blocking issue from comments
+    BLOCKING=$(gh issue view "$ISSUE" --json comments --jq '.comments[] | 
+      select(.body | contains("blocks:")) | .body' | grep -oP 'blocks:\s*#\K[0-9]+' | head -1)
+    
+    if [ -n "$BLOCKING" ]; then
+      # Check if blocking issue is CLOSED
+      STATUS=$(gh issue view "$BLOCKING" --json state -q '.state')
+      if [ "$STATUS" = "CLOSED" ]; then
+        # Remove blocked-on label; return to queue
+        echo "UNBLOCKED:$ISSUE:$BLOCKING"
+      else
+        # Still blocked
+        echo "BLOCKED:$ISSUE:$BLOCKING"
+      fi
+    fi
+  fi
+done)
+
+# Process unblocked issues
+echo "$BLOCKED_ISSUES" | grep "^UNBLOCKED:" | cut -d: -f2 | while read ISSUE BLOCKING; do
+  gh issue edit "$ISSUE" --remove-label "blocked-on"
+  gh issue comment "$ISSUE" --body "✅ Blocking issue #$BLOCKING resolved. Returning to ready queue."
+done
+
+# Report still-blocked issues
+STILL_BLOCKED=$(echo "$BLOCKED_ISSUES" | grep "^BLOCKED:" | cut -d: -f2)
+if [ -n "$STILL_BLOCKED" ]; then
+  echo "NOTE: Skipping $(echo "$STILL_BLOCKED" | wc -l) issues with active blocked-on dependencies. Will retry next cycle."
+fi
+
 # Step 2: Parse priority score from each issue and sort by highest score first
-NEXT_ISSUE=$(echo "$READY_ITEMS" | while IFS= read -r item; do
-  ISSUE_NUM=$(echo "$item" | jq -r '.number')
+NEXT_ISSUE=$(gh project item-list 1 --format json | \
+  jq '.items[] | select(.column == "Ready for Development") | .number' | while read ISSUE_NUM; do
+  # Skip blocked issues
+  if echo "$STILL_BLOCKED" | grep -q "^$ISSUE_NUM$"; then
+    continue
+  fi
+  
   ISSUE_BODY=$(gh issue view "$ISSUE_NUM" --json body -q '.body')
   
   # Extract priority score from issue body (format: "Priority Score: 2.1")
-  PRIORITY=$(echo "$ISSUE_BODY" | grep -oP 'Priority Score:\s*\K[0-9.]+' || echo "")
+  PRIORITY=$(echo "$ISSUE_BODY" | grep -oP 'Priority Score:\s*\K[0-9.]+' || echo "0")
   
-  if [ -z "$PRIORITY" ]; then
-    echo "ERROR: Issue #$ISSUE_NUM in Ready for Development missing Priority Score. Skipping." >&2
-    echo "0 $ISSUE_NUM"  # Assign 0 so it sorts to end
-  else
-    echo "$PRIORITY $ISSUE_NUM"
-  fi
+  echo "$PRIORITY $ISSUE_NUM"
 done | sort -rn | head -1 | cut -d' ' -f2)
 
-if [ -z "$NEXT_ISSUE" ] || [ "$NEXT_ISSUE" = "0" ]; then
-  echo "ERROR: All issues in Ready for Development are missing Priority Score. Orchestrator cannot determine pull order." >&2
-  echo "ACTION REQUIRED: PO must add Priority Score to all issues before orchestrator can proceed." >&2
+if [ -z "$NEXT_ISSUE" ]; then
+  echo "No unblocked issues in Ready for Development. All issues either blocked or missing priority score." >&2
+  sleep 300
   exit 1
 fi
 
@@ -72,11 +126,11 @@ INTAKE_AGENT process "$NEXT_ISSUE"
 
 **Why**: 
 - Pulls `feature-request` issues from PM-PO backlog (already researched, prioritized, linked to strategic-opportunity)
-- **Parses priority score from each issue** and sorts by highest score first (descending order)
-- Validates that priority score exists; errors if missing
-- No re-negotiation; issue stays in development until complete
-- If backlog is empty, development waits (normal state; PM-PO will add more)
-- **Deterministic ordering:** Same run always pulls the same highest-priority issue
+- **Step 1a - Priority Score Validation:** Validates that every issue in "Ready for Development" has a Priority Score; alerts PO if missing
+- **Step 1b - Dependency Resolution:** Checks each issue's blocked-on dependencies; removes label if blocking issue is CLOSED; skips still-blocked issues
+- Sorts by highest priority score first (descending order)
+- Deterministic ordering: Same run always pulls the same highest-priority unblocked issue
+- If backlog is empty or all blocked, development waits (normal state)
 
 **What happens**:
 1. Issue (type `feature-request`) is moved from "Ready for Development" to "In Development"
