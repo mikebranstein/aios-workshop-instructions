@@ -173,6 +173,82 @@ Execute when: Orchestrator detects all linked research items on `pm-idea` are no
    - Document confidence level (N interviews, which segments covered)
    - Identify any gaps or contradictions
 
+2b. **Verify and Read Completed Research Wiki - Procedural Steps:**
+
+   **CRITICAL:** Do NOT skip this. Research Wiki contains all data needed to validate CHAMPION decision.
+
+   **Access GitHub Wiki:**
+   ```bash
+   # Open the repository Wiki (usually at: github.com/[owner]/[repo]/wiki)
+   gh wiki view Home  # Verify Wiki is accessible
+   ```
+
+   **For each research: item that was closed, find corresponding Wiki pages:**
+
+   Research item closed: `research: [Persona Name] for [Idea]`
+   → Look for these Wiki pages:
+   - `Personas-[PersonaName]`
+   - `Journey-Maps-[PersonaName]` (if created)
+   - `Interview-Transcripts-[Quarter]` (if created)
+   - `Research-to-Decision-Index` (main findings index)
+   - `Strategic-Findings-[Quarter]` (top 3 insights)
+
+   **Read each page - Verify Update:**
+   ```bash
+   # Check Personas page was updated
+   gh wiki view "Personas-[PersonaName]"
+   
+   # Look for:
+   # ✅ Timestamp showing recent update (last 2 weeks)
+   # ✅ Evidence counts (N=[X] support tickets, N=[Y] interviews)
+   # ✅ Confidence levels (HIGH/MEDIUM/LOW assigned to each finding)
+   # ✅ Research source link (reference to research: issue #[N])
+   ```
+
+   If page NOT found or NOT updated:
+   ```
+   Post comment on strategic-opportunity: "ERROR: Expected Wiki page not found or not updated: Personas-[PersonaName]. Research may not be complete. Investigating..."
+   DO NOT PROCEED. Return to Orchestrator to check if research: item actually closed properly.
+   ```
+
+   **Extract Key Data from Each Page:**
+
+   **From Personas-[PersonaName]:**
+   - Primary job to be done (copy exact phrasing)
+   - Top 3 frustrations (with frequency % if available)
+   - Evidence count: N=[X] (how many support tickets/interviews)
+   - Confidence: [HIGH/MEDIUM/LOW] assigned by Research Agent
+
+   **From Journey-Maps-[PersonaName]:**
+   - Stage with highest friction (e.g., "Stage 3: Regular Usage, 60% of users hit blocker X")
+   - Churn signals (if noted)
+   - Customer impact quantified (if available: % affected, time lost, revenue impact)
+
+   **From Research-to-Decision-Index:**
+   ```
+   Find row(s) matching this opportunity:
+   | Problem | Persona | Stage | Research Finding | Evidence Source | Confidence | Strategic Implication |
+   | [Match] | [Pers]  | [S]   | [Finding]        | [Source, N=X]   | [HIGH]     | [Action implication] |
+   ```
+
+   **From Strategic-Findings-[Quarter]:**
+   - Top 3 research findings for this topic
+   - Market opportunity quantification (TAM/SAM/SOM with confidence)
+   - Risk assessment (technical/org/timing barriers)
+
+   **Post Wiki Verification Comment:**
+   ```
+   ✅ Research Wiki Verified - Ready for Phase 2 Validation
+
+   Wiki Pages Reviewed:
+   - Personas-[Name]: Evidence N=[X], Confidence [HIGH]
+   - Journey-Maps-[Name]: [X%] users hit Stage [N] friction
+   - Research-to-Decision-Index: [X] findings linked to decision
+   - Strategic-Findings-[Quarter]: Market opportunity quantified
+
+   Proceeding to final validation with research evidence.
+   ```
+
 3. **Evaluate Follow-On Research Needs (Before final decision):**
    
    Read research comments for severity-rated Next Steps Assessment:
