@@ -446,71 +446,99 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    Create this issue in your GitHub repo. The PM agent will read it from the backlog.
 
-2. **Invoke the PM-PO Orchestrator** via CLI:
+2. **Invoke the PM orchestrator** (Terminal 1):
 
-   First, copy the PM-PO orchestrator template to your active agent location:
+   Copy the PM orchestrator template to your active agent location:
 
    ```bash
-   cp templates/agents/orchestrator.pm-po.agent.md .github/agents/orchestrator.agent.md
+   cp templates/agents/orchestrator.pm.agent.md .github/agents/orchestrator.agent.md
    ```
 
-   Then run the orchestrator:
+   Then run it:
 
    ```bash
    copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
-     -p "Start the PM-PO orchestrator."
+     -p "Start the PM orchestrator."
    ```
 
-   The orchestrator will (autonomously, from its contract in orchestrator.pm-po.agent.md):
-   - Scan for pm-idea issues
-   - Invoke the PM agent to research and create strategic-opportunity issues
-   - Invoke the PO agent to prioritize and create feature-requests with priority scores
-   - Move feature-requests to Ready for Development
-   - Report what was created
+   The PM orchestrator will (autonomously, from its contract in orchestrator.pm.agent.md):
+   - Find unprocessed `pm-idea` issues
+   - Spawn PM agent to research and validate each idea
+   - Output `strategic-opportunity` issues with CHAMPION/DEFER/BLOCK decisions
+   - Link back to source pm-idea and update Research Wiki
+   - Loop back to find the next pm-idea
+   - Continue until you press Ctrl+C
 
-3. **Wait for the PM-PO Orchestrator to finish.** Review what it created:
-   
-   **Check the `strategic-opportunity` issue:**
-   - Does it have research findings (support tickets, customer mentions, competitive context)?
-   - Is validation credible and specific?
-   - Is the decision clear (CHAMPION/DEFER/BLOCK)?
-   - Are Research Wiki pages linked (personas, journey maps, decision reasoning)?
-   
-   **Check the `feature-request` issue:**
-   - Does it have a clear user story (As a field manager, I want...)?
-   - Are acceptance criteria testable?
-   - Is the priority score included and parseable? (e.g., `Priority Score: 2.3`)
-   - Is it linked to the strategic-opportunity?
-   - Is it in "Ready for Development" column?
+3. **In a second terminal, invoke the PO orchestrator** (Terminal 2):
 
-4. **Invoke the Development Orchestrator** via CLI:
+   Copy the PO orchestrator template to your active agent location:
 
-   In a second terminal, copy the Development orchestrator template to your active agent location:
+   ```bash
+   cp templates/agents/orchestrator.po.agent.md .github/agents/orchestrator.agent.md
+   ```
+
+   Then run it (in parallel with the PM orchestrator):
+
+   ```bash
+   copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
+     -p "Start the PO orchestrator."
+   ```
+
+   The PO orchestrator will (autonomously, from its contract in orchestrator.po.agent.md):
+   - Find CHAMPION `strategic-opportunity` issues without corresponding feature-requests
+   - Spawn PO agent to evaluate and prioritize each opportunity
+   - Create `feature-request` issues with priority scores and acceptance criteria
+   - Move feature-requests to "Ready for Development" column
+   - Link back to source strategic-opportunity
+   - Loop back to find the next unprocessed opportunity
+   - Continue until you press Ctrl+C
+
+   **Both orchestrators now run concurrently in separate terminals:**
+   - Terminal 1 (PM): Discovering and validating ideas
+   - Terminal 2 (PO): Prioritizing validated opportunities
+   - Neither waits for the other; both work asynchronously
+
+4. **Observe what both orchestrators produce** (or optionally invoke Development Orchestrator in Terminal 3):
+
+   Watch the PM and PO orchestrators process your pm-idea:
+   - Terminal 1 (PM): Creates strategic-opportunity issue with research findings
+   - Terminal 2 (PO): Creates feature-request issue with priority score, moves to "Ready for Development"
+
+   **Optional: Route through Development Pipeline**
+
+   If you want to see the feature flow through development (Intake → Design → Build), open a third terminal and start the Development Orchestrator:
 
    ```bash
    cp templates/agents/orchestrator.development.agent.md .github/agents/orchestrator.agent.md
-   ```
-
-   Then run the orchestrator:
-
-   ```bash
    copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
      -p "Start the Development orchestrator."
    ```
 
-   The orchestrator will (autonomously, from its contract in orchestrator.development.agent.md):
-   - Parse priority scores from all Ready for Development issues
-   - Pull the highest-priority issue
+   The Development orchestrator will:
+   - Parse priority scores from all issues in "Ready for Development"
+   - Pull the highest-priority issue created by PO orchestrator
    - Route it through Intake → Design → Build
    - Create design documentation and architecture decisions
    - Generate build task breakdown and code scaffolding
-   - Report all decisions and artifacts created
 
-5. **Observe the output.** What you should see:
+5. **Review the output and verify full traceability:**
+
+   **From PM Orchestrator (Terminal 1):**
+   - `strategic-opportunity` issue with research findings, customer validation, decision label (CHAMPION/DEFER/BLOCK)
+   - Research Wiki updates (personas, journey maps, decision reasoning)
+   - Links back to source pm-idea
+
+   **From PO Orchestrator (Terminal 2):**
+   - `feature-request` issue with user story, acceptance criteria, priority score
+   - Positioned in "Ready for Development" column
+   - Links back to strategic-opportunity
+
+   **From Development Orchestrator (Terminal 3, if running):**
    - Intake: Issue validated, moved to "In Development"
    - Design: Architecture decision, wireframes, interaction model, risk assessment
    - Build: Code scaffolding, task breakdown, test cases
-   - All stages linked back to the original pm-idea → strategic-opportunity → feature-request (full traceability)
+
+   **Full traceability chain:** pm-idea → strategic-opportunity → feature-request → intake → design → code
 
 ---
 
@@ -520,25 +548,29 @@ After the end-to-end run, review the artifacts and verify the full flow:
 
 **What happened (the complete flow):**
 1. **You created** `pm-idea` issue → User input describing a problem
-2. **PM-PO Orchestrator autonomously:**
+2. **PM Orchestrator processed it autonomously** (Terminal 1):
    - PM agent researched → created `strategic-opportunity` issue with findings, validation, decision
    - PM agent populated Research Wiki (personas, journey maps, decision record)
+3. **PO Orchestrator processed it autonomously** (Terminal 2):
    - PO agent read strategic-opportunity → created `feature-request` with priority score → moved to "Ready for Development"
-3. **Development Orchestrator pulled** the feature-request (highest priority first) → routed through Intake → Design → Build
+4. **Development Orchestrator pulled it** (Terminal 3, optional):
+   - Routed through Intake → Design → Build
+   - Created intake, design, and build artifacts
 
 **What you learned:**
-- The PM agent autonomously researched a real problem and documented findings credibly
-- The PO agent converted that research into a shippable feature with clear acceptance criteria and priority
+- The PM agent autonomously researched a real problem and documented findings credibly (Terminal 1 workflow)
+- The PO agent independently prioritized that research into a shippable feature with clear acceptance criteria (Terminal 2 workflow)
+- Both PM and PO worked concurrently without blocking each other (separate terminals, parallel execution)
 - The Development orchestrator deterministically pulled the highest-priority issue and created intake, design, and build artifacts
 - **Full traceability:** pm-idea → strategic-opportunity → feature-request → intake → design → code
+- **Three independent loops** (PM, PO, Development) can all run in parallel without coordination overhead
 
 **Verify traceability:**
-- Navigate to the `pm-idea` issue you created → see link to strategic-opportunity created by PM agent
-- Navigate to the `strategic-opportunity` issue → see Research Wiki links (personas, journey maps, decision reasoning) created by PM agent
-- Navigate to the `feature-request` issue → see link back to strategic-opportunity, priority score included, acceptance criteria present
-- Navigate to the intake issue → see link back to feature-request, BA questions, clarifications
-- Navigate to the design document → see architecture decisions, wireframes, risk assessment
-- All artifacts reference each other; no decision is orphaned
+- Navigate to the `pm-idea` issue you created → see link to `strategic-opportunity` created by PM orchestrator (Terminal 1)
+- Navigate to the `strategic-opportunity` issue → see Research Wiki links (personas, journey maps, decision reasoning) and final decision label (CHAMPION)
+- Navigate to the `feature-request` issue → see link back to strategic-opportunity, priority score included, acceptance criteria present (created by PO orchestrator, Terminal 2)
+- Navigate to the intake/design/build issues (if Development orchestrator ran) → see full pipeline trace back to pm-idea
+- All artifacts reference each other in a complete chain; no decision is orphaned
 
 **Identify any gaps:**
 - If research was thin, note what was missing (PM agent opportunity for improvement)
