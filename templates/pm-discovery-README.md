@@ -18,7 +18,7 @@ The PM agent runs continuously as part of orchestration, checking for new `pm-id
 
 ```bash
 gh issue create \
-  --title "Mobile app for field teams" \
+  --title "[pm-idea]: Mobile app for field teams" \
   --body "4 support tickets this week about checking out equipment from the field" \
   --label "pm-idea"
 ```
@@ -30,7 +30,7 @@ gh issue create \
 
 **Rich example:**
 ```
-Title: Mobile app for field teams
+Title: [pm-idea]: Mobile app for field teams
 Body:
 - Support tickets: #245, #312, #478 (all mention "can't checkout from field")
 - Customer signal: 4 enterprise customers mentioned this in recent calls
@@ -207,7 +207,7 @@ If recommendation changes, agent updates labels and decision.
 
 ### Day 1: User submits idea
 ```
-Issue Title: Mobile app for field teams
+Issue Title: [pm-idea]: Mobile app for field teams
 Label: pm-idea
 Body: 4 support tickets this week about checkout from field. Competitor X doesn't have mobile.
 ```

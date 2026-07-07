@@ -212,7 +212,7 @@ In a browser or second terminal, create a GitHub issue using the `.github/ISSUE_
 Use this fully-formed example for the Team Equipment Checkout Tracker:
 
 ```markdown
-Title: Prevent double checkout of the same item
+Title: [feature-request]: Prevent double checkout of the same item
 
 ## Problem Statement
 An operations coordinator can check out an item that is already checked out
@@ -378,7 +378,7 @@ Now that V3 is running continuously, create two additional features. They will b
 Create a new issue using the template:
 
 ```markdown
-Title: Show checkout history for each item
+Title: [feature-request]: Show checkout history for each item
 
 ## Problem Statement
 There is no way to see the history of who has checked out a specific item.
@@ -418,7 +418,7 @@ Coordinators need audit capability for equipment disputes.
 Create a third new issue:
 
 ```markdown
-Title: Flag overdue checkout items in the list
+Title: [feature-request]: Flag overdue checkout items in the list
 
 ## Problem Statement
 Coordinators cannot see at a glance which items have been checked out past

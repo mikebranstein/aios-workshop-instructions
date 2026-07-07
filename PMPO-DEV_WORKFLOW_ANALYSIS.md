@@ -74,7 +74,7 @@
 **Example Structure** (from pm-orchestrator.agent.md):
 
 ```markdown
-Title: Strategic Opportunity - Mobile App for Field Teams
+Title: [strategic-opportunity]: Mobile App for Field Teams
 
 Link to source: pm-idea #34
 
@@ -145,7 +145,7 @@ Use the template you customized in Module 2 - Intake Quality Template
 **Example from PO Agent:**
 
 ```markdown
-Title: Mobile App - iOS Checkout for Field Teams
+Title: [feature-request]: Mobile App - iOS Checkout for Field Teams
 
 Linked to: strategic-opportunity #42
 

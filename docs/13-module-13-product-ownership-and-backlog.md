@@ -189,7 +189,7 @@ That's it. When the PM agent runs for the first time, it will automatically crea
 
 **Example:**
 ```
-Title: Mobile app for field teams
+Title: [pm-idea]: Mobile app for field teams
 Labels: pm-idea
 Body: 
 - 4 support tickets this week about "can't checkout from field"
@@ -209,7 +209,7 @@ Body:
 ---
 name: PM Idea
 about: Submit a feature idea for product discovery
-title: "[PM Idea]: "
+title: "[pm-idea]: "
 labels: 'pm-idea'
 assignees: ''
 
@@ -239,7 +239,7 @@ assignees: ''
 
 **Example:**
 ```
-Title: Strategic Opportunity - Mobile app for field teams
+Title: [strategic-opportunity]: Mobile app for field teams
 
 Research Findings:
 - 12 support tickets about field checkout over 4 weeks
@@ -267,7 +267,7 @@ Decision: CHAMPION → Ready for PO prioritization
 ---
 name: Strategic Opportunity
 about: PM research, validation, and strategic decision
-title: "[Strategic Opportunity]: "
+title: "[strategic-opportunity]: "
 labels: 'pm-opportunity'
 assignees: ''
 
@@ -429,7 +429,7 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
    **Example `pm-idea` for this workshop project:**
    
    ```
-   Title: Mobile checkout for field teams - field teams waste 2-3 hours/day returning to office for equipment checkout
+   Title: [pm-idea]: Mobile checkout for field teams - field teams waste 2-3 hours/day returning to office for equipment checkout
    Label: pm-idea
    Body: 8 support tickets in the last month from our largest customers requesting mobile access. Competitor just launched mobile app. Blocking upsell to field-heavy customers.
    ```
@@ -549,7 +549,7 @@ When PM orchestrator finds a new `pm-idea`:
    - What research exists in the Wiki already?
 
 3. PM agent creates **research work items** for missing research:
-   - Issue title: "Research: [Persona Name] for [Opportunity]"
+   - Issue title: "[research]: [Persona Name] for [Opportunity]"
    - Label: `research`, `pm-work`
    - Due: 2 weeks
    - Body: Guidance on conducting 5+ interviews and updating Research Wiki

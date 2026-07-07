@@ -127,7 +127,7 @@ cp templates/agents/orchestrator.v4.agent.md .github/agents/orchestrator.agent.m
 Create Feature 5 with vague, incomplete requirements that will trigger intake-blocked:
 
 ```bash
-gh issue create --title "Feature 5: Improve checkout history" \
+gh issue create --title "[feature-request]: Improve checkout history" \
   --body "We need to show more information about past checkouts so users can see what they've borrowed."
 ```
 

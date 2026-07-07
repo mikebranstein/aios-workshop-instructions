@@ -150,7 +150,7 @@ copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
 Once Features 1, 2, 3 are done verifying, create a 4th feature to see the complete pipeline from start to finish:
 
 ```bash
-gh issue create --title "Feature 4: Add pagination to checkout history" \
+gh issue create --title "[feature-request]: Add pagination to checkout history" \
   --body "Show checkout history for each item in a paginated list with 10 items per page."
 ```
 
