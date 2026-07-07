@@ -81,54 +81,93 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
 - If Round 2 follow-on research identifies more CRITICAL items: PM Phase 2 decides DEFER (research is sufficient, do not spawn Round 3)
 - This prevents infinite research loops
 
-3b. **Spawn Research Agent on all research items** (autonomous research execution):
-   - Find all `research:` items linked to this pm-idea:
-     ```bash
-     gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | grep research
-     ```
-   - For each research item found, spawn Research agent:
-     ```bash
-     for research_item in $research_items; do
-       task(description="Conduct comprehensive research on issue #${research_item}", agent_id="research-agent")
-     done
-     ```
-   - Research agent will autonomously:
-     - Analyze competitive landscape
-     - Research market trends
-     - Extract persona insights from data
-     - Map customer journey stages
-     - Update Research Wiki
-     - Close research item when complete
-   - **Proceed to step 4**
-
-4. **Monitor for research completion** (same issue):
+3b. **Spawn Research Agent on all research items - SEQUENTIAL** (one at a time, not parallel):
    
-   Check for BOTH initial research AND follow-on research items:
+   Find all `research:` items linked to this pm-idea:
    ```bash
-   # Find all research: items (initial and follow-on)
-   gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | while read research_item; do
-     # Check if this is initial research OR follow-on research
-     label=$(gh issue view $research_item --json labels)
-     status=$(gh issue view $research_item --json state)
+   gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | grep research
+   ```
+   
+   **CRITICAL: Spawn research agents SEQUENTIALLY, not in parallel**
+   
+   Why sequential?
+   - Multiple Research Agents updating Wiki simultaneously = race conditions
+   - Wiki page edits can collide/overwrite if done in parallel
+   - Single-threading prevents data corruption
+   - Clearer progress visibility
+   
+   Spawn and monitor ONE research item at a time:
+   ```bash
+   for research_item in $research_items; do
+     # Spawn THIS research item
+     task(description="Conduct comprehensive research on issue #${research_item}", agent_id="research-agent")
      
-     if status is OPEN; then
-       echo "Research still working on #${research_item}..."
-       exit 1
-     fi
+     # WAIT FOR THIS RESEARCH ITEM TO CLOSE before spawning next
+     while true; do
+       status=$(gh issue view $research_item --json state --jq '.state')
+       if [ "$status" = "CLOSED" ]; then
+         echo "Research item #${research_item} complete. Wiki updates finished."
+         break
+       fi
+       echo "Waiting for research #${research_item} to complete..."
+       sleep 10  # Check every 10 seconds
+     done
+     
+     # Only after THIS item closes, spawn the NEXT research item
    done
    ```
-   - If ANY research items (initial or follow-on) still OPEN → Output "Research in progress on #23, #24, #25..." → **End cycle, wait 30 seconds, loop back to step 4**
-   - If ALL research items CLOSED (including follow-on) → **Proceed to step 5**
+   
+   Each Research Agent will autonomously:
+   - Analyze competitive landscape
+   - Research market trends
+   - Extract persona insights from data
+   - Map customer journey stages
+   - **UPDATE RESEARCH WIKI (one agent at a time, no collisions)**
+   - Close research item when complete
+   
+   **Proceed to step 4 only after ALL research items are closed**
+
+4. **Verify research completion** (all research items now complete):
+   
+   Since Step 3b **waits for each research item to close before spawning the next**, by the time you reach Step 4:
+   - ✅ All research items are CLOSED
+   - ✅ All Wiki updates are complete (single-threaded, no collisions)
+   - ✅ No conflicts in wiki page edits
+   
+   Verify ALL research items are closed:
+   ```bash
+   # List all linked research items
+   gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | while read research_item; do
+     status=$(gh issue view $research_item --json state --jq '.state')
+     echo "Research #${research_item}: $status"
+   done
+   
+   # All should show CLOSED
+   ```
+   
+   If any are OPEN:
+   - ERROR: Step 3b should have waited for all to close
+   - Check if a Research Agent failed mid-execution
+   - Post comment on pm-idea: "Research item #[N] stuck. Investigating..."
+   
+   Otherwise: **Proceed to step 5**
 
 5. **Spawn PM agent for PHASE 2 (same issue):**
-   - Post routing comment: "All research items complete (Round 1 + any Round 2 follow-on). Starting Phase 2 Final Validation on this pm-idea..."
-   - Spawn: `task(description="Validate pm-idea on issue #N with completed research - Phase 2 Final Validation (may spawn CRITICAL follow-on research if needed)", agent_id="product-manager")`
+   - Post routing comment: "All research items complete (Round 1 + any Round 2 follow-on, processed sequentially). Starting Phase 2 Final Validation on this pm-idea..."
+   - Spawn: `task(description="Validate pm-idea on issue #N with completed research - Phase 2 Final Validation (may identify CRITICAL follow-on research)\", agent_id="product-manager")`
    - **Wait for completion**
    
    What Phase 2 does:
+   - Reads all completed Wiki pages (updated by Research Agents, one at a time)
    - Evaluates CRITICAL next steps (severity-rated by Research Agent)
-   - If CRITICAL items exist: Spawns follow-on research, loops back to step 4
+   - If CRITICAL items exist: Creates follow-on research item, RETURNS TO STEP 3B
    - If NO CRITICAL items: Makes final CHAMPION/DEFER/BLOCK decision
+   
+   **If Phase 2 creates follow-on research:**
+   - Orchestrator loops back to Step 3b
+   - Follow-on research item is processed sequentially (same as initial research)
+   - Then loops back to Step 5 for Phase 2 final decision
+   - (Max 2 research rounds total per pm-idea, enforced by guardrail)
 
 6. **Phase 2 Agent Output:**
    - Read completed Research Wiki
