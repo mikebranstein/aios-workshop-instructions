@@ -413,35 +413,19 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
 1. **Create a `pm-idea` GitHub issue** as your starting input (this is what users or customer success would submit):
 
-   Use this template for a `pm-idea` issue:
+   Use this format for a `pm-idea` issue:
    ```
-   Title: [Simple problem statement]
-   Labels: pm-idea
-   
-   ## Problem Statement
-   [1-2 sentences describing a customer problem or market opportunity]
-   
-   ## Customer Segment
-   [Who has this problem?]
-   
-   ## Why Now
-   [What triggered this idea? (customer feedback, support tickets, competitive pressure, internal need)]
+   Title: [1-3 sentence feature idea]
+   Label: pm-idea
+   Body (optional): Customer trigger, competitive context, strategic rationale, or support ticket references
    ```
 
    **Example `pm-idea` for this workshop project:**
    
    ```
-   Title: Mobile checkout for field teams
-   Labels: pm-idea
-   
-   ## Problem Statement
-   Field equipment checkout currently requires teams to return to the office to use the desktop system. This wastes 2-3 hours per day in travel time for facility teams working remotely or at distributed sites.
-   
-   ## Customer Segment
-   Facility managers and equipment coordinators at mid-market companies (50-500 employees) who manage equipment across multiple locations.
-   
-   ## Why Now
-   We've seen 8 support tickets in the last month from our largest customers requesting mobile access to checkout. Our competitor just launched a basic mobile app. This is blocking upsell to field-heavy customers.
+   Title: Mobile checkout for field teams - field teams waste 2-3 hours/day returning to office for equipment checkout
+   Label: pm-idea
+   Body: 8 support tickets in the last month from our largest customers requesting mobile access. Competitor just launched mobile app. Blocking upsell to field-heavy customers.
    ```
 
    Create this issue in your GitHub repo. The PM agent will read it from the backlog.
@@ -458,7 +442,7 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    ```bash
    copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
-     -p "Start the PM orchestrator."
+     -p "Start the PM orchestrator. Run continuously in an infinite loop. Check every 30 seconds for new unprocessed pm-idea issues. Do not stop until Ctrl+C."
    ```
 
    The PM orchestrator will (autonomously, from its contract in orchestrator.pm.agent.md):
@@ -481,7 +465,7 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    ```bash
    copilot --autopilot --allow-all-tools --enable-all-github-mcp-tools \
-     -p "Start the PO orchestrator."
+     -p "Start the PO orchestrator. Run continuously in an infinite loop. Check every 30 seconds for new CHAMPION strategic-opportunities without feature-requests. Do not stop until Ctrl+C."
    ```
 
    The PO orchestrator will (autonomously, from its contract in orchestrator.po.agent.md):
@@ -540,6 +524,26 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    **Full traceability chain:** pm-idea → strategic-opportunity → feature-request → intake → design → code
 
+### pm-idea Issue Lifecycle
+
+When you create a pm-idea issue, here's what happens to it during orchestration:
+
+**1. Initial state:** `pm-idea` issue is open, unprocessed
+
+**2. PM Orchestrator processes it:**
+   - Adds label: `pm-validating` (so it's not picked up twice)
+   - PM agent researches the opportunity, validates with stakeholders
+   - PM agent creates `strategic-opportunity` issue with findings
+
+**3. PM agent closes the pm-idea issue:**
+   - If **CHAMPION** (validated + strategically important): Closes with comment "Strategic-opportunity issue #X created and ready for PO prioritization. See link for research findings."
+   - If **DEFER** (valid but not strategic now): Closes with comment "Valid opportunity but not strategically important now. Deferred for quarterly re-evaluation."
+   - If **BLOCK** (doesn't fit strategy): Closes with comment "Decision: BLOCK. Doesn't fit market anchor or validation was weak."
+
+**Why close it?** Keeping pm-ideas open forever creates confusion and noise. Closing them documents the decision and moves the conversation to the relevant downstream issue (strategic-opportunity or quarterly review). The research and reasoning are recorded in the closed issue's comments and the strategic-opportunity.
+
+**Timeline:** pm-idea stays open for approximately 10-30 minutes (PM agent research time), then closes with decision documented.
+
 ---
 
 ## Step 7 (10 minutes): Review what the orchestration produced
@@ -591,7 +595,8 @@ After the end-to-end run, review the artifacts and verify the full flow:
 
 2. **Product Manager role understood** (Step 1)
    - Can explain: strategic discovery, validation, opportunity evaluation, decision-making
-   - Understand what PM does (research, validate, create `strategic-opportunity` issues) vs. what PO does (create `feature-request` issues for development)
+   - Understand what PM does (research, validate, create `strategic-opportunity` issues, **close pm-idea issues with decision**) vs. what PO does (create `feature-request` issues for development)
+   - Understand pm-idea lifecycle: created by user → processed by PM agent → closed with decision reasoning
 
 3. **Product Owner role understood** (Step 2)
    - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-request` issues

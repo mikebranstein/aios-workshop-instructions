@@ -82,8 +82,13 @@ Once triggered by orchestrator or manually invoked, execute:
 6. **Update state on `pm-idea`**:
    - Apply label: `pm-opportunity` (CHAMPION), `pm-deferred` (DEFER), `pm-blocked` (BLOCK)
    - Move in Projects board accordingly
+   - **Close the issue** with a summary comment:
+     - **If CHAMPION:** "Strategic-opportunity issue #X created and ready for PO prioritization. See link for research findings and validation. Closing this pm-idea."
+     - **If DEFER:** "Valid opportunity but not strategically important now. Deferred for quarterly re-evaluation. Closing this pm-idea."
+     - **If BLOCK:** "Decision: BLOCK. Doesn't fit market anchor or validation was weak. Closing this pm-idea."
+
 7. **Notify PO** (if CHAMPION):
-   - Post comment: "Strategic-opportunity issue created and ready for PO prioritization"
+   - Post comment on strategic-opportunity: "Ready for PO prioritization. Research findings and validation above."
 
 ### State Tracking
 

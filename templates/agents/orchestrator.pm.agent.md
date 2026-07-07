@@ -26,9 +26,9 @@ For the first unprocessed `pm-idea` issue found, route as follows:
 | Current issue state              | Action                                                          |
 |----------------------------------|-----------------------------------------------------------------|
 | `pm-idea` label, no `pm-validating` label | Spawn PM agent: `task(description="Discover and validate pm-idea on issue #N", agent_id="product-manager")` |
-| `pm-idea` + `pm-opportunity` label (CHAMPION) | Move to "Ready for PO" column in Projects board; PO orchestrator will pick it up next |
-| `pm-idea` + `pm-deferred` label (DEFER) | Archive for quarterly review; skip to next pm-idea |
-| `pm-idea` + `pm-blocked` label (BLOCK) | Archive decision; skip to next pm-idea |
+| `pm-idea` + `pm-opportunity` label (CHAMPION) | PM agent already created `strategic-opportunity` and closed this `pm-idea`. Skip. |
+| `pm-idea` + `pm-deferred` label (DEFER) | PM agent already processed and closed this `pm-idea` (deferred for quarterly review). Skip. |
+| `pm-idea` + `pm-blocked` label (BLOCK) | PM agent already processed and closed this `pm-idea` (blocked). Skip. |
 
 ---
 
@@ -50,10 +50,11 @@ For the first unprocessed `pm-idea` issue found, route as follows:
 4. Wait for the spawned task to complete. The PM agent will:
    - Research the market opportunity
    - Validate with customers
-   - Create a `strategic-opportunity` GitHub issue with research findings
+   - Create a `strategic-opportunity` GitHub issue with research findings (if CHAMPION)
    - Apply final decision labels: `pm-opportunity` (CHAMPION), `pm-deferred` (DEFER), or `pm-blocked` (BLOCK)
    - Link back to this pm-idea issue
    - Update the Research Wiki with findings (personas, journey maps, decision reasoning)
+   - **Close this pm-idea issue** with a summary comment (CHAMPION → link to strategic-opportunity; DEFER/BLOCK → explanation)
 
 5. Output cycle summary:
    ```
