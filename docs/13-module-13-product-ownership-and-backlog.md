@@ -524,25 +524,69 @@ Now create a `pm-idea` issue and invoke the PM-PO Orchestrator to handle the ful
 
    **Full traceability chain:** pm-idea → strategic-opportunity → feature-request → intake → design → code
 
-### pm-idea Issue Lifecycle
+### pm-idea Issue Lifecycle: Two-Phase Validation
 
-When you create a pm-idea issue, here's what happens to it during orchestration:
+When you create a pm-idea issue, the PM orchestrator processes it through **two phases** to ensure decisions are backed by customer research:
 
-**1. Initial state:** `pm-idea` issue is open, unprocessed
+#### **PHASE 1: Research Gate (10-15 min)**
 
-**2. PM Orchestrator processes it:**
-   - Adds label: `pm-validating` (so it's not picked up twice)
-   - PM agent researches the opportunity, validates with stakeholders
-   - PM agent creates `strategic-opportunity` issue with findings
+When PM orchestrator finds a new `pm-idea`:
 
-**3. PM agent closes the pm-idea issue:**
-   - If **CHAMPION** (validated + strategically important): Closes with comment "Strategic-opportunity issue #X created and ready for PO prioritization. See link for research findings."
-   - If **DEFER** (valid but not strategic now): Closes with comment "Valid opportunity but not strategically important now. Deferred for quarterly re-evaluation."
-   - If **BLOCK** (doesn't fit strategy): Closes with comment "Decision: BLOCK. Doesn't fit market anchor or validation was weak."
+1. PM agent does **quick validation**:
+   - Does a credible customer signal exist? (support tickets, customer feedback)
+   - Does it fit strategic pillars (high-level)?
+   - If **NO** → BLOCK or DEFER immediately, close pm-idea → Done
 
-**Why close it?** Keeping pm-ideas open forever creates confusion and noise. Closing them documents the decision and moves the conversation to the relevant downstream issue (strategic-opportunity or quarterly review). The research and reasoning are recorded in the closed issue's comments and the strategic-opportunity.
+2. If **YES signal** → PM agent identifies research gaps:
+   - What personas are affected?
+   - What journey stages matter?
+   - What research exists in the Wiki already?
 
-**Timeline:** pm-idea stays open for approximately 10-30 minutes (PM agent research time), then closes with decision documented.
+3. PM agent creates **research work items** for missing research:
+   - Issue title: "Research: [Persona Name] for [Opportunity]"
+   - Label: `research`, `pm-work`
+   - Due: 2 weeks
+   - Body: Guidance on conducting 5+ interviews and updating Research Wiki
+
+4. PM agent creates **strategic-opportunity issue** with status: "PENDING RESEARCH VALIDATION"
+   - Links all research items
+   - Marks with `pm-provisional-champion` label (not final yet)
+   - **pm-idea stays OPEN** (doesn't close yet)
+
+**Your responsibility in Phase 1:** Research work items are now created. Your PM team must conduct the interviews and update the Research Wiki pages (Personas, Journey Maps) with findings.
+
+#### **PHASE 2: Final Validation (10-15 min) - Triggered when research items close**
+
+When all linked research items are **closed** (research completed and Wiki updated):
+
+1. PM orchestrator detects Phase 1 is complete and triggers Phase 2
+
+2. PM agent re-reads the `pm-idea` and checks the completed Research Wiki:
+   - What do the N interviews reveal about personas?
+   - What journey map patterns emerged?
+   - What competitive positioning data exists?
+
+3. PM agent **validates with full research evidence**:
+   - Is this CHAMPION, DEFER, or BLOCK based on research?
+   - If CHAMPION confirmed → Continue to step 4
+   - If research changed decision → DEFER or BLOCK
+
+4. PM agent **closes the pm-idea** with decision:
+   - If **CHAMPION** (validated with research): "Validated with customer research. See strategic-opportunity #X for findings. Closing pm-idea."
+   - If **DEFER** (research shows wrong timing): "Research shows market timing wrong. Deferred for Q[X] review. Closing pm-idea."
+   - If **BLOCK** (research shows weak fit): "Research revealed weak persona fit. Decision: BLOCK. Closing pm-idea."
+
+**Timeline:**
+- Phase 1: 10-15 min (quick validation + research gate setup)
+- Research execution: 2 weeks (your team's responsibility)
+- Phase 2: 10-15 min (final validation with completed research)
+- **Total: ~2 weeks before decision is final**
+
+**Why two phases?**
+- Phase 1 gates: Prevents wasting time researching ideas with no signal
+- Research work tracking: Research tasks are explicit GitHub issues, not orphaned Wiki pages
+- Phase 2 validation: Decisions backed by actual customer interviews (15+ hours of work)
+- Quality assurance: Weak ideas are blocked early; strong ideas are thoroughly validated before PO resources them
 
 ---
 
@@ -552,12 +596,21 @@ After the end-to-end run, review the artifacts and verify the full flow:
 
 **What happened (the complete flow):**
 1. **You created** `pm-idea` issue → User input describing a problem
-2. **PM Orchestrator processed it autonomously** (Terminal 1):
-   - PM agent researched → created `strategic-opportunity` issue with findings, validation, decision
-   - PM agent populated Research Wiki (personas, journey maps, decision record)
-3. **PO Orchestrator processed it autonomously** (Terminal 2):
+2. **PM Orchestrator Phase 1 processed it** (Terminal 1):
+   - PM agent quick-validated → Created research work items for gaps
+   - Created `strategic-opportunity` issue (PENDING RESEARCH VALIDATION)
+   - Identified personas/journey maps that need research
+3. **Research team executed** (manual, 2 weeks):
+   - Conducted 5+ interviews per persona
+   - Updated Research Wiki (Personas, Journey Maps, Interview Transcripts)
+   - Closed research work items when done
+4. **PM Orchestrator Phase 2 processed it** (Terminal 1, after research items closed):
+   - PM agent re-validated with complete research
+   - Updated `strategic-opportunity` with research findings
+   - Final decision: CHAMPION/DEFER/BLOCK
+5. **PO Orchestrator processed it autonomously** (Terminal 2, after Phase 2):
    - PO agent read strategic-opportunity → created `feature-request` with priority score → moved to "Ready for Development"
-4. **Development Orchestrator pulled it** (Terminal 3, optional):
+6. **Development Orchestrator pulled it** (Terminal 3, optional):
    - Routed through Intake → Design → Build
    - Created intake, design, and build artifacts
 
@@ -594,26 +647,32 @@ After the end-to-end run, review the artifacts and verify the full flow:
    - `feature-request` (PO output): user story, acceptance criteria, priority score
 
 2. **Product Manager role understood** (Step 1)
-   - Can explain: strategic discovery, validation, opportunity evaluation, decision-making
-   - Understand what PM does (research, validate, create `strategic-opportunity` issues, **close pm-idea issues with decision**) vs. what PO does (create `feature-request` issues for development)
-   - Understand pm-idea lifecycle: created by user → processed by PM agent → closed with decision reasoning
+   - Can explain: strategic discovery, validation, opportunity evaluation, decision-making backed by customer research
+   - Understand two-phase PM workflow: 
+     - Phase 1 (Research Gate): Quick validation + identify research gaps + create research work items
+     - Phase 2 (Final Validation): Research completion triggers final validation + decision + pm-idea closure
+   - Understand what PM does (research gate, validate, create strategic-opportunity issues, create research work items) vs. what PO does (create feature-request issues)
+   - Understand pm-idea lifecycle: created by user → Phase 1 gate → research execution (manual) → Phase 2 validation → closed with decision
 
 3. **Product Owner role understood** (Step 2)
    - Can explain: consuming `strategic-opportunity` issues, value assessment, priority scoring, creating `feature-request` issues
-   - Understand relationship: PM validates market opportunities; PO converts them to actionable development tasks
+   - Understand relationship: PM validates market opportunities with research; PO converts them to actionable development tasks
+   - Understand: PO only acts AFTER Phase 2 completes (after research is done)
 
 3b. **GitHub Wiki enabled** (Step 3b)
    - GitHub Wiki feature enabled in Repository Settings → Features
-   - Understand: PM agent will create Research Wiki pages on first run
-   - Understand: How to link from strategic-opportunity issues to research wiki pages
+   - Understand: PM agent will create Research Wiki skeleton pages on first run
+   - Understand: Research work items guide your team in filling Wiki pages with interview data
    - Familiar with [User Research & Personas Skill](../templates/skills/user-research-and-personas.md)
 
 4. **PM and PO agent capabilities reviewed** (Step 5)
-   - Can articulate: What PM agent discovers (research, validation, strategic-opportunity creation)
+   - Can articulate: Phase 1 workflow (quick gate + research item creation)
+   - Can articulate: Phase 2 workflow (triggered when research items close; final validation + decision)
+   - Can articulate: What PM agent creates (strategic-opportunity, research work items, Wiki links)
    - Can articulate: What PO agent does (read strategy, prioritize, create feature-request)
    - Can articulate: What Development orchestrator does (intake, design, build routing)
-   - Understand: Your role is to create pm-idea issues and invoke orchestrators; agents do the work
-   - Understand: Orchestration is autonomous; you observe and review decisions
+   - Understand: PM agent is responsible for both phases; your team is responsible for research execution
+   - Understand: Orchestration is autonomous for gates and decisions; manual research work required between phases
 
 5. **PO Skill Files understood** (Step 5)
    - Familiar with [Release Coordination](../templates/skills/release-coordination.md) (multi-team dependencies, feature flags, launch checklists)
@@ -624,7 +683,9 @@ After the end-to-end run, review the artifacts and verify the full flow:
 
 6. **End-to-end orchestration completed** (Step 6)
    - Created 1 `pm-idea` issue (user input with problem statement)
-   - PM agent researched and created 1 `strategic-opportunity` issue with findings, validation, and Research Wiki links
+   - PM orchestrator Phase 1: researched and created 1 `strategic-opportunity` (PENDING RESEARCH) + N research work items
+   - Your team: Completed research work items (filled Wiki pages with N interviews)
+   - PM orchestrator Phase 2: Re-validated and updated strategic-opportunity with final decision (CHAMPION/DEFER/BLOCK)
    - PO agent created 1 `feature-request` issue with priority score and moved to "Ready for Development"
    - Development orchestrator pulled feature-request (highest priority first) and created Intake/Design/Build artifacts
    - Full traceability: pm-idea → strategic-opportunity → feature-request → intake → design → code

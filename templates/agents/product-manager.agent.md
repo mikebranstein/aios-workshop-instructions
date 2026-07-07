@@ -55,55 +55,190 @@ Body: 4 support tickets this week mentioning "can't checkout from field"
 Label: pm-idea
 ```
 
-### Autonomous Workflow
+### Autonomous Workflow: Two-Phase Validation
 
-Once triggered by orchestrator or manually invoked, execute:
+PM validation happens in two phases to ensure research-backed decisions. The orchestrator manages both phases.
 
-1. **Read issue**: Extract the feature idea from `pm-idea` issue title/body
-2. **Research phase** (Post research findings as comment on `pm-idea`):
+---
+
+#### **PHASE 1: Research Gate (10-15 min) - First invocation per pm-idea**
+
+Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
+
+1. **Read issue**: Extract feature idea from `pm-idea` title/body
+
+2. **Quick validation** (Post as comment on `pm-idea`):
    - Search support tickets for related themes
-   - Analyze competitor landscape
-   - Estimate market size
-   - Check for macro trends
-   - Document customer signals
-3. **Validation phase** (Post validation results as comment on `pm-idea`):
-   - Assess strategic fit
-   - Calculate market opportunity score
-   - Evaluate competitive advantage
-   - Estimate effort and feasibility
-4. **Decision phase** (Post decision JSON as comment on `pm-idea`):
-   - Apply logic: CHAMPION / DEFER / BLOCK
-   - Include detailed rationale
-5. **Create `strategic-opportunity` issue** (if CHAMPION):
-   - **Title**: Strategic Opportunity - [Idea Title]
-   - **Label**: `pm-opportunity` (and `strategic-opportunity` for issue type)
-   - **Body**: Link to source `pm-idea`, include research findings, validation assessment, decision
-   - See [Module 13 Step 3](../../docs/13-module-13-product-ownership-and-backlog.md) for `strategic-opportunity` issue template
-6. **Update state on `pm-idea`**:
-   - Apply label: `pm-opportunity` (CHAMPION), `pm-deferred` (DEFER), `pm-blocked` (BLOCK)
-   - Move in Projects board accordingly
-   - **Close the issue** with a summary comment:
-     - **If CHAMPION:** "Strategic-opportunity issue #X created and ready for PO prioritization. See link for research findings and validation. Closing this pm-idea."
-     - **If DEFER:** "Valid opportunity but not strategically important now. Deferred for quarterly re-evaluation. Closing this pm-idea."
-     - **If BLOCK:** "Decision: BLOCK. Doesn't fit market anchor or validation was weak. Closing this pm-idea."
+   - Analyze competitor landscape (quick market scan)
+   - Check macro trends
+   - Document customer signals found
+   - Assess strategic fit (high-level: does this align with product pillars?)
+   - **Decision gate:** Is there a credible customer signal? Does strategic fit seem plausible?
+     - If **NO credible signal** → Apply label `pm-blocked` + close pm-idea
+       - Close comment: "Decision: BLOCK. No credible customer signal or strategic fit. Closing pm-idea."
+     - If **YES signal but uncertainty** → Apply label `pm-deferred` + close pm-idea
+       - Close comment: "Valid direction but not urgent. Deferred for quarterly re-evaluation."
 
-7. **Notify PO** (if CHAMPION):
-   - Post comment on strategic-opportunity: "Ready for PO prioritization. Research findings and validation above."
+3. **If YES signal AND strategic fit appears sound** → Proceed to research gates
+
+4. **Identify research needs** (Post as comment on `pm-idea`):
+   - What personas are affected? (Check Wiki for existing personas)
+   - What journey stages? (Check Wiki for related journey maps)
+   - What competitive research exists? (Check Research-to-Decision Index)
+   - **For each missing research item**, create a `research:` work item:
+     ```
+     Issue Title: "Research: [Persona Name] for [Idea Title]"
+     Label: research, pm-work
+     Body: 
+     Conduct 5+ customer interviews with [Persona Name] to understand:
+     - Primary job to be done
+     - Key frustrations and goals
+     - Usage context and constraints
+     
+     Update Research Wiki: Personas-[Persona-Name] and Journey-Maps-[Persona-Name]
+     
+     Close this issue when research is documented in Wiki.
+     
+     Linked pm-idea: #N
+     Due: 2 weeks from now
+     ```
+
+5. **Create `strategic-opportunity` issue (PROVISIONAL)**:
+   - **Title**: Strategic Opportunity - [Idea Title] (PENDING RESEARCH)
+   - **Label**: `pm-opportunity`, `strategic-opportunity`, `pm-provisional-champion`
+   - **Body**: 
+     ```
+     **Source pm-idea:** #N
+     
+     **Status:** PENDING RESEARCH VALIDATION (Phase 1 of 2)
+     
+     **Preliminary Findings:**
+     [Quick research from Phase 1]
+     
+     **Research Gates (must complete before final decision):**
+     - Research item #X: [Persona Name]
+     - Research item #Y: [Journey Map Name]
+     - Research item #Z: [Competitive positioning]
+     
+     **Research Timeline:** Due 2 weeks from now
+     
+     Once research items close, PM agent will conduct Phase 2 validation.
+     ```
+
+6. **Update state on `pm-idea`**:
+   - Apply label: `pm-validating` (shows it's in progress)
+   - Add link comment to strategic-opportunity: "Research validation in progress. See linked strategic-opportunity for research items. This issue will remain open until research completes."
+   - **DO NOT CLOSE pm-idea** (leave open until Phase 2)
+
+7. **Output cycle summary**:
+   ```
+   PM Orchestrator - Phase 1 (Research Gate)
+   pm-idea #N: [Title]
+   Status: PROVISIONAL CHAMPION → Created strategic-opportunity #M
+   Research items created: 3 (Due: 2 weeks)
+   Action: Awaiting research completion before Phase 2 validation
+   ```
+
+---
+
+#### **PHASE 2: Final Validation (10-15 min) - Triggered when all research items close**
+
+Execute when: Orchestrator detects all linked research items on `pm-idea` are now closed
+
+1. **Re-read pm-idea** and linked strategic-opportunity
+
+2. **Read completed Research Wiki** (personas, journey maps, interview transcripts):
+   - Extract key findings, quotes, segments
+   - Document confidence level (N interviews, which segments covered)
+   - Identify any gaps or contradictions
+
+3. **Final validation** (Post as comment on strategic-opportunity):
+   - Re-assess strategic fit with research evidence
+   - Calculate market opportunity score (with research data)
+   - Evaluate competitive advantage (with research insights)
+   - Estimate effort/feasibility (with persona feedback)
+   - **Decision gate:** With research evidence, is this CHAMPION, DEFER, or BLOCK?
+     - If **CHAMPION** → Continue to step 4
+     - If **DEFER** → Jump to step 6
+     - If **BLOCK** → Jump to step 6
+
+4. **Confirm CHAMPION** (if decision holds):
+   - Update strategic-opportunity body:
+     ```
+     **Status:** RESEARCH VALIDATED ✅
+     
+     **Research Summary:**
+     - Interviews conducted: N across [segments]
+     - Key finding: [Primary insight from interviews]
+     - Persona fit: [Which personas, journey stages]
+     - Competitive advantage: [vs. alternatives, based on research]
+     - Strategic alignment: [Which pillars, OKRs]
+     
+     **Research Pages:**
+     - [Link] Personas-[Name]
+     - [Link] Journey-Maps-[Name]
+     - [Link] Interview-Transcripts-[Quarter]
+     
+     **Decision:** CHAMPION ✅ (Validated with customer research)
+     Ready for PO prioritization.
+     ```
+   - Apply label: `pm-opportunity` (remove `pm-provisional-champion`)
+   - Close pm-idea with comment:
+     ```
+     CHAMPION ✅ - Validated with customer research
+     See strategic-opportunity #M for research findings and decision.
+     Closing pm-idea.
+     ```
+   - Notify PO: Post comment on strategic-opportunity: "Ready for PO prioritization. Research findings and validation complete."
+
+5. **Revise to DEFER or BLOCK** (if research changes the picture):
+   - Update strategic-opportunity body with finding and revised decision
+   - Apply label: `pm-deferred` or `pm-blocked`
+   - Close pm-idea with comment:
+     ```
+     Research revealed: [Finding that changed decision]
+     Final decision: [DEFER/BLOCK]
+     See strategic-opportunity #M for research summary.
+     Closing pm-idea.
+     ```
+
+6. **Output cycle summary**:
+   ```
+   PM Orchestrator - Phase 2 (Final Validation)
+   pm-idea #N: [Title] → Strategic-opportunity #M
+   Status: RESEARCH VALIDATED → [CHAMPION/DEFER/BLOCK]
+   Research completed: 3 items (N total interviews)
+   Action: [Ready for PO | Deferred for Q[X] review | Blocked]
+   ```
 
 ### State Tracking
 
-State stored in GitHub issue (comments + labels + Projects):
+State stored in GitHub issue (comments + labels + Projects + linked research items):
 
-**Labels**:
-- `pm-idea`: Submitted
-- `pm-validating`: Agent researching
-- `pm-opportunity`: Validated, ready for PO
-- `pm-deferred`: Valid but not strategic
-- `pm-blocked`: Blocked or doesn't fit
+**Labels** (pm-idea issues):
+- `pm-idea`: Submitted, awaiting processing
+- `pm-validating`: Phase 1 in progress (quick validation)
+- `pm-provisional-champion`: Phase 1 complete, research items created, awaiting Phase 2
+- `pm-deferred`: Valid but not strategic now (no further research needed)
+- `pm-blocked`: Doesn't fit or weak signal (no further research needed)
+- `pm-opportunity`: Phase 2 complete, CHAMPION validated with research (ready for PO)
+
+**Research tracking** (research: labeled issues):
+- `research: [Persona Name]`: Work item for research phase 1→2 gate
+- Links back to pm-idea and strategic-opportunity
+- Closed when Research Wiki pages are updated with interview data
+
+**Strategic-opportunity issue lifecycle**:
+- Created in Phase 1 with `pm-provisional-champion` label + status "PENDING RESEARCH VALIDATION"
+- Updated in Phase 2 with final decision + `pm-opportunity` label (if CHAMPION) or closed (if DEFER/BLOCK)
 
 **Projects board**:
 ```
-Ideas → Discovery → Validating → Ready for PO → Deferred → Blocked
+Ideas (pm-idea) → Phase 1 Gate (pm-validating + research: items created)
+                  → Phase 2 Validation (all research: items closed)
+                  → Ready for PO (pm-opportunity label, research validated)
+                  → Deferred (pm-deferred, revisit quarterly)
+                  → Blocked (pm-blocked, decision recorded)
 ```
 
 ### First Run: Research Wiki Setup
