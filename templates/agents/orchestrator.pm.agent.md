@@ -58,6 +58,25 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
 
 ---
 
+## Research Issue Labeling Strategy (Critical for Discovery)
+
+**When PM Agent Phase 1 creates research: items**, they MUST be labeled with BOTH:
+- `research:` — Identifies it as a research work item
+- `pm-idea-[NUMBER]` — Links it back to the source pm-idea (e.g., `pm-idea-123`)
+
+**Why this matters:**
+1. **Orchestrator Step 3b** uses these labels to find research items: `--label "pm-idea-$PM_IDEA_NUMBER" --label "research:"`
+2. **PM Agent Phase 2** uses these labels to find research comments to read
+3. **Follow-on research** also uses same labels to link back to pm-idea
+
+**Example:** If pm-idea #123 creates two research items:
+- Research item #1000 gets labels: `research:`, `pm-idea-123`
+- Research item #1001 gets labels: `research:`, `pm-idea-123`
+
+Later, orchestrator can query: `gh issue list --label "pm-idea-123" --label "research:"`
+
+---
+
 ## Cycle Steps (Strictly Sequential)
 
 1. **Check for PHASE 1-ready issues:** List all `pm-idea` issues with NO processing labels:
@@ -89,9 +108,22 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
 
 3b. **Spawn Research Agent on all research items - SEQUENTIAL** (one at a time, not parallel):
    
-   Find all `research:` items linked to this pm-idea:
+   **Find all `research:` items linked to this pm-idea using labels (not body text):**
+   
+   When PM Phase 1 creates research: items, they are labeled with both:
+   - `research:` (marks it as a research item)
+   - `pm-idea-[THIS_NUMBER]` (links it back to the pm-idea)
+   
+   Query using these labels:
    ```bash
-   gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | grep research
+   RESEARCH_ITEMS=$(gh issue list \
+     --label "pm-idea-$PM_IDEA_NUMBER" \
+     --label "research:" \
+     --state open \
+     --json number \
+     --jq '.[] | .number' | tr '\n' ' ')
+   
+   echo "Found research items: $RESEARCH_ITEMS"
    ```
    
    **CRITICAL: Spawn research agents SEQUENTIALLY, not in parallel**
@@ -102,9 +134,11 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
    - Single-threading prevents data corruption
    - Clearer progress visibility
    
-   Spawn and monitor ONE research item at a time. Each Research Agent will use the `wiki-manager` skill for all wiki operations:
+   Spawn and monitor ONE research item at a time. Store the list for passing to PM Phase 2:
    ```bash
-   for research_item in $research_items; do
+   RESEARCH_ITEMS_CLOSED=""
+   
+   for research_item in $RESEARCH_ITEMS; do
      # Spawn THIS research item
      task(description="Conduct comprehensive research on issue #${research_item}", agent_id="research-agent")
      
@@ -113,6 +147,7 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
        status=$(gh issue view $research_item --json state --jq '.state')
        if [ "$status" = "CLOSED" ]; then
          echo "Research item #${research_item} complete. Wiki updates finished."
+         RESEARCH_ITEMS_CLOSED="$RESEARCH_ITEMS_CLOSED $research_item"
          break
        fi
        echo "Waiting for research #${research_item} to complete..."
@@ -139,38 +174,59 @@ No concurrent processing across pm-ideas. Each pm-idea goes completely through a
    - ✅ All research items are CLOSED
    - ✅ All Wiki updates are complete (single-threaded, no collisions)
    - ✅ No conflicts in wiki page edits
+   - ✅ $RESEARCH_ITEMS_CLOSED contains all closed research issue numbers
    
-   Verify ALL research items are closed:
+   Double-check: Verify ALL research items are now CLOSED:
    ```bash
-   # List all linked research items
-   gh issue view <pm-idea-#N> --json body | grep -o "#\d\+" | while read research_item; do
-     status=$(gh issue view $research_item --json state --jq '.state')
-     echo "Research #${research_item}: $status"
-   done
+   # Query for any research items still OPEN (should find none)
+   OPEN_RESEARCH=$(gh issue list \
+     --label "pm-idea-$PM_IDEA_NUMBER" \
+     --label "research:" \
+     --state open \
+     --json number)
    
-   # All should show CLOSED
+   if [ $(echo $OPEN_RESEARCH | jq 'length') -gt 0 ]; then
+     echo "ERROR: Found open research items:"
+     echo $OPEN_RESEARCH
+     exit 1
+   fi
+   
+   echo "✅ All research items complete and closed"
    ```
    
-   If any are OPEN:
-   - ERROR: Step 3b should have waited for all to close
-   - Check if a Research Agent failed mid-execution
-   - Post comment on pm-idea: "Research item #[N] stuck. Investigating..."
-   
-   Otherwise: **Proceed to step 5**
+   **Proceed to step 5**
 
 5. **Spawn PM agent for PHASE 2 (same issue):**
-   - Post routing comment: "All research items complete (Round 1 + any Round 2 follow-on, processed sequentially). Starting Phase 2 Final Validation on this pm-idea..."
-   - Spawn: `task(description="Validate pm-idea on issue #N with completed research - Phase 2 Final Validation (may identify CRITICAL follow-on research)\", agent_id="product-manager")`
-   - **Wait for completion**
+   
+   Post routing comment:
+   ```bash
+   gh issue comment $PM_IDEA_NUMBER --body "✅ All research items complete (Round 1 + any Round 2 follow-on, processed sequentially). Starting Phase 2 Final Validation..."
+   ```
+   
+   Spawn PM Agent with research issue numbers:
+   ```bash
+   # Pass research issue numbers to PM Agent so it knows where to read comments
+   task(
+     description="Validate pm-idea #$PM_IDEA_NUMBER with completed research - Phase 2 Final Validation",
+     agent_id="product-manager",
+     parameters={
+       "pm_idea_number": "$PM_IDEA_NUMBER",
+       "research_issues": "$RESEARCH_ITEMS_CLOSED"
+     }
+   )
+   ```
+   
+   **Wait for completion**
    
    What Phase 2 does:
    - Reads all completed Wiki pages (updated by Research Agents, one at a time)
-   - Evaluates CRITICAL next steps (severity-rated by Research Agent)
-   - If CRITICAL items exist: Creates follow-on research item, RETURNS TO STEP 3B
+   - Evaluates CRITICAL next steps (severity-rated by Research Agent) using the research_issues passed above
+   - If CRITICAL items exist: Creates follow-on research issue with label `pm-idea-$PM_IDEA_NUMBER`, RETURNS TO STEP 3B
    - If NO CRITICAL items: Makes final CHAMPION/DEFER/BLOCK decision
    
    **If Phase 2 creates follow-on research:**
-   - Orchestrator loops back to Step 3b
+   - Orchestrator detects follow-on-research label on pm-idea
+   - Loops back to Step 3b
    - Follow-on research item is processed sequentially (same as initial research)
    - Then loops back to Step 5 for Phase 2 final decision
    - (Max 2 research rounds total per pm-idea, enforced by guardrail)

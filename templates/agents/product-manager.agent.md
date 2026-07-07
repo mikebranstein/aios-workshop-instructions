@@ -105,23 +105,29 @@ Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
    - What personas are affected? (Check Wiki for existing personas)
    - What journey stages? (Check Wiki for related journey maps)
    - What competitive research exists? (Check Research-to-Decision Index)
-   - **For each missing research item**, create a `research:` work item:
-     ```
-     Issue Title: "Research: [Persona Name] for [Idea Title]"
-     Label: research, pm-work
-     Body: 
-     Conduct 5+ customer interviews with [Persona Name] to understand:
-     - Primary job to be done
-     - Key frustrations and goals
-     - Usage context and constraints
+   - **For each missing research item**, create a `research:` work item with REQUIRED labels:
+     ```bash
+     gh issue create \
+       --label "research:" \
+       --label "pm-idea-$PM_IDEA_NUMBER" \
+       --title "research: [Persona Name] for [Idea Title]" \
+       --body "# Research Work Item
+   
+   Conduct 5+ customer interviews with [Persona Name] to understand:
+   - Primary job to be done
+   - Key frustrations and goals
+   - Usage context and constraints
+   
+   Update Research Wiki: Personas-[Persona-Name] and Journey-Maps-[Persona-Name]
+   
+   Close this issue when research is documented in Wiki.
+   
+   Linked pm-idea: #$PM_IDEA_NUMBER
+   Due: 2 weeks from now"\n     ```
      
-     Update Research Wiki: Personas-[Persona-Name] and Journey-Maps-[Persona-Name]
-     
-     Close this issue when research is documented in Wiki.
-     
-     Linked pm-idea: #N
-     Due: 2 weeks from now
-     ```
+   **CRITICAL:** Always add both labels when creating research: items:
+   - `research:` — marks it as a research work item
+   - `pm-idea-[THIS_NUMBER]` — links it back to this pm-idea (allows orchestrator and PM Phase 2 to discover it)
 
 5. **Create `strategic-opportunity` issue (PROVISIONAL)**:
    - **Title**: Strategic Opportunity - [Idea Title] (PENDING RESEARCH)
@@ -255,27 +261,92 @@ Execute when: Orchestrator detects all linked research items on `pm-idea` are no
    Proceeding to final validation with research evidence.
    ```
 
-3. **Evaluate Follow-On Research Needs (Before final decision):**
+3. **Evaluate Follow-On Research Needs (Detailed Procedure):**
    
-   Read research comments for severity-rated Next Steps Assessment:
-   - Are there any CRITICAL follow-on research items identified?
-   - CRITICAL = must validate before CHAMPION decision can be made
+   **STEP 3.1: Find research: issues linked to this pm-idea**
    
-   If CRITICAL items exist:
+   Query for all research items tagged with this pm-idea (passed by Orchestrator):
+   ```bash
+   # Orchestrator passes: PM_IDEA_NUMBER=123, RESEARCH_ISSUES="1024 1025 1026"
+   
+   # Parse research issue list
+   IFS=' ' read -ra RESEARCH_ARRAY <<< "$RESEARCH_ISSUES"
+   echo "Research issues to review: ${RESEARCH_ARRAY[@]}"
    ```
-   Decision: DEFER Phase 2 decision, spawn follow-on research
-   - Create issue: "Research: [Topic] - Follow-On Critical Validation"
-   - Label: follow-on-research
-   - Body: [Copy CRITICAL next step from research comments]
-   - Note: "Linked to initial research issue #[N]. This is the only follow-on research allowed for this pm-idea."
-   - Post comment: "Spawning 1 follow-on research item to validate CRITICAL assumption before Phase 2 decision."
-   - RETURN to Orchestrator step 4 (monitor research completion)
+
+   If research issues NOT provided:
+   ```bash
+   # Fallback: Query by label
+   RESEARCH_ISSUES=$(gh issue list \
+     --label "pm-idea-$PM_IDEA_NUMBER" \
+     --label "research:" \
+     --state closed \
+     --json number \
+     --jq '.[] | .number')
+   ```
+
+   **STEP 3.2: Read closure comments from each research: issue**
+   
+   For each research: issue found:
+   ```bash
+   for issue_num in $RESEARCH_ISSUES; do
+     # Get comments (newest last, so last comment is usually the research summary)
+     COMMENTS=$(gh issue view #$issue_num --json comments --jq '.comments')
+     
+     # Extract last comment (should contain Next Steps Assessment)
+     LAST_COMMENT=$(echo $COMMENTS | jq '.[-1].body' -r)
+   done
+   ```
+
+   **STEP 3.3: Parse for CRITICAL next steps**
+   
+   Loop through comments, search for section:
+   ```markdown
+   **Next Steps Assessment (Severity-Rated for Follow-On Research):**
+   
+   **CRITICAL - MUST VALIDATE BEFORE CHAMPION DECISION:**
    ```
    
-   If NO CRITICAL items (only HIGH/MEDIUM/LOW):
+   ```bash
+   if echo "$LAST_COMMENT" | grep -q "CRITICAL - MUST VALIDATE"; then
+     echo "Found CRITICAL follow-on research needed"
+     HAS_CRITICAL=true
+   else
+     HAS_CRITICAL=false
+   fi
    ```
-   Proceed to final validation (step 4 below)
-   Document HIGH/MEDIUM/LOW as Post-Launch Research Recommendations
+
+   Extract all text under "CRITICAL" section:
+   ```bash
+   CRITICAL_TEXT=$(echo "$LAST_COMMENT" | sed -n '/CRITICAL - MUST VALIDATE/,/HIGH - Strongly Recommended/p')
+   ```
+
+   **STEP 3.4: Make decision**
+   
+   If CRITICAL items found ($HAS_CRITICAL == true):
+   ```bash
+   # Create follow-on research issue
+   FOLLOWON_ISSUE=$(gh issue create \
+     --label "research:" \
+     --label "follow-on-research" \
+     --label "pm-idea-$PM_IDEA_NUMBER" \
+     --title "research: Follow-On Critical Validation for #$PM_IDEA_NUMBER" \
+     --body "# Follow-On Research - Critical Validation\n\n$CRITICAL_TEXT\n\nLinked to: #$PM_IDEA_NUMBER (initial research: #$FIRST_RESEARCH_ISSUE)")
+   
+   # Post comment: "Spawning follow-on research for CRITICAL validation"
+   gh issue comment $PM_IDEA_NUMBER --body "⏸️ Phase 2 PAUSED: Spawning 1 follow-on research item for CRITICAL validation. Linked issue: $FOLLOWON_ISSUE"
+   
+   # Return to Orchestrator (orchestrator will see follow-on-research label and loop back to Step 3b)
+   exit 0
+   ```
+   
+   If NO CRITICAL items ($HAS_CRITICAL == false):
+   ```bash
+   # Extract HIGH/MEDIUM/LOW items for post-launch documentation
+   POST_LAUNCH=$(echo "$LAST_COMMENT" | sed -n '/HIGH - Strongly/,/LOW - Exploratory/p')
+   
+   # Proceed to final validation (step 4 below)
+   echo "No CRITICAL items. Proceeding to Phase 2 final decision."
    ```
 
 4. **Final validation** (Post as comment on strategic-opportunity):

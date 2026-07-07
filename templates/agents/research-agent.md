@@ -913,7 +913,44 @@ Post final research summary comment:
 Ready for PM Phase 2 validation.
 ```
 
-Close research issue with summary.
+#### Step 6: Close Research Issue with Labels
+
+**CRITICAL:** Research issue must be explicitly closed and labeled so orchestrator and PM Agent can discover it.
+
+**Close the research: issue:**
+
+```bash
+# Get this research issue number (should be in GitHub Actions environment or passed as parameter)
+# Example: research issue is #1025
+RESEARCH_ISSUE_NUM=${{ github.event.issue.number }}
+
+# Close the research: issue with reason
+gh issue close $RESEARCH_ISSUE_NUM --reason "not_planned"
+
+# Add label: research-complete (marks research as finished)
+gh issue edit $RESEARCH_ISSUE_NUM --add-label "research-complete"
+
+# Verify closure
+CLOSED_STATE=$(gh issue view $RESEARCH_ISSUE_NUM --json state --jq '.state')
+if [ "$CLOSED_STATE" != "CLOSED" ]; then
+  echo "ERROR: Failed to close research issue #$RESEARCH_ISSUE_NUM"
+  exit 1
+fi
+
+echo "✅ Research issue #$RESEARCH_ISSUE_NUM closed and labeled"
+```
+
+**DO NOT proceed until:**
+- ✅ Research summary comment posted (with CRITICAL/HIGH/MEDIUM/LOW next steps)
+- ✅ All wiki pages updated (via wiki-manager skill)
+- ✅ Research issue is CLOSED (verified by command above)
+- ✅ research-complete label is added
+
+**If closure fails:**
+```
+Post comment: "ERROR: Failed to close research issue. [Error details]. Manually close issue and retry."
+Exit with error status.
+```
 
 ## Quality Standards
 
