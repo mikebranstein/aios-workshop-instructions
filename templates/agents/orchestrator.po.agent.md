@@ -61,6 +61,7 @@ For the first unprocessed CHAMPION opportunity found, route as follows:
    - Apply label: `po-prioritized`
    - Move issue to "Ready for Development" column in Projects board (or add to project with "Ready for Development" status)
    - Link back to the strategic-opportunity issue
+   - **Close the strategic-opportunity** issue with comment: "Strategic planning complete. PO prioritized and created feature-request. See feature-request #N"
 
 5. Output cycle summary:
    ```
@@ -84,6 +85,32 @@ For the first unprocessed CHAMPION opportunity found, route as follows:
 - `pm-opportunity` — Created by PM; CHAMPION decision ready for PO
 - `po-prioritized` — PO has prioritized this opportunity and created feature-request
 - `blocked-on` — Feature is blocked by dependency; includes reference to blocking issue
+
+---
+
+## Issue Lifecycle: Strategic-Opportunity → Feature-Request
+
+**Strategic-Opportunity Lifecycle:**
+- **Created by:** PM (after CHAMPION validation)
+- **Labeled:** `pm-opportunity`
+- **Status:** OPEN (awaiting PO prioritization)
+- **Action:** PO reads, asks clarifying questions, creates feature-request
+- **Closed by:** PO (after feature-request successfully created)
+- **Closure reason:** "completed"
+- **Closure comment:** "Strategic planning complete. Prioritized and created feature-request #N for development backlog."
+
+**Feature-Request Lifecycle:**
+- **Created by:** PO (after strategic-opportunity evaluation)
+- **Labeled:** `po-prioritized`
+- **Status:** OPEN (in "Ready for Development" column)
+- **Action:** Development Orchestrator pulls from "Ready for Development", routes through build pipeline
+- **Closed by:** Release Agent (after feature ships to production)
+
+**Why close strategic-opportunity?**
+- Signals handoff: Research phase complete → Development phase begins
+- Prevents PM from tracking closed loops (clean dashboard)
+- Clear accountability: PO owns closure, ensures feature-request is properly created
+- Audit trail: GitHub close comment links to feature-request for full traceability
 
 ---
 
