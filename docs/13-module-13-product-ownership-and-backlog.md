@@ -81,10 +81,13 @@ A product manager is responsible for **strategic product direction**. They sit a
 - **Channel opportunities to PO:** Hand off validated ideas to the Product Owner for tactical prioritization.
 
 **What PMs do NOT do:**
+- **Create `feature-request` issues** (PO creates these exclusively)
 - Define acceptance criteria (BA does this)
 - Design architecture (Design does this)
 - Prioritize the day-to-day backlog (PO does this)
 - Manage sprint execution (PO does this)
+
+**CRITICAL BOUNDARY:** PM creates `strategic-opportunity` issues. PO creates `feature-request` issues. This boundary is non-negotiable.
 
 **Key PM question:** "What market problems should we solve? Is this strategically important?"
 
@@ -97,15 +100,18 @@ A product owner is responsible for **tactical execution** of the PM's strategic 
 **What POs do:**
 - **Manage the backlog:** Order features by priority. Quick wins first (high value + low complexity), then strategic bets (high value + high complexity), then maintenance work.
 - **Collaborate with BA:** Clarify requirements, ask clarifying questions, work through ambiguities.
-- **Create issues:** Turn validated opportunities into GitHub issues with structure and clarity.
+- **Create `feature-request` issues:** Turn validated strategic-opportunities into GitHub issues with user story, acceptance criteria, and priority score (PO-only responsibility).
 - **Prioritize:** Use a formula to assess (User Value + Business Value) / (Complexity × 1.5). Higher score = higher priority.
 - **Escalate to PM:** If a customer request conflicts with strategy or needs strategic context, ask PM for input.
 
 **What POs do NOT do:**
 - Set product strategy (PM does this)
 - Conduct market research (PM does this)
-- Define acceptance criteria (BA does this)
+- Create strategic-opportunity issues (PM does this)
+- Define acceptance criteria at the strategic level (PM research informs this)
 - Build features (Design and Build do this)
+
+**CRITICAL BOUNDARY:** PO consumes `strategic-opportunity` issues (PM creates those) and creates `feature-request` issues exclusively. PO never creates feature-requests from pm-ideas directly; they must come via PM validation first.
 
 **Key PO question:** "Which features should we build next to execute our strategy? What's the business value vs. effort?"
 
