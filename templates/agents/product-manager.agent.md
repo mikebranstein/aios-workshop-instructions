@@ -105,29 +105,29 @@ Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
 
    Before creating any research work item, search the wiki. This prevents duplicate research.
 
-   **For each persona identified:**
+   **For each subject/topic identified:**
    
    ```bash
    CALL SKILL: wiki-manager
    {
      "action": "search",
      "repo": "[owner]/[repo]",
-     "query": "[Persona Name]"
+     "query": "[subject]"
    }
    
    RESPONSE:
    {
      "total_found": 2,
      "results": [
-       { "page": "Personas/Field-Manager", "match_score": 0.98, "snippet": "..." },
-       { "page": "Journey-Maps/Field-Manager-Checkout", "match_score": 0.72, "snippet": "..." }
+       { "page": "[type]/[subject]", "match_score": 0.98, "snippet": "..." },
+       { "page": "[type]/[subject-variant]", "match_score": 0.72, "snippet": "..." }
      ]
    }
    
    # Agent Decision (NOT skill):
    IF results[0].match_score > 0.95:
      → High confidence match
-     → POST on pm-idea: "✅ Research found: [Personas/Field-Manager]"
+     → POST on pm-idea: "✅ Research found: [type]/[subject]"
      → Link to wiki page
      → Don't create new research work item
    
@@ -159,9 +159,8 @@ Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
    - Usage context and constraints
 
    Upon completion:
-   1. Write findings to Wiki: Personas/[Persona-Name]
-   2. Call wiki-manager update-index with research metadata
-   3. Close this issue
+   1. Write findings to Wiki with metadata (status, confidence, findings_summary)
+   2. Close this issue
 
    Linked pm-idea: #$PM_IDEA_NUMBER
    Due: 2 weeks from now"
@@ -170,8 +169,8 @@ Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
 6. **Note: Research Agent Will Handle Wiki Writing**
 
    When research is complete, the Research Agent will:
-   1. Call wiki-manager write-page to store findings at exact wiki location
-   2. Call wiki-manager update-index to register in Research-to-Decision-Index
+   1. Call wiki-manager write-content to store findings (with metadata: status, confidence, findings_summary, github_issue)
+   2. Skill automatically updates index; no separate call needed
 
 7. **Create `strategic-opportunity` issue (PROVISIONAL)**:
    - **Title**: Strategic Opportunity - [Idea Title] (PENDING RESEARCH)

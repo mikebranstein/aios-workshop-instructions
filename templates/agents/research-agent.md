@@ -36,7 +36,7 @@ You do not need to manage git operations directly. Simply call the skill in Step
 - No other Research Agents are simultaneously editing wiki pages
 - No race conditions on wiki updates (locks not needed)
 - Your wiki updates will NOT collide with other agents' updates
-- When you update `Personas-[Name]`, `Journey-Maps-[Name]`, `Research-to-Decision-Index`, you are the sole writer
+- When you update wiki content via write-content, you are the sole writer
 
 **Why sequential?**
 - Multiple agents writing to same wiki pages simultaneously = data corruption risk
@@ -749,108 +749,98 @@ Create/Update Research Wiki pages with **explicit evidence hierarchy and confide
 
 #### Step 4b: Wiki Update Procedure (Using wiki-manager Skill)
 
-**⚠️ MANDATORY:** Complete ALL wiki updates BEFORE closing the research issue. If no wiki pages are updated, PM Phase 2 will have no research data and cannot validate the decision.
+**⚠️ MANDATORY:** Complete ALL wiki updates BEFORE closing the research issue.
 
-Use the `wiki-manager` skill with the **librarian model** — the skill executes exactly what you tell it. You decide what to write, where to write it, and what metadata to register.
+Use the `wiki-manager` skill with the **expert librarian model**. Agents specify WHAT to store (content_type + subject). Skill owns placement, organization, and may reorganize autonomously.
 
-**For each Wiki page needed (Personas/[Name], Journey-Maps/[Name], and Research-to-Decision-Index):**
+**For each research output:**
 
-**1. WRITE: Personas/[PersonaName]**
-
-CALL SKILL: `wiki-manager`
-```json
-{
-  "action": "write-page",
-  "repo": "[owner]/[repo]",
-  "page_path": "Personas/[Persona-Name]",
-  "content": "# [PersonaName]\n\n## Demographics\n[from research findings]\n\n## Jobs to be Done\n[primary JTBD statement]\n\n## Frustrations\n[top 3 with frequency %]\n\n## Research Source\nIssue #[this-issue-number]\nEvidence Count: N=[X] interviews"
-}
-```
-
-Expected response:
-```json
-{
-  "status": "success",
-  "page_path": "Personas/[Persona-Name]",
-  "wiki_url": "https://github.com/[owner]/[repo]/wiki/Personas/[Persona-Name]",
-  "committed": true,
-  "commit_message": "Create Personas/[Persona-Name].md"
-}
-```
-
-If status is "error": Post comment "Wiki write failed: [error]. Aborting." and close with label `wiki-error`.
-
-**2. WRITE: Journey-Maps/[PersonaName]**
+**1. WRITE: Research Content (Including Metadata)**
 
 CALL SKILL: `wiki-manager`
 ```json
 {
-  "action": "write-page",
+  "action": "write-content",
   "repo": "[owner]/[repo]",
-  "page_path": "Journey-Maps/[Persona-Name]-[Journey-Type]",
-  "content": "# [PersonaName] - [Journey Type]\n\n## Stage 1: Discovery\n[findings]\n\n## Stage 2: Consideration\n[findings]\n\n## Stage 3: Regular Usage\n[findings]\n\n## Research Source\nIssue #[this-issue-number]\nEvidence Count: N=[X] interviews"
-}
-```
-
-**3. UPDATE: Research-to-Decision-Index**
-
-CALL SKILL: `wiki-manager`
-```json
-{
-  "action": "update-index",
-  "repo": "[owner]/[repo]",
-  "subject": "[PersonaName]",
+  "content_type": "[type]",
+  "subject": "[subject]",
+  "content": "# [Subject]\n\n## Key Findings\n[research findings]\n\n## Methodology\n[how this was researched]\n\n## Evidence\nIssue #[this-issue-number]\nConfidence: HIGH|MEDIUM|LOW\nEvidence: N=[X] data points",
   "status": "Complete",
-  "wiki_page": "Personas/[Persona-Name]",
-  "github_issue": "#[this-issue-number]",
   "confidence": "HIGH|MEDIUM|LOW",
-  "findings_summary": "N=[X] interviews completed. Key finding: [one-liner]"
+  "github_issue": "#[this-issue-number]",
+  "findings_summary": "N=[X] data points. Key finding: [one-liner]"
 }
 ```
 
-Expected response:
+**Skill Response (Standard):**
 ```json
 {
   "status": "success",
-  "message": "Index entry added: [PersonaName]",
-  "index_entry_added": true
+  "committed": true,
+  "reorganized": false
 }
 ```
 
-**4. Verify All Updates**
+**Skill Response (With Reorganization):**
+```json
+{
+  "status": "success",
+  "committed": true,
+  "reorganized": true,
+  "reorganization_summary": {
+    "changes_made": [...],
+    "audit_result": "all_pages_accounted_for",
+    "gap_analysis": { "fixed": true },
+    "index_updated": true
+  }
+}
+```
+
+**Key Point:** You specify content AND metadata (status, confidence, findings_summary, github_issue). Skill writes content, updates index automatically, and may reorganize the wiki internally to maintain health. Either way, content is committed and index quality is maintained.
+
+---
+
+**2. Verify Write Succeeded**
 
 Post comment on research issue:
 ```
-✅ Wiki pages created successfully
-- Personas/[Persona-Name]: https://github.com/[owner]/[repo]/wiki/Personas/[Persona-Name]
-- Journey-Maps/[Persona-Name]-[Journey-Type]: https://github.com/[owner]/[repo]/wiki/Journey-Maps/[Persona-Name]-[Journey-Type]
-- Research-to-Decision-Index: updated with entry
+✅ Research complete and indexed
+- Content: [stored_at from write-content response]
+- Index: Updated with findings
 
-All research findings documented and indexed. Ready for PM Phase 2 validation.
+Ready for next phase validation.
 ```
 
-5. **VERIFY ALL PAGES UPDATED:**
+4. **VERIFY ALL UPDATES BEFORE CLOSING:**
    
    Before proceeding to Step 5 (closure), confirm:
-   - ✅ All wiki pages were created (check success response)
-   - ✅ All new research findings are in wiki pages
+   
+   Before proceeding to Step 5 (closure), confirm:
+   - ✅ write-content returned `committed=true`
+   - ✅ Note if `reorganized: true` occurred (informational; skill handled index update)
+   - ✅ Verify content was actually written using search()
    - ✅ All pages include evidence counts (N=[X])
-   - ✅ All pages include confidence levels (HIGH/MEDIUM/LOW)
-   - ✅ Research-to-Decision-Index has been updated
+   - ✅ All pages include confidence levels
    - ✅ All wiki pages link back to research issue
    - ✅ Research issue links to all updated wiki pages
+   
+   **Verification steps:**
+   ```bash
+   # Verify content was written
+   CALL wiki-manager: search("[subject]")
+   # Confirm your content appears in results with high match_score
+   ```
    
    Post summary comment on research issue:
    ```
    ## Wiki Update Summary ✅
    
-   All required wiki pages updated:
-   - Personas-[Name]: [N] data points, Confidence: [HIGH]
-   - Journey-Maps-[Name]: [N] data points, Confidence: [MEDIUM]
-   - Research-to-Decision-Index: Entry added linking [problem] → [finding] → [decision]
-   - Strategic-Findings-[Quarter]: Top 3 findings recorded
+   All required content updated and verified:
+   - [Content Type]: [subject] with [N] data points, Confidence: [HIGH|MEDIUM|LOW]
+   - ✅ Verified via search() - content found
+   - Index: Automatically updated with metadata (status, confidence, findings_summary)
    
-   Ready for PM Phase 2 validation.
+   Ready for next phase validation.
    ```
 
 **IF ANY WIKI PAGE FAILS TO UPDATE:**

@@ -1,362 +1,336 @@
-# Wiki Manager Integration Guide: Librarian Model
+# Wiki Manager Integration Guide: Expert Librarian Model
 
 ## Overview
 
-The **wiki-manager skill** uses the **librarian model**: simple, explicit storage operations with agents making all business decisions.
+The **wiki-manager skill** is an **expert librarian**: autonomous, intelligent, and self-optimizing.
 
-**Core Principle:** Agents own logic and decisions. Skill owns storage.
+**Core Principle:** 
+- **Agents own semantics** — what to store (content_type, subject, content)
+- **Skill owns everything else** — organization, placement, reorganization, index accuracy
+
+**Key Feature:** The skill is *constantly evaluating* wiki organization quality. Before writing new content, it assesses "messiness" (orphaned pages, scattered structure, redundancy, duplicates) and **reorganizes autonomously if needed**. This is internal—agents never direct it.
+
+**What this means:**
+- Agents call write-content, and the skill may reorganize behind the scenes
+- write-content response indicates if reorganization occurred
+- Index is always accurate and complete
+- Structure evolves intelligently based on actual content patterns
 
 ---
 
-## Four Core Actions
+## Two Core Agent Actions
 
-### 1. **search** — Find Existing Research
+Agents use only two actions. Everything else is internal skill operation.
+
+### 1. **search** — Find Existing Content
 
 **When to use:**
-- Before creating new research (check if it already exists)
-- Before writing new findings (avoid duplicates)
-- When you need to review existing research
+- Before creating new research
+- To check if topic already researched
+- To prevent duplicate work
 
 **Agent Responsibility:**
 - Decide what to search for
 - Evaluate match_score (0.0 = no match, 1.0 = perfect match)
-- Decide whether to reuse, link to, or create new research
+- Decide: reuse existing or create new
 
 **Example:**
 
 ```bash
-# Check if "Field Manager" persona already researched
 CALL SKILL: wiki-manager
 {
   "action": "search",
   "repo": "owner/repo",
-  "query": "Field Manager"
+  "query": "[search term]"
 }
 
 RESPONSE:
 {
-  "total_found": 2,
+  "total_found": 1,
   "results": [
     {
-      "page": "Personas/Field-Manager",
+      "page": "[type]/[subject]",
       "match_score": 0.98,
-      "snippet": "# Field Manager\n\nManages equipment checkout and field operations..."
+      "snippet": "[first few lines]"
     }
   ]
 }
 
 # Agent Decision:
-IF match_score > 0.95:
-  ✅ Use existing research
-  → Link from your research issue to Personas/Field-Manager
-  → Do NOT create duplicate research
-ELSE IF match_score > 0.70:
-  ⚠️ Similar research exists (score: 0.72)
-  → Review it first
-  → Decide: Merge with existing? Or create new focused research?
-ELSE:
-  ❌ No match found
-  → Proceed to create new research
+IF match_score > 0.95: ✅ Use existing
+ELSE: Create new research
 ```
 
 ---
 
-### 2. **write-page** — Store Findings at Exact Location
+### 2. **write-content** — Autonomous Organization & Write
 
-**When to use:**
-- After research is complete and findings documented
-- To create or update any wiki page
-- You decide exactly where and what to write
+Agent specifies WHAT to store. Skill autonomously evaluates wiki health, may reorganize, then writes content.
 
-**Agent Responsibility:**
-- Write findings in markdown
-- Specify exact `page_path` (e.g., "Personas/Field-Manager")
-- Include source citations (Issue #, evidence count)
-- Format page following templates
+**What happens:**
+1. Skill evaluates current wiki organization quality (messiness metric)
+2. **If messiness exceeds threshold:** Reorganizes wiki internally
+   - Consolidates redundant structure
+   - Moves orphaned or scattered pages
+   - Audits all pages are accounted for
+   - Gap analysis (identifies missing index entries)
+   - Updates Content-Index to fill gaps
+3. Writes new content to the (possibly reorganized) structure
+4. Returns response indicating what occurred
 
-**Example:**
-
+**Input:**
 ```bash
-# After 10 Field Manager interviews, write persona to wiki
 CALL SKILL: wiki-manager
 {
-  "action": "write-page",
+  "action": "write-content",
   "repo": "owner/repo",
-  "page_path": "Personas/Field-Manager",
-  "content": "# Field Manager\n\n## Primary Job to be Done\nManage daily equipment checkout for field teams.\n\n## Top Frustrations\n1. Manual checkout takes 15 min (60% daily)\n2. No mobile access (40% report as pain)\n3. Equipment location lookup (35% report)\n\n## Evidence\nIssue #1025: 10 interviews conducted\nConfidence: HIGH\n\n**Findings:**\n- All 10 reported manual process friction\n- 8/10 have field teams (mobile use case)\n- Primary industry: Construction"
+  "content_type": "[type]",
+  "subject": "[subject]",
+  "content": "[markdown content]"
 }
+```
 
-RESPONSE:
+**Output (No reorganization needed):**
+```json
 {
   "status": "success",
-  "page_path": "Personas/Field-Manager",
-  "wiki_url": "https://github.com/owner/repo/wiki/Personas/Field-Manager",
   "committed": true,
-  "commit_message": "Create Personas/Field-Manager.md"
+  "reorganized": false
 }
 ```
 
-**Standard Folders:**
-```
-Personas/              # User archetypes
-Journey-Maps/         # Experience stages
-Competitive-Analysis/ # Market comparison
-Market-Trends/        # Industry signals
-Feature-Research/     # Feature-specific investigations
-```
-
----
-
-### 3. **update-index** — Register in Master Registry
-
-**When to use:**
-- After writing a research page (always)
-- To mark research as Complete, In Progress, or Deferred
-- To track metadata: status, confidence, findings summary
-
-**Agent Responsibility:**
-- Call after write-page succeeds
-- Provide research status (Complete | In Progress | Deferred)
-- Provide confidence level (HIGH | MEDIUM | LOW)
-- Write concise findings_summary (one-liner)
-
-**Example:**
-
-```bash
-# After Field Manager persona written, register in index
-CALL SKILL: wiki-manager
-{
-  "action": "update-index",
-  "repo": "owner/repo",
-  "subject": "Field Manager",
-  "status": "Complete",
-  "wiki_page": "Personas/Field-Manager",
-  "github_issue": "#1025",
-  "confidence": "HIGH",
-  "findings_summary": "10 interviews. Primary JTBD: manage equipment checkout. Top 3 frustrations identified."
-}
-
-RESPONSE:
+**Output (Reorganization occurred):**
+```json
 {
   "status": "success",
-  "message": "Index entry added: Field Manager",
-  "index_entry_added": true
-}
-```
-
-**This updates Research-to-Decision-Index:**
-```markdown
-| Field Manager | ✅ Complete | Personas/Field-Manager | 2026-07-08 | #1025 | HIGH | 10 interviews... |
-```
-
----
-
-### 4. **audit-and-organize** — Detect Issues (No Auto-Fix)
-
-**When to use:**
-- Weekly/periodic maintenance (optional)
-- Detecting duplicates, naming issues, stale content
-- For housekeeping reporting (flags issues, doesn't auto-merge)
-
-**Agent Responsibility:**
-- Review issues flagged by audit
-- Decide on merges/reorganization manually
-- NO automatic file moves or consolidations
-
-**Example:**
-
-```bash
-# Weekly wiki audit
-CALL SKILL: wiki-manager
-{
-  "action": "audit-and-organize",
-  "repo": "owner/repo",
-  "dry_run": true  # Set false to apply fixes (if any)
-}
-
-RESPONSE:
-{
-  "status": "success",
-  "wiki_state": {
-    "total_pages": 12,
-    "organized_pages": 10,
-    "unorganized_pages": 2
-  },
-  "issues_detected": [
-    {
-      "issue_type": "potential_duplicates",
-      "severity": "HIGH",
-      "pages": ["Personas/Field-Manager", "Personas-Manager-Field"],
-      "recommendation": "Manual review - similar names"
+  "committed": true,
+  "reorganized": true,
+  "reorganization_summary": {
+    "changes_made": ["consolidated_folders", "moved_orphaned_pages", ...],
+    "audit_result": "all_pages_accounted_for",
+    "gap_analysis": {
+      "missing_from_index": 0,
+      "orphaned_content": 0,
+      "fixed": true
     },
-    {
-      "issue_type": "naming_inconsistency",
-      "severity": "LOW",
-      "pages": ["Personas/Sarah_Director"],
-      "recommendation": "Use Kebab-Case: 'Sarah-Director' not 'Sarah_Director'"
-    }
-  ]
+    "index_updated": true
+  }
 }
-
-# Agent then:
-# - Reviews the flagged duplicates
-# - Decides: merge? or keep separate?
-# - Handles renames/consolidations manually
 ```
+
+**Key Point:** 
+- You never know if reorganization happened unless you check response
+- Structure is always optimized and indexed
+- Index is always trustworthy after write-content completes
+
+---
+
+## Internal Operations (Skill Only)
+
+Agents do not call these. The skill executes them autonomously:
+
+- **update-index** — Executed automatically after write-content. Maintains Content-Index with all metadata. Also run post-reorganization to fill any gaps.
+- **discover-structure** — Executed internally before write-content (to evaluate messiness) and post-reorganization (to audit pages and find missing index entries).
+- **reorganize** — Triggered autonomously by skill when messiness exceeds threshold. Consolidates duplicates, moves orphaned content, updates index post-reorganization.
+
+**Agents interface through search() and write-content() only.** Everything else is skill responsibility.
+
+---
+
+## Benefits of Expert Librarian Architecture
+
+| Aspect | Benefit |
+|--------|---------|
+| **Agents focus on content** | Don't think about wiki organization or reorganization |
+| **Skill owns all structure** | Can reorganize transparently without breaking agents |
+| **Autonomous optimization** | Evaluates and fixes organization proactively |
+| **Index always accurate** | Post-reorganization audit ensures complete, gap-free index |
+| **Emergent organization** | Structure evolves from content patterns, not rigid schema |
+| **Adaptive placement** | Placement decisions based on domain expertise |
+| **Generic** | Works with any content types agents define |
+| **Simple agent code** | Call write-content; let skill handle rest |
+| **Reorganization hidden** | Agents don't manage or direct restructuring |
+
+---
+
+## What Agents Should Expect
+
+### From write-content
+
+**Standard case (most common):**
+- Call write-content with your content AND metadata (status, confidence, findings_summary, etc.)
+- Skill writes content to optimized location
+- Skill updates index automatically
+- You get response: `reorganized: false, committed: true`
+
+**Reorganization case (less common):**
+- Call write-content with your content AND metadata
+- Skill detects wiki messiness exceeds threshold
+- Skill reorganizes wiki internally (you don't manage this)
+- After reorg: Skill audits, does gap analysis, updates index automatically
+- Then writes your content
+- You get response: `reorganized: true` + summary of changes + `committed: true`
+- Content is in newly organized structure; index is already updated
+
+**Either way:**
+- Your content will be found via search() reliably
+- Index accurately reflects all content AND your metadata
+- No separate index update call needed
+
+### You Don't Need To:
+- ✅ Worry about folder structure or naming
+- ✅ Check if reorganization happened (unless you want to know)
+- ✅ Manually move or consolidate content
+- ✅ Audit the wiki for gaps
+- ✅ Manually update index entries (skill does this automatically)
+
+### You Still Must:
+- ✅ Call write-content with all relevant metadata (status, confidence, findings_summary, github_issue)
+- ✅ Verify content was written via search() if unsure
+- ✅ Provide accurate metadata
 
 ---
 
 ## Agent Workflow Patterns
 
-### Pattern 1: PM Agent (Before Creating Research)
+### Pattern 1: Discovery Agent (Before Creating Work)
 
 ```
 Step 1: Search
-├─ search("Field Manager")
+├─ search("[subject]")
 ├─ evaluate match_score
-└─ decide: reuse OR create new
+└─ decide: reuse existing OR create new work item
 
-Step 2: Create Research Issue (if needed)
-└─ gh issue create --label "research" ...
+Step 2: Create Work Issue (if needed)
+└─ gh issue create --label "[content_type]" ...
 
 Step 3: Link Results
 └─ Post comment with wiki link if found
 ```
 
-### Pattern 2: Research Agent (Execute Research)
+### Pattern 2: Research/Analysis Agent (Execute Work)
 
 ```
 Step 0: Pre-Flight Check
-└─ search("[Research Topic]")
+└─ search("[subject]")
    → If found and Complete: reuse, don't redo
    → If not found: proceed
 
-Step 1-3: Conduct Research
-└─ Interviews, analysis, synthesis
+Step 1-3: Conduct Research/Analysis
+└─ Interviews, analysis, synthesis, experimentation
 
-Step 4: Write Findings
-├─ write-page("Personas/Field-Manager", markdown_content)
-├─ write-page("Journey-Maps/Field-Manager-Checkout", content)
-└─ verify: both successful
+Step 4: Write Findings (includes all metadata)
+├─ write-content(
+│    content_type="[type]",
+│    subject="[subject]",
+│    content="[markdown]",
+│    status="Complete",
+│    confidence="HIGH",
+│    findings_summary="[summary]",
+│    github_issue="#[issue]"
+│  )
+├─ check response: committed=true
+└─ note: reorganized true/false (informational)
 
-Step 5: Register in Index
-├─ update-index(subject, status, confidence, findings)
-└─ verify: index_entry_added = true
-
-Step 6: Close Issue
-└─ Close with comment: "Research complete, wiki updated, indexed"
+Step 5: Close Issue
+└─ Close with comment: "Research complete, wiki updated and indexed"
 ```
 
-### Pattern 3: Orchestrator (Housekeeping)
+### Pattern 3: Infrastructure (Optional)
 
 ```
-Weekly:
-├─ audit-and-organize(dry_run=true)
-├─ review flagged issues
-└─ post summary to team with links
+Weekly (optional):
+├─ discover-structure()
+├─ review organization
+└─ post summary if changes needed
 ```
-
----
 
 ## Key Decision Points
 
-### When to Search vs Create?
+### When to Search?
 
 | Scenario | Action |
 |----------|--------|
-| "Does Field Manager persona exist?" | search("Field Manager") |
-| "I need fresh research on Facility Director" | search + create new |
-| "Is checkout flow documented?" | search("checkout flow") |
-| "Should I update existing persona or create new?" | search + compare findings + agent decides |
+| "Does this research already exist?" | search("[subject]") |
+| "Should I start new work or reuse?" | search + evaluate match_score |
+| "What existing content is related?" | search + review results |
 
-### When to Update Index?
+### When to Write?
 
 | Scenario | When |
 |----------|------|
-| After write-page succeeds | Always |
-| During research | update-index(..., status="In Progress") |
-| When research deferred | update-index(..., status="Deferred") |
-| After research complete | update-index(..., status="Complete") |
+| Research/analysis complete | After steps 1-3 conducted |
+| Have documented findings | Ready to persist to wiki |
+| Multiple pages needed | Call write-content multiple times |
+| Ready to register metadata | Include status, confidence, findings_summary in write-content call |
 
-### When to Call Audit?
+**Note:** write-content handles both content storage AND index registration (metadata included as optional parameters).
 
-| Scenario | Frequency |
-|----------|-----------|
-| Check for duplicates | Weekly or after major edits |
-| Verify index is current | Bi-weekly |
-| Detect naming issues | Monthly housekeeping |
-
----
-
-## Response Code Examples
+## Response Examples
 
 ### Successful Search
 
 ```json
 {
   "status": "success",
-  "query": "Field Manager",
+  "query": "[search term]",
   "total_found": 1,
   "results": [
     {
-      "page": "Personas/Field-Manager",
+      "page": "[type]/[subject]",
       "match_score": 0.98,
-      "snippet": "# Field Manager\n\nManages equipment checkout..."
+      "snippet": "# [Subject]\n\n[first few lines]"
     }
   ]
 }
 ```
 
-**Agent reads:** `match_score=0.98` → this is a strong match → likely use it
+**Agent reads:** `match_score=0.98` → strong match → likely reuse
 
 ---
 
-### Successful Write
+### Successful Write (No Reorganization)
 
 ```json
 {
   "status": "success",
-  "page_path": "Personas/Field-Manager",
-  "wiki_url": "https://github.com/owner/repo/wiki/Personas/Field-Manager",
   "committed": true,
-  "commit_message": "Create Personas/Field-Manager.md"
+  "reorganized": false
 }
 ```
 
-**Agent reads:** `committed=true` → page written and pushed → proceed to update-index
+**Agent reads:** `committed=true` and `reorganized: false` → Content written. Structure was already optimized. Index automatically updated with your metadata.
 
 ---
 
-### Successful Index Update
+### Successful Write (With Reorganization)
 
 ```json
 {
   "status": "success",
-  "message": "Index entry added: Field Manager",
-  "index_entry_added": true
+  "committed": true,
+  "reorganized": true,
+  "reorganization_summary": {
+    "trigger": "messiness_exceeded_threshold (orphaned_pages_detected)",
+    "changes_made": [
+      "consolidated_duplicate_folders",
+      "moved_orphaned_research_pages_to_main_structure",
+      "removed_empty_intermediate_folders"
+    ],
+    "pages_touched": 7,
+    "audit_result": "all_pages_accounted_for",
+    "gap_analysis": {
+      "missing_from_index_before": 2,
+      "orphaned_content_before": 3,
+      "fixed": true,
+      "new_index_entries": 5
+    },
+    "index_updated": true
+  }
 }
 ```
 
-**Agent reads:** `index_entry_added=true` → index updated → can close research issue
-
----
-
-### Audit Issues Detected
-
-```json
-{
-  "issues_detected": [
-    {
-      "issue_type": "potential_duplicates",
-      "severity": "HIGH",
-      "pages": ["Personas/Field-Manager", "Personas-Manager-Field"],
-      "recommendation": "Manual review"
-    }
-  ]
-}
-```
-
-**Agent reads:** Flags raised, agent manually reviews and decides
+**Agent reads:** `reorganized: true` → Skill optimized wiki structure, audited everything, updated index automatically. Your content is in the cleaned-up structure. Index is already accurate with your metadata.
 
 ---
 
@@ -367,7 +341,7 @@ Weekly:
 ```json
 {
   "status": "error",
-  "query": "Field Manager",
+  "query": "[search term]",
   "message": "Wiki clone failed: authentication error"
 }
 ```
@@ -381,7 +355,8 @@ Weekly:
 ```json
 {
   "status": "error",
-  "page_path": "Personas/Field-Manager",
+  "content_type": "[type]",
+  "subject": "[subject]",
   "message": "Failed to push: branch conflict"
 }
 ```
@@ -390,21 +365,6 @@ Weekly:
 1. Post error comment on issue
 2. Close with label `wiki-error`
 3. Escalate to orchestrator
-
----
-
-### Index Update Error
-
-```json
-{
-  "status": "error",
-  "message": "Research-to-Decision-Index not found in wiki"
-}
-```
-
-**Agent Action:** Create index first, then retry update-index
-
----
 
 ## Example: Full Research-to-Decision Workflow
 
@@ -435,43 +395,69 @@ CALL wiki-manager: search("Field Manager")
 
 # Step 1-3: Conduct 10 interviews, synthesize findings
 
-# Step 4: Write to Wiki
-CALL wiki-manager: write-page
-{
-  "page_path": "Personas/Field-Manager",
-  "content": "[findings from 10 interviews]"
-}
-# Response: success, committed=true
+## Example: Full Content Creation Workflow
 
-# Step 5: Register in Index
-CALL wiki-manager: update-index
-{
-  "subject": "Field Manager",
-  "status": "Complete",
-  "confidence": "HIGH",
-  "findings_summary": "10 interviews, 15-min checkout time = primary pain"
-}
-# Response: success, index_entry_added=true
-
-# Step 6: Close
-gh issue close 1025 -c "Research complete, wiki updated, indexed"
-```
-
-### Phase 3: PM Agent Reviews for Decision
+### Phase 1: Discovery Agent Checks for Existing Content
 
 ```bash
-# PM Phase 2 triggered
+# Discovery sees opportunity: "Need analysis on [subject]"
 
-# Search to retrieve research
-CALL wiki-manager: search("Field Manager")
-# Response: match_score=0.98, page=Personas/Field-Manager
+# Step 1: Search
+CALL wiki-manager: search("[subject]")
+
+# Response: No match (total_found: 0)
+
+# Step 2: Create Work Issue
+gh issue create --label "[content_type]" \
+  --title "[content_type]: [subject]" \
+  --body "Conduct [analysis/research]..."
+```
+
+### Phase 2: Execution Agent Produces Content
+
+```bash
+# Execution Agent assigned to work issue #1025
+
+# Step 0: Pre-flight check
+CALL wiki-manager: search("[subject]")
+# Response: No match → proceed
+
+# Step 1-3: Conduct work (interviews, analysis, testing, etc.)
+
+# Step 4: Write to Wiki
+CALL wiki-manager: write-content
+{
+  "action": "write-content",
+  "repo": "owner/repo",
+  "content_type": "[type]",
+  "subject": "[subject]",
+  "content": "[findings markdown]",
+  "status": "Complete",
+  "confidence": "HIGH|MEDIUM|LOW",
+  "findings_summary": "[one-line summary]",
+  "github_issue": "#1025"
+}
+# Response: success, committed=true, reorganized: true|false
+
+# Step 5: Close
+gh issue close 1025 -c "Work complete, wiki updated and indexed"
+```
+
+### Phase 3: Decision Agent Reviews for Action
+
+```bash
+# Discovery Phase 2 triggered
+
+# Search to retrieve content
+CALL wiki-manager: search("[subject]")
+# Response: match_score=0.98, page=[type]/[subject]
 
 # Read page directly:
 git clone https://github.com/owner/repo.wiki.git
-cat Personas/Field-Manager.md
+cat [type]/[subject].md
 
 # Review findings, make decision
-# Create strategic-opportunity if decision is GO
+# Create work item if decision is GO
 ```
 
 ---
@@ -479,34 +465,35 @@ cat Personas/Field-Manager.md
 ## Best Practices
 
 ✅ **DO:**
-- Search before creating research
-- Always call update-index after write-page
+- Search before creating new work
+- Always call update-index after write-content
 - Provide confidence levels (HIGH/MEDIUM/LOW)
-- Include evidence counts (N=X)
-- Use Kebab-Case for page names (Personas/Field-Manager, not Personas/FieldManager)
-- Include source citations (Issue #, interview count)
+- Include evidence counts (N=X interviews, N=X tests, etc.)
+- Use Kebab-Case for page names ([type]/[subject], not [type]/[subject with spaces])
+- Include source citations (Issue #, evidence count)
+- Let skill decide where content goes (agent specifies type, not path)
 
 ❌ **DON'T:**
-- Auto-merge or consolidate pages (only audit, agent decides)
+- Specify page_path in write-content (agent specifies content_type, skill decides path)
 - Write to wiki without indexing
-- Skip search (might duplicate effort)
-- Ignore audit findings
-- Create pages outside standard folders without reason
+- Skip search (might duplicate work)
+- Create pages outside of skill-managed folders
+- Assume specific content types exist (let agent define type)
 
 ---
 
-## Summary: Dumb Skill, Smart Agent
+## Summary: Structure-Agnostic Architecture
 
-| Responsibility | Action |
+| Who | Responsibility |
 |---|---|
-| **Skill:** search | Return matches + scores; agent decides |
-| **Skill:** write-page | Write at agent-specified location |
-| **Skill:** update-index | Add to master registry |
-| **Skill:** audit-and-organize | Detect issues; NO auto-fixes |
-| **Agent:** Decide when to search | Based on context |
-| **Agent:** Evaluate search results | Based on match_score |
-| **Agent:** Decide what to write | Based on research findings |
-| **Agent:** Decide where to write | Based on content classification |
-| **Agent:** Decide metadata | Status, confidence, findings_summary |
-| **Agent:** Handle issues | Merge duplicates, rename files |
+| **Skill: search** | Return matches + scores; agent evaluates |
+| **Skill: write-content** | Discover structure, auto-place content based on content_type |
+| **Skill: update-index** | Add to master index |
+| **Skill: discover-structure** | Inspect organization, report findings |
+| **Agent: Decide when to search** | Based on context and need |
+| **Agent: Evaluate search results** | Based on match_score and relevance |
+| **Agent: Decide what to write** | Based on findings and research |
+| **Agent: Specify content_type** | What category does this content belong in? |
+| **Agent: Decide metadata** | Status, confidence, findings_summary |
+| **Agent: Decide on merges** | Manual review of duplicates/conflicts |
 

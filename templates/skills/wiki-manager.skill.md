@@ -1,36 +1,246 @@
-# Skill: GitHub Wiki Manager v2 (Smart, Adaptive, Self-Healing)
+# Skill: GitHub Wiki Manager (Expert Librarian Model)
 
-## Overview
+## Philosophy
 
-A self-adapting wiki manager that **discovers what exists, measures chaos, auto-organizes, and maintains a master index**. Each call evaluates the current wiki state and reorganizes if chaos exceeds thresholds.
+**Expert Librarian, Not Passive Storage**
+
+The wiki-manager skill is an **autonomous expert librarian** that owns all aspects of wiki organization:
+- **Agents specify WHAT** to store: content_type, subject, content
+- **Skill owns WHERE & HOW**: placement, organization, structure
+- **Skill owns REORGANIZATION**: evaluates organization quality continuously, reorganizes proactively to maintain library health
+- **Index is source of truth**: Always accurate and complete after every write, audit, and reorganization
+
+The skill operates with semantic understanding of its own library:
+- Observes patterns in how content is organized over time
+- Calculates organization "messiness" (orphaned pages, duplicate structures, scattered content types, etc.)
+- Reorganizes when messiness exceeds acceptable thresholds
+- Maintains rigorous index audit & gap analysis after any reorganization
+- All reorganization is internal—agents never direct it
+
+Agents never instruct reorganization. The skill reorganizes autonomously before/during write operations to maintain library quality.
 
 ## Purpose
 
-Eliminate manual wiki maintenance. The skill audits wiki health, measures organizational chaos, auto-fixes mess, consolidates duplicates, and keeps the Research-to-Decision-Index current.
+Self-organizing wiki repository for AIOS research artifacts. Skill learns structure from existing content, organizes new submissions automatically, prevents duplicates, and maintains master index.
 
 ## Prerequisites
 
 - GitHub CLI (`gh`) installed and authenticated
 - Git installed
-- PowerShell 5.1+ (Windows) or Bash (Mac/Linux)
-- Access to target GitHub repository with wiki enabled
+- PowerShell 5.1+
+- Wiki enabled on target repo
 
-## Input Parameters
+## Agent Interface (Only Actions)
+
+Agents call only two actions:
 
 ```json
 {
-  "action": "string (required) - audit-and-organize | check-wiki-health | find-or-create",
+  "action": "string (required) - search | write-content",
   "repo": "string (required) - format: 'owner/repo'",
-  "search_term": "string (optional) - topic to find or create",
-  "content": "string (optional) - content for new pages",
-  "force_reorganize": "boolean (optional, default: false) - bypass messiness threshold"
+  "query": "string (optional for search) - search keyword",
+  "content_type": "string (optional for write-content) - any type agent defines",
+  "subject": "string (optional for write-content) - what this content is about",
+  "content": "string (optional for write-content) - markdown content to store",
+  "status": "string (optional for write-content) - Complete | In Progress | Deferred",
+  "confidence": "string (optional for write-content) - HIGH | MEDIUM | LOW",
+  "github_issue": "string (optional for write-content) - issue number",
+  "findings_summary": "string (optional for write-content) - one-line summary"
 }
 ```
 
+**Internal Operations (Skill Only):**
+- `update-index` — Maintained automatically by skill after write-content
+- `discover-structure` — Used internally by skill for reorganization decisions
+- `reorganize` — Triggered autonomously based on messiness metric
+
 ### Actions
 
-#### **audit-and-organize**
-Comprehensive wiki health check. Discovers all pages, classifies them, measures chaos, auto-reorganizes if needed, updates master index.
+#### **search**
+
+Find existing content by keyword. Returns matches with scores. **Agent evaluates results.**
+
+**Input:**
+```json
+{
+  "action": "search",
+  "repo": "owner/repo",
+  "query": "[search term]"
+}
+```
+
+**Output:**
+```json
+{
+  "status": "success|error",
+  "query": "[search term]",
+  "total_found": 1,
+  "results": [
+    {
+      "page": "[actual page name or path]",
+      "match_score": 0.98,
+      "snippet": "[first few lines of matching content]"
+    }
+  ],
+  "note": "Page names reported as-is from wiki. Structure may vary."
+}
+```
+
+---
+
+#### **write-content**
+
+Agent specifies content_type and subject. **Skill autonomously evaluates and optimizes wiki organization, then writes content.**
+
+**What happens internally (transparent to agent):**
+1. Discover current wiki structure and organization patterns
+2. Calculate organization "messiness" metric (orphaned pages, scattered content, duplicates, structure drift, etc.)
+3. If messiness exceeds acceptable threshold → **reorganize automatically:**
+   - Restructure wiki to improve coherence (consolidate, move, or refactor pages as needed)
+   - Audit wiki after reorganization (cross-check all pages accounted for)
+   - Gap analysis (identify missing index entries, orphaned content)
+   - Update Content-Index to fill all gaps and reflect new organization
+4. Write new content to the optimized structure
+5. Return response indicating whether reorganization occurred
+
+**Input:**
+```json
+{
+  "action": "write-content",
+  "repo": "owner/repo",
+  "content_type": "[type]",
+  "subject": "[subject]",
+  "content": "[markdown content]"
+}
+```
+
+**Output (Standard - no reorganization needed):**
+```json
+{
+  "status": "success",
+  "committed": true,
+  "reorganized": false,
+  "note": "Content committed to wiki."
+}
+```
+
+**Output (With reorganization):**
+```json
+{
+  "status": "success",
+  "committed": true,
+  "reorganized": true,
+  "reorganization_summary": {
+    "trigger": "messiness_exceeded_threshold",
+    "changes_made": ["consolidated_duplicate_folders", "moved_orphaned_pages", ...],
+    "audit_result": "all_pages_accounted_for",
+    "gap_analysis": {
+      "missing_from_index": [...],
+      "orphaned_content": [...],
+      "fixed": true
+    },
+    "index_updated": true
+  }
+}
+```
+
+**How Skill Decides Organization:**
+- Organization is NOT always content_type-based; may follow domain, outcome, workflow stage, or observed patterns
+- Skill uses expertise and analysis of wiki history to determine optimal structure
+- Structure emerges and evolves over time
+- **Always indexed. Always auditable. Always optimized.**
+
+---
+
+## Internal Operations (Skill Only)
+
+These operations are performed autonomously by the skill and are NOT called by agents.
+
+### **update-index** (Internal)
+
+Automatically executed by skill after every write-content. Maintains Content-Index with all content metadata:
+- Triggered: After write-content completes
+- Also executed: Post-reorganization (as part of gap-analysis)
+- Updates: Content-Index.md in wiki root
+- Ensures: All pages are indexed, no gaps, all metadata current
+
+### **discover-structure** (Internal)
+
+Automatically executed by skill:
+- **Before write-content:** Evaluates current organization to calculate messiness metric
+- **During reorganization:** Audits that all pages are accounted for
+- **Post-reorganization:** Identifies orphaned content and missing index entries
+- NOT exposed to agents (use search() if you need to verify content location)
+
+### **reorganize** (Internal)
+
+Automatically triggered by skill based on messiness metric:
+- Triggered: Before write-content, if messiness exceeds threshold
+- Process: Consolidate duplicates, move orphaned pages, optimize structure
+- Follow-up: Full audit → gap-analysis → index-update
+- Transparent: Agents see `reorganized: true/false` in response, but don't manage it
+
+---
+
+## Master Index Format
+
+Content-Index.md (auto-maintained in wiki root, updated post-write and post-reorg):
+
+```markdown
+# Content-Index
+
+Master registry of all content. Updated after each write-content + update-index.
+
+| Subject | Type | Status | Wiki Page | Last Updated | GitHub Issue | Confidence | Summary |
+|---------|------|--------|-----------|--------------|--------------|------------|---------|
+| [subject] | [type] | ✅ Complete | [actual page location] | 2026-07-08 | #1025 | HIGH | [one-liner] |
+```
+
+**Note:** Wiki Page column records the actual location where content was stored, whatever the current wiki structure determines.
+
+---
+
+## Agent Workflow
+
+### Typical Research/Analysis Workflow
+
+```markdown
+Step 0: Pre-flight check
+CALL wiki-manager: search("[subject]")
+→ If found and complete: reuse, don't redo
+
+Step 1-3: Conduct research/analysis
+
+Step 4: Write findings (all metadata included)
+CALL wiki-manager: write-content
+{
+  "content_type": "[type]",
+  "subject": "[subject]",
+  "content": "[markdown findings]",
+  "status": "Complete",
+  "confidence": "HIGH|MEDIUM|LOW",
+  "findings_summary": "[summary]",
+  "github_issue": "#[issue]"
+}
+→ Skill writes content AND updates index
+
+Step 5: Close issue
+```
+
+---
+
+## Key Principles
+
+✅ **Expert librarian, not passive storage** — Skill owns organization, placement, and reorganization  
+✅ **Autonomous optimization** — Evaluates wiki messiness continuously, reorganizes proactively  
+✅ **Index as source of truth** — Always accurate, complete, and up-to-date  
+✅ **Agents specify semantics** — content_type, subject, content (agents decide meaning)  
+✅ **Skill owns structure** — Decides WHERE and HOW based on domain expertise and observed patterns  
+✅ **Structure may not follow content_type** — Organization emerges from patterns, not prescribed schema  
+✅ **Post-reorganization rigor** — Audit → Gap Analysis → Index Update (always)  
+✅ **Internal mechanisms only** — Agents never direct reorganization; skill acts autonomously  
+✅ **No path specifications** — Agents never specify placement or folder structure  
+✅ **Generic by design** — Works with any content types agents define
 
 **Input:**
 ```json
