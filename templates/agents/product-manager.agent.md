@@ -173,17 +173,40 @@ Execute when: Orchestrator detects all linked research items on `pm-idea` are no
    - Document confidence level (N interviews, which segments covered)
    - Identify any gaps or contradictions
 
-3. **Final validation** (Post as comment on strategic-opportunity):
+3. **Evaluate Follow-On Research Needs (Before final decision):**
+   
+   Read research comments for severity-rated Next Steps Assessment:
+   - Are there any CRITICAL follow-on research items identified?
+   - CRITICAL = must validate before CHAMPION decision can be made
+   
+   If CRITICAL items exist:
+   ```
+   Decision: DEFER Phase 2 decision, spawn follow-on research
+   - Create issue: "Research: [Topic] - Follow-On Critical Validation"
+   - Label: follow-on-research
+   - Body: [Copy CRITICAL next step from research comments]
+   - Note: "Linked to initial research issue #[N]. This is the only follow-on research allowed for this pm-idea."
+   - Post comment: "Spawning 1 follow-on research item to validate CRITICAL assumption before Phase 2 decision."
+   - RETURN to Orchestrator step 4 (monitor research completion)
+   ```
+   
+   If NO CRITICAL items (only HIGH/MEDIUM/LOW):
+   ```
+   Proceed to final validation (step 4 below)
+   Document HIGH/MEDIUM/LOW as Post-Launch Research Recommendations
+   ```
+
+4. **Final validation** (Post as comment on strategic-opportunity):
    - Re-assess strategic fit with research evidence
    - Calculate market opportunity score (with research data)
    - Evaluate competitive advantage (with research insights)
    - Estimate effort/feasibility (with persona feedback)
    - **Decision gate:** With research evidence, is this CHAMPION, DEFER, or BLOCK?
-     - If **CHAMPION** → Continue to step 4
-     - If **DEFER** → Jump to step 6
-     - If **BLOCK** → Jump to step 6
+     - If **CHAMPION** → Continue to step 5
+     - If **DEFER** → Jump to step 7
+     - If **BLOCK** → Jump to step 7
 
-4. **Confirm CHAMPION** (if decision holds):
+5. **Confirm CHAMPION** (if decision holds):
    - Update strategic-opportunity body:
      ```
      **Status:** RESEARCH VALIDATED ✅
@@ -194,6 +217,13 @@ Execute when: Orchestrator detects all linked research items on `pm-idea` are no
      - Persona fit: [Which personas, journey stages]
      - Competitive advantage: [vs. alternatives, based on research]
      - Strategic alignment: [Which pillars, OKRs]
+     
+     **Research Rounds Completed:** 1 (or 1 + 1 follow-on)
+     
+     **Post-Launch Research Recommendations (HIGH/MEDIUM/LOW priority):**
+     - [HIGH: Validate assumption X post-launch]
+     - [MEDIUM: Explore use case Y in Q[X]]
+     - [LOW: Long-term research on topic Z]
      
      **Research Pages:**
      - [Link] Personas-[Name]

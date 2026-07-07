@@ -838,9 +838,30 @@ Post final research summary comment:
 - Research-to-Decision-Index ✅
 - Strategic-Findings-[Quarter] ✅
 
-**Next Steps (If Approved):**
-- Validate assumption X with [experiment/interview/data review]
-- Deep-dive into [risk area] with [specific research method]
+**Next Steps Assessment (Severity-Rated for Follow-On Research):**
+
+**CRITICAL - MUST VALIDATE BEFORE CHAMPION DECISION:**
+- [Next step 1]: [Why this is critical] → Blocks CHAMPION decision
+  - Recommended method: [research method]
+  - Estimated effort: [hours]
+  - If not validated: Decision changes to DEFER/BLOCK
+
+**HIGH - Strongly Recommended Before Decision:**
+- [Next step 1]: [Why this is important] → Increases confidence in CHAMPION
+  - Recommended method: [research method]
+  - Estimated effort: [hours]
+  - If not validated: CHAMPION decision still valid but riskier
+
+**MEDIUM - Nice-to-Have Before Launch:**
+- [Next step 1]: [Why this would be useful] → Informs GTM strategy
+  - Recommended method: [research method]
+  - Estimated effort: [hours]
+  - Timeline: Can be done post-launch
+
+**LOW - Exploratory/Future Research:**
+- [Next step 1]: [Long-term research question] → Future learning
+  - Recommended method: [research method]
+  - Timeline: Q[X] research or later
 
 **Research Quality Notes:**
 - Data sources: [Mix of Tier 1, 2, 3]
