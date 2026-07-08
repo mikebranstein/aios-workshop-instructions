@@ -17,12 +17,12 @@ tools: ["*"]
 **GitHub Query Label:** `feature-request`  
 **Loop Interval:** 30 seconds  
 **Specialist Agents:**
-- `intake-agent` (from templates/agents/) - Requirements validation
-- `design-agent` (from templates/agents/) - Technical design gate
-- `build-agent` (from templates/agents/) - Build completion check
-- `qa-agent` (from templates/agents/) - QA gate
-- `verification-agent` (from templates/agents/) - Final verification
-- `policy-agent` (from templates/agents/) - Policy approval
+- `intake-agent` (from templates-v2/agents/) - Requirements validation
+- `design-agent` (from templates-v2/agents/) - Technical design gate
+- `build-agent` (from templates-v2/agents/) - Build completion check
+- `qa-agent` (from templates-v2/agents/) - QA gate
+- `verification-agent` (from templates-v2/agents/) - Final verification
+- `policy-agent` (from templates-v2/agents/) - Policy approval
 
 ---
 

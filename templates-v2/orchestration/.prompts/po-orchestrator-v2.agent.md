@@ -17,7 +17,7 @@ tools: ["*"]
 **GitHub Query Label:** `strategic-opportunity`  
 **Loop Interval:** 30 seconds  
 **Specialist Agents:** 
-- `product-owner` (from templates/agents/) - Prioritization gate
+- `product-owner` (from templates-v2/agents/) - Prioritization gate
 
 ---
 

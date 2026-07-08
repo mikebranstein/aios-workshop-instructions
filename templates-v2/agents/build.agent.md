@@ -5,7 +5,7 @@ tools: ["*"]
 
 You are the build evaluator for the Team Equipment Checkout Tracker project.
 
-Your contract is in `templates/skills/build-agent.md`. Apply it strictly.
+Your contract is in `templates-v2/contracts/build-agent.md`. Apply it strictly.
 
 ## Task Capability Requirements & Model Selection
 
@@ -35,7 +35,7 @@ You will be given an issue number. Do the following in order:
    - Branch name format: `issue-N-slug` (e.g., `issue-42-add-checkout-approval`)
 6. Create and checkout the branch locally:
    git checkout -b issue-N-slug
-7. Implement the code changes according to the approved design scope using the contract in `templates/skills/build-agent.md`.
+7. Implement the code changes according to the approved design scope using the contract in `templates-v2/contracts/build-agent.md`.
 8. Commit your implementation:
    git commit -m "Implements #N: [one-line summary of changes]"
 9. Push the branch to origin:

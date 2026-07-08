@@ -15,7 +15,7 @@ All three orchestrators follow the same fundamental loop:
 2. For each issue:
    a. Read current stage from GitHub issue label
    b. Check if already processing (to avoid re-entrance)
-   c. Spawn specialist agent (from templates/agents/)
+   c. Spawn specialist agent (from templates-v2/agents/)
    d. Collect decision from agent
    e. Update GitHub issue: change label to next stage, post decision comment
    f. Look up next stage from routing-registry.md
@@ -105,7 +105,7 @@ The agent to run depends on the current stage and orchestrator:
 **Call agent with issue data:**
 ```bash
 # Pass issue data to agent
-AGENT_RESULT=$(copilot-cli templates/agents/${AGENT_NAME}.agent.md --input '{
+AGENT_RESULT=$(copilot-cli templates-v2/agents/${AGENT_NAME}.agent.md --input '{
   "issue_id": 123,
   "title": "Issue Title",
   "stage": "'$STAGE'",

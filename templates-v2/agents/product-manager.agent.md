@@ -43,7 +43,7 @@ This is a **strategic product leadership role**. You will:
 
 This agent can run **autonomously** on GitHub issues with the `pm-idea` label. Users input a 1-3 sentence feature idea; the agent runs through discovery, validation, and decision-making automatically.
 
-**First Run Setup:** On your first execution, verify Research Wiki is accessible using the `wiki-manager` skill (templates/skills/wiki-manager.skill.md). All subsequent runs will reference and read the research wiki. The wiki-manager skill handles all cloning, reading, and verification automatically.
+**First Run Setup:** On your first execution, verify Research Wiki is accessible using the `wiki-manager` utility (templates-v2/utilities/wiki-manager.md). All subsequent runs will reference and read the research wiki. The wiki-manager utility handles all cloning, reading, and verification automatically.
 
 ### Input & Output Contract
 
@@ -567,7 +567,7 @@ Central repository for customer research, personas, and journey maps.
 - **Strategic Decisions** — Recorded decisions with evidence
 - **Quarterly Summaries** — Themes, signals, and implications
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for templates and quarterly update cycles."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for templates and quarterly update cycles."
 
 # Create skeleton pages (learner will fill in content as research accumulates)
 gh wiki create "Personas-[Segment-Name]" --body "# Persona: [Segment Name]
@@ -587,7 +587,7 @@ gh wiki create "Personas-[Segment-Name]" --body "# Persona: [Segment Name]
 ## Frustrations & Pain Points
 [To be filled in]
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for complete template."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for complete template."
 
 gh wiki create "Journey-Maps-[Segment-Name]" --body "# Journey Map: [Segment Name]
 
@@ -607,7 +607,7 @@ gh wiki create "Journey-Maps-[Segment-Name]" --body "# Journey Map: [Segment Nam
 ## Stage 4: Problem Resolution
 [To be filled in]
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for complete template."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for complete template."
 
 gh wiki create "Interview-Transcripts-[Quarter]" --body "# Interview Transcripts: [Quarter Year]
 
@@ -619,7 +619,7 @@ Recording and transcribing interviews from [Quarter]. Update weekly as interview
 |------|----------|------|--------------|----------------|
 | [date] | [name] | [title] | [summary] | [link] |
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for interview methodology."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for interview methodology."
 
 gh wiki create "Research-to-Decision-Index" --body "# Research-to-Decision Index
 
@@ -631,7 +631,7 @@ Update quarterly as new interview data is analyzed.
 |---------|---------|---------------|-----------------|----------------|-----------------------|----------|
 | [problem] | [persona] | [stage] | [N interviews] | [quote] | [issue link] | [status] |
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for indexing guidance."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for indexing guidance."
 
 gh wiki create "Strategic-Decisions-2026" --body "# Strategic Decisions: 2026
 
@@ -646,7 +646,7 @@ For each major decision, use:
 - **Dissenting Opinion:** Who disagreed?
 - **Revisit Criteria:** When would we reconsider?
 
-See [Stakeholder Alignment Skill](../templates/skills/stakeholder-alignment.md) for detailed decision documentation template."
+See [Stakeholder Alignment Skill](../../templates-old/reference/stakeholder-alignment.md) for detailed decision documentation template."
 
 gh wiki create "Quarterly-Summary-[Quarter]" --body "# Quarterly Research Summary: [Quarter Year]
 
@@ -666,7 +666,7 @@ Synthesis of all research conducted this quarter: interviews, themes, churn sign
 ## Strategic Implications
 [What this means for product strategy and OKRs]
 
-See [User Research & Personas Skill](../templates/skills/user-research-and-personas.md) for quarterly synthesis process (8-10 hours)."
+See [User Research & Personas Skill](../../templates-old/reference/user-research-and-personas.md) for quarterly synthesis process (8-10 hours)."
 ```
 
 **What to do manually:**

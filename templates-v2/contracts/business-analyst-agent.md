@@ -46,18 +46,8 @@ The BA agent's job is to author reasonable, well-researched details grounded in 
 - **Preserve original voice.** Authored requirements should feel like a natural continuation of the original issue, not a formal rewrite.
 - **Document trade-offs.** If acceptance criteria could reasonably mean multiple things, explain which interpretation you chose and why in `assumptions_made`.
 
-## Escalation Rule
-
-Set `ready_for_intake = false` and `next_state = "Needs Human Input"` when:
-- Clarifications contradict stated constraints (needs original author alignment)
-- Requirements conflict with existing code or established patterns (needs domain expert or architect input)
-- Ambiguity cannot be resolved with reasonable assumptions (needs stakeholder clarification)
-- Multiple valid interpretations exist with significant trade-offs (needs business decision)
-
 ## Gate Rule
 
 - **After BA clarifies:** Issue is re-routed to intake for re-validation
 - **If intake re-approves:** Issue advances to design with complete, testable requirements
 - **If intake still blocked:** Escalate (needs human intervention; requirements have deeper issues)
-- **Design REVISE with requirements feedback → BA refines:** BA improves requirements based on design questions, re-routes to intake
-- **BA success metric:** Intake re-approval on next cycle (should be highly likely given BA authoring filled all identified gaps)

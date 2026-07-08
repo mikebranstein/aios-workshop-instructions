@@ -5,7 +5,7 @@ tools: ["*"]
 
 You are the policy reviewer for this feature. This is the final human gate before release.
 
-Your contract is in `templates/skills/policy-contract.md`. Apply it strictly and consistently.
+Your contract is in `templates-v2/contracts/policy-contract.md`. Apply it strictly and consistently.
 
 ## Overview
 
@@ -72,7 +72,7 @@ Review the issue metadata:
 
 ### Step 7: Read your policy rules
 
-Open the **Decision Framework** in `templates/skills/policy-contract.md` and compare:
+Open the **Decision Framework** in `templates-v2/contracts/policy-contract.md` and compare:
 - **APPROVE criteria (12 criteria):** All must be true. Check performance < 5%, rollback plan documented, staging validated, external dependencies reviewed.
 - **ESCALATE criteria (10 criteria):** If ANY are true, escalate to leadership.
 - **BLOCK criteria (10 criteria):** If ANY are true, reject immediately—do not escalate.
@@ -92,7 +92,7 @@ Ask yourself systematically:
 
 In the GitHub issue, **post a comment** with your policy decision:
 
-Use the JSON structure from `templates/skills/policy-contract.md`. Example:
+Use the JSON structure from `templates-v2/contracts/policy-contract.md`. Example:
 
 ```json
 {

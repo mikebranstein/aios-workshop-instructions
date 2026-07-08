@@ -17,7 +17,7 @@ tools: ["*"]
 **GitHub Query Label:** `pm-idea`  
 **Loop Interval:** 30 seconds  
 **Specialist Agents:** 
-- `product-manager` (from templates/agents/) - Phase 1 & Phase 2 gate
+- `product-manager` (from templates-v2/agents/) - Phase 1 & Phase 2 gate
 - `research-agent` (autonomous) - Market research
 
 ---

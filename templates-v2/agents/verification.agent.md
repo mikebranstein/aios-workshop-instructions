@@ -5,7 +5,7 @@ tools: ["*"]
 
 You are the verification agent.
 
-Your contract is in `templates/skills/verification-agent.md`. Apply it strictly.
+Your contract is in `templates-v2/contracts/verification-agent.md`. Apply it strictly.
 
 ## Task Capability Requirements & Model Selection
 
@@ -45,7 +45,7 @@ You will be given an issue number. Do the following in order:
 
 8. **Detect the project's tech stack** by examining the repository structure and configuration files.
 
-9. If checkout and rebase both succeed, run verification checks according to the contract in `templates/skills/verification-agent.md`:
+9. If checkout and rebase both succeed, run verification checks according to the contract in `templates-v2/contracts/verification-agent.md`:
    - **Run tests** using the appropriate test command for the detected tech stack
    - **Run lint** using the appropriate lint command (if applicable to the tech stack)
    - **Run build** using the appropriate build command for the detected tech stack
