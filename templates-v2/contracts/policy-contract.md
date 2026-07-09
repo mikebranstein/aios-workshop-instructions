@@ -75,6 +75,46 @@ You make the final human judgment for Tier 2 features: ESCALATE (leadership revi
 - If feature has any TIER 3 blocker → Apply `policy-blocked` label; route back to Design
 - If feature has any TIER 2 escalation criteria → Apply `policy-escalated` label; wait for leadership
 
+## Output Schema (JSON only)
+
+Return valid JSON only:
+
+```json
+{
+   "contract": "Policy",
+   "decision": "APPROVE|ESCALATE|BLOCK",
+   "policy_date": "YYYY-MM-DD",
+   "reviewer": "string",
+   "risk_level": "low|medium|high",
+   "impact_scope": "isolated|cross-system|major",
+   "policy_rationale": "string",
+   "escalation_reason": "string|null",
+   "blocker_reason": "string|null",
+   "verified_criteria": {
+      "api_breaking_changes": true,
+      "schema_breaking_changes": true,
+      "security_review_needed": true,
+      "compliance_implications": true,
+      "pii_handling_unchanged": true,
+      "audit_logging_intact": true,
+      "test_coverage_adequate": true,
+      "regressions_detected": false,
+      "performance_regression_acceptable": true,
+      "rollback_plan_documented": true,
+      "external_dependencies_reviewed": true,
+      "staging_environment_validated": true
+   },
+   "qa_summary": "string",
+   "recommendations": "string"
+}
+```
+
+## Label Mapping
+
+- `decision = APPROVE` → apply `policy-auto-approved`
+- `decision = ESCALATE` → apply `policy-escalated`
+- `decision = BLOCK` → apply `policy-blocked`
+
 ## Gate Rule
 - TIER 1 (Auto-Approve): Feature is auto-released
 - TIER 2 (Leadership Review): Hold for async leadership review (~30 min); leadership decides

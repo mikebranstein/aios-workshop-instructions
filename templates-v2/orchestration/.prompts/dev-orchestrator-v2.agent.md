@@ -378,19 +378,6 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 ---
 
-#### POLICY APPROVED -- Leadership-Approved Release
-
-**Condition:** Has `policy-approved`
-
-**Action:**
-1. Read Build Decision comment to get the PR number.
-2. `gh pr merge PR_NUMBER --merge --admin`
-3. `gh issue comment NUMBER --body "**Orchestrator:** Policy tier evaluation: TIER 2 leadership approved. PR #PR_NUMBER merged. Feature released."`
-4. `gh issue label NUMBER --add released`
-5. `gh issue close NUMBER --reason completed`
-
----
-
 #### POLICY ESCALATED -- Tier 2 Leadership Review
 
 **Condition:** Has `policy-escalated`
@@ -458,7 +445,7 @@ gh issue label NUMBER --add orchestrator-timeout
 | `verification-failed` | Check failure -- needs rework |
 | `qa-passed` | All tests pass -- ready for policy or release |
 | `qa-failed` | Test failures or coverage gaps |
-| `policy-approved` | Approved for release |
+| `policy-auto-approved` | Approved for release |
 | `policy-escalated` | Waiting for leadership decision |
 | `policy-blocked` | Blocked -- back to design |
 | `released` | PR merged, feature shipped |

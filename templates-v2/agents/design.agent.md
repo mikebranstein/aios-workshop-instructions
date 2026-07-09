@@ -39,35 +39,10 @@ You will be given an issue number. Do the following in order:
    **Model Used:** [your active model]
    **Summary:** [one-line design assessment]
 
-   <details>
-   <summary>Decision Details (JSON)</summary>
-
-   ```json
-   {
-     "decision": "PASS | REVISE | BLOCKED",
-     "model_used": "[your active model]",
-     "design_assessment": "[assessment text]",
-     "interfaces_impacted": ["list of interfaces"],
-     "data_model_changes": ["list of changes"],
-     "risks": ["risk item"],
-     "clarifications_needed": ["if REVISE: list what needs clarification or narrowing"],
-     "next_state": "[In Build | In Design | Blocked]",
-     "summary": "one-line design assessment"
-   }
-   ```
-
-   </details>
+   Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/design-agent.md`.
 
 7. Determine if policy review is needed (governance gate):
-   
-   Apply `policy-review-required` label if ANY of these are true:
-   - Risk level is **High**
-   - **Breaking changes** to public APIs, data models, or authentication
-   - **PII/compliance/security** implications (data access changes, retention, encryption)
-   - Impact affects **multiple critical subsystems** (3+ areas)
-   - **Database schema changes** (migrations, new tables, structural changes)
-   - **New external dependencies** or third-party integrations
-   - Changes to **existing critical workflows** (checkout/return, payments, auth)
+   Use the policy trigger rules in `.github/contracts/design-agent.md`.
    
    Label command:
    ```bash

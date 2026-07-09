@@ -24,7 +24,7 @@ Execute objective quality checks on the built PR. Validate tests pass, lint is c
   "failing_checks": ["list of failed checks or empty if all pass"],
   "root_causes": ["list of root causes"],
   "recommended_fixes": ["list of recommended fixes"],
-  "next_state": "Ready for Merge|In Build"
+  "next_state": "Ready for QA|In Build|In Design"
 }
 ```
 
@@ -43,6 +43,6 @@ Execute objective quality checks on the built PR. Validate tests pass, lint is c
 Escalate when the same root cause fails 3 consecutive verification cycles on the same PR.
 
 ## Gate Rule
-- PASS maps to `next_state = Ready for Merge` (issue is complete and approved).
+- PASS maps to `next_state = Ready for QA`.
 - FAIL with test/lint/build failure maps to `next_state = In Build` (issue returns to build for rework).
 - FAIL with integration_conflict maps to `next_state = In Design` (issue returns to design for re-evaluation).

@@ -19,7 +19,7 @@ In both cases, apply the contract. Your goal is to make intake's next re-validat
 
 ## Task Capability Requirements & Model Selection
 
-This agent performs **creative requirements authoring with domain reasoning**: analyzing incomplete specifications, identifying gaps, researching reasonable implementations, and authoring detailed acceptance criteria with documented assumptions.
+This agent performs **requirements refinement with domain reasoning**: analyzing incomplete specifications, identifying gaps, and clarifying acceptance criteria with documented assumptions.
 
 **Required capability:** Domain knowledge application, creative problem-solving within constraints, requirements specification writing, trade-off analysis, clear technical writing.
 
@@ -47,7 +47,7 @@ You will be given an issue number. Do the following in order:
 
    ## Business Analyst Clarification
 
-   **Status:** [CLARIFY | AUTHOR | AUTHOR_AND_CLARIFY]
+   **Status:** [CLARIFIED | ESCALATE]
    **Model Used:** [your active model]
    **Summary:** [one-line summary of what was clarified/authored]
 
@@ -59,9 +59,9 @@ You will be given an issue number. Do the following in order:
    - [explicit, testable criterion 2]
    - [etc.]
 
-   ### Edge Cases Identified
-   - [edge case 1 and how it's handled]
-   - [edge case 2 and how it's handled]
+   ### Test Scenarios (including edge cases)
+   - [scenario 1 and expected behavior]
+   - [scenario 2 and expected behavior]
    - [etc.]
 
    ### Constraints
@@ -85,34 +85,14 @@ You will be given an issue number. Do the following in order:
 
    </details>
 
-   <details>
-   <summary>Decision Details (JSON)</summary>
-
-   ```json
-   {
-     "action": "[CLARIFY | AUTHOR | AUTHOR_AND_CLARIFY]",
-     "model_used": "[your active model]",
-     "clarifications": {
-       "acceptance_criteria": ["list of criteria"],
-       "edge_cases": ["list of edge cases"],
-       "constraints": ["list of constraints"],
-       "non_goals": ["list of non-goals"]
-     },
-     "gaps_filled": ["list of fields"],
-     "assumptions_made": ["list of assumptions with rationale"],
-     "ready_for_intake": true|false,
-     "next_state": "[Ready for Intake Re-validation | Needs Human Input]"
-   }
-   ```
-
-   </details>
+   Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/business-analyst-agent.md`.
 
 8. Output a one-line summary to the issue:
    - If ready_for_intake = true: "Business analyst clarification complete. Re-routing to intake for re-validation."
    - If ready_for_intake = false: "Business analyst escalation: [reason]. Needs human input."
 
 9. Apply labels based on action:
-   - If CLARIFY or AUTHOR or AUTHOR_AND_CLARIFY (ready_for_intake = true): `gh issue label NUMBER --add requirements-clarified`
+   - If CLARIFIED (ready_for_intake = true): `gh issue label NUMBER --add requirements-clarified`
    - If ESCALATE (ready_for_intake = false): `gh issue label NUMBER --add requirements-needs-human`
 
 10. Output a one-line terminal summary:

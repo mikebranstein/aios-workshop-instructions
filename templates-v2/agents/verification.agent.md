@@ -61,27 +61,7 @@ You will be given an issue number. Do the following in order:
    **Build System:** [npm | maven | gradle | python | etc.]
    **Summary:** [one-line result: all checks passed, or specific failure type and reason]
 
-   <details>
-   <summary>Decision Details (JSON)</summary>
-
-   ```json
-   {
-     "decision": "PASS | FAIL",
-     "model_used": "[your active model]",
-     "build_system": "[detected tech stack]",
-     "rebased_onto_main": true,
-     "failure_type": "[integration_conflict | test_failure | lint_failure | build_failure | null if PASS]",
-     "build_status": "PASS | FAIL",
-     "test_status": "PASS | FAIL",
-     "lint_status": "PASS | FAIL",
-     "failing_checks": ["list of failed checks"],
-     "root_causes": ["list of root causes"],
-     "recommended_fixes": ["list of fixes"],
-     "next_state": "Ready for QA | In Design | In Build"
-   }
-   ```
-
-   </details>
+    Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/verification-agent.md`.
 
 13. Apply the label to the issue:
     - If PASS: gh issue label NUMBER --add verification-passed

@@ -68,6 +68,7 @@ You will be given an issue number. Do the following in order:
    - Are failures due to acceptance criteria being interpreted differently than expected? (e.g., test expects "last 20 items" but spec says "all items")
 5. **If failures are code bugs:** Fix the implementation (go to step 6)
 6. **If failures suggest acceptance criteria ambiguity:** 
+   - Post Build Decision with `"decision": "BLOCKED_REQUIRES_CLARIFICATION"`
    - Post Build Decision with `"reason": "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION"`
    - Document which test failure suggests the acceptance criteria issue
    - Orchestrator will route back to Design for clarification
@@ -77,11 +78,11 @@ You will be given an issue number. Do the following in order:
    - Commit and push: `git commit -m "Fixes #N: [specific fix]"`
    - Re-run full test suite to ensure no regressions
 8. Post Build Decision comment with JSON showing:
-   - `decision`: "COMPLETE" (if fixed) or "BLOCKED" (if criteria ambiguity)
-   - `reason`: "fixed_test_failures" or "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION"
-   - `test_failures`: Which specific tests were fixed / which suggest criteria issues
+   - `decision`: "COMPLETE" (if fixed) or "BLOCKED_REQUIRES_CLARIFICATION" (if criteria ambiguity)
+   - `reason`: null (if COMPLETE) or "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION" (if criteria ambiguity)
+   - `test_failure_analysis`: Which specific tests were fixed / which suggest criteria issues
 9. If COMPLETE: Remove `build-blocked` label (test passed, code was the issue)
-10. If BLOCKED: Keep `build-blocked` label (criteria issue, design must clarify)
+10. If BLOCKED_REQUIRES_CLARIFICATION: Keep `build-blocked` label (criteria issue, design must clarify)
 
 ### Mode A: CLEANUP
 
@@ -119,35 +120,15 @@ You will be given an issue number. Do the following in order:
 
     ## Build Decision
 
-    **Status:** [COMPLETE | PARTIAL | BLOCKED]
+   **Status:** [COMPLETE | PARTIAL | BLOCKED | BLOCKED_REQUIRES_CLARIFICATION]
     **Model Used:** [your active model]
     **PR:** [link to PR]
     **Summary:** [one-line implementation summary]
 
-    <details>
-    <summary>Decision Details (JSON)</summary>
-
-    ```json
-    {
-      "decision": "COMPLETE | PARTIAL | BLOCKED",
-      "model_used": "[your active model]",
-      "pr_url": "[link to PR]",
-      "branch_name": "issue-N-slug",
-      "changes_summary": "string describing implementation",
-      "files_changed": ["file.ts", "file.md"],
-      "tests_updated": ["test.spec.ts"],
-      "acceptance_criteria_covered": ["criterion 1"],
-      "remaining_work": ["work item"],
-      "blocker_reason": null,
-      "risks": ["risk item"],
-      "next_state": "In Build | In Verification | Blocked"
-    }
-    ```
-
-    </details>
+    Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/build-agent.md`.
 12. Apply the label:
     - If COMPLETE: gh issue label NUMBER --add build-complete
-    - If PARTIAL or BLOCKED: gh issue label NUMBER --add build-blocked
+   - If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: gh issue label NUMBER --add build-blocked
 13. Output a one-line summary: "Issue #NUMBER: build DECISION - PR CREATED: [pr_url]"
 
 ### Mode B: CLEANUP

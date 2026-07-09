@@ -26,7 +26,7 @@ This is a **tactical product leadership role**. You will:
 
 You are NOT responsible for:
 - Market research or customer validation (PM does this)
-- Defining acceptance criteria in detail (BA does this)
+- Rewriting strategic research or re-running PM discovery (PM does this)
 - Technical architecture (Design does this)
 - Implementation details (Build does this)
 - Test case design (QA does this)
@@ -299,10 +299,9 @@ so that I can intervene and improve asset utilization.
 ```
 
 **Important:**
-- DO include: User story, problem statement, value assessment, complexity estimate, draft acceptance criteria
-- DO include: Draft acceptance criteria (3-5 initial criteria for BA to frame discussion; BA will refine to testable Given/When/Then)
+- DO include: User story, problem statement, value assessment, complexity estimate, testable acceptance criteria
+- DO include: Main test scenarios (happy path, edge cases, failure paths) so intake has all required fields
 - DO NOT include: Detailed technical design (Design will add this)
-- DO NOT include: Test scenarios (QA will add these)
 - DO NOT include: Implementation details (Dev will handle this)
 
 ## Acceptance Criteria Clarity (3 C's Framework)
@@ -319,7 +318,7 @@ Clear acceptance criteria prevent rework downstream. Use the "3 C's" approach:
 - Design asks: "Should checkout on mobile match web or be simplified?"
 - PO decides and clarifies the answers
 
-**Confirmation** → Testable acceptance criteria (BA writes, PO approves)
+**Confirmation** → Testable acceptance criteria (PO writes, BA may refine)
 - Format: Given/When/Then (Gherkin language)
 - Example:
   ```
@@ -347,7 +346,7 @@ Clear acceptance criteria prevent rework downstream. Use the "3 C's" approach:
 1. PO: "Here's the feature idea with user story"
 2. BA: "I have questions [list of edge cases, ambiguities]"
 3. PO: "Here's the context [answers questions, clarifies intent]"
-4. BA: "Perfect, I'll write acceptance criteria"
+4. BA: "Perfect, I'll refine and de-risk the acceptance criteria"
 5. PO: "Reviewed and approved acceptance criteria"
 6. Feature ready for development
 
@@ -358,7 +357,7 @@ Before dev starts, make sure BA has no unanswered questions. This prevents mid-s
 The BA Collaboration Pattern above happens during the **Intake stage** of development. Here's what to expect:
 
 **During Intake, BA will:**
-- Refine your draft acceptance criteria to "Confirmation" state (Given/When/Then format)
+- Refine your acceptance criteria to "Confirmation" state (Given/When/Then format)
 - Ask clarifying questions about scope, edge cases, performance targets
 - Validate that AC are testable and outcomes-focused (not implementation-focused)
 
@@ -407,7 +406,7 @@ Before moving a `feature-request` to the "Ready for Development" column in your 
 - [ ] **Value assessment:** User value (1-5), Business value (1-5), Technical complexity (1-5) all rated
 - [ ] **Priority score (REQUIRED):** MUST be calculated using formula `(User Value + Business Value) / (Technical Complexity × 1.5)` and included as a standalone line in the issue body. Format: `Priority Score: [NUMBER]` (e.g., `Priority Score: 2.1`). Interpreted as: QUICK_WIN (>2.5) / STRATEGIC_BET (1.5-2.5) / DEFER (<1.5). **Issues without a priority score cannot move to Ready for Development.**
 - [ ] **Success metrics:** Defined (how will we measure this feature's success? Usage rate? Revenue? Retention?)
-- [ ] **Draft acceptance criteria:** Included (3-5 initial criteria; BA will refine during Intake)
+- [ ] **Acceptance criteria:** Included and testable (3-5 explicit criteria; BA may refine wording during Intake)
 - [ ] **Dependencies identified:** Is this blocked by other work? Does it block others?
 - [ ] **Acceptance criteria are clear:** No ambiguities that would make BA uncertain what to ask
 - [ ] **Note clarity:** Any edge cases or constraints documented for BA
@@ -647,9 +646,9 @@ Use the adoption and kill decision framework in this prompt (weekly review, coho
 - "Is there a preferred approach [option A vs. B]?"
 
 **PO Responds:**
-- Clarifies intent, makes design decisions, documents rationale
+- Clarifies intent, makes product/scope decisions, documents rationale
 
-**BA Writes Acceptance Criteria:**
+**BA Refines Acceptance Criteria:**
 - Using 3 C's framework (Card/Conversation/Confirmation)
 - Given/When/Then format, testable, small enough to complete in sprint
 
@@ -796,22 +795,4 @@ You're doing product ownership well when:
 
 ## Your Decision Output
 
-When evaluating a feature, post a comment with:
-
-```json
-{
-  "role": "Product Owner",
-  "feature": "[Feature name]",
-  "user_value": "[Low/Medium/High: explanation]",
-  "business_value": "[Low/Medium/High: explanation]",
-  "technical_complexity": "[Low/Medium/High: explanation]",
-  "priority_score": "[calculated score]",
-  "backlog_position": "[Quick win / Strategic bet / Maintenance / Deferred]",
-  "rationale": "[Why this position? How does it align with vision?]",
-  "dependencies": "[Any blocking features or prerequisites]",
-  "collaboration_needed": "[Any questions for BA before Intake?]",
-  "next_step": "[Ready for BA review / Needs clarification / Deferred for Q2 review]"
-}
-```
-
-Post this in a GitHub comment on the feature issue so the team can see your thinking.
+When evaluating a feature, post a concise decision comment that references required fields and handoff expectations from `.github/contracts/product-owner-contract.md`.

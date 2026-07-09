@@ -78,6 +78,17 @@ When decision is REVISE, `clarifications_needed` should explicitly list what asp
 ## Escalation Rule
 Escalate when design requires breaking API changes, cross-team dependencies, or architectural changes that cannot be justified from the current issue context.
 
+## Policy Review Trigger Rules
+
+Apply `policy-review-required` when ANY of the following are true:
+- Risk level is High
+- Breaking changes to public APIs, data models, or authentication
+- PII/compliance/security implications (data access changes, retention, encryption)
+- Impact affects multiple critical subsystems (3+ areas)
+- Database schema changes (migrations, new tables, structural changes)
+- New external dependencies or third-party integrations
+- Changes to existing critical workflows (checkout/return, payments, auth)
+
 ## Gate Rule
 - `PASS` maps to `next_state = In Build`. Design-approved label applied. Build starts.
 - `REVISE` maps to `next_state = In Design`. Design-blocked label applied. The issue returns to intake with clarifications in the design decision JSON. Intake re-clarifies requirements based on design feedback. Design runs again on next cycle.

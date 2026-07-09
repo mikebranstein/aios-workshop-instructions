@@ -37,22 +37,7 @@ You will be given an issue number. Do the following in order:
    **Model Used:** [your active model]
    **Summary:** [one-line deterministic rationale]
 
-   <details>
-   <summary>Decision Details (JSON)</summary>
-
-   ```json
-   {
-     "decision": "READY | BLOCKED",
-     "model_used": "[your active model]",
-     "missing_fields": ["field_name"],
-     "questions": ["question text"],
-     "next_state": "In Progress | Blocked",
-     "summary": "one-line deterministic rationale",
-     "confidence": 0.0
-   }
-   ```
-
-   </details>
+    Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/intake-agent.md`.
 5. Apply the label that matches the decision:
    - If READY: gh issue label NUMBER --add intake-approved
    - If BLOCKED: gh issue label NUMBER --add intake-blocked

@@ -9,17 +9,9 @@ You are the QA agent.
 
 Your contract is in `.github/contracts/qa-agent.md`. Apply it strictly.
 
-## Key Requirements
-
-- **Code Coverage:** Minimum 70% of new/modified code
-- **Pass Criteria:** 0% test failures, no warnings, no skips — all tests must run and pass
-- **Test Timeouts:** Variable by test type (unit: 5s, integration: 15s, E2E: 30s)
-- **Environment Testing:** Full matrix (Windows/Mac/Linux) for high-risk; primary platform only for low-risk
-- **Zero Tolerance:** Any test failure, skip, warning, timeout, or coverage gap = FAIL or TEST_COVERAGE_INCOMPLETE
-
 ## Task Capability Requirements & Model Selection
 
-This agent performs **manual scenario-based quality assessment**: executing predefined test workflows, observing behavior, documenting results, and making release-ready decisions based on real-world testing.
+This agent performs **automated quality assessment**: validating rebase state, coverage, test completeness, and full test execution outcomes against contract thresholds.
 
 **Required capability:** Scenario orchestration, observational documentation, defect analysis, clear communication of test results and blockers.
 
@@ -87,14 +79,13 @@ You will be given an issue number that is ready for QA (already passed build).
 
 6. **Determine Risk Level:**
    - Read the design specification and build decision comments
-   - Classify as **high-risk** if: breaking API changes, data model changes, auth changes, PII handling, payment processing, critical workflows
-   - Otherwise classify as **low-risk**
+   - Classify risk level using the contract definitions
 
 7. **Measure Code Coverage:**
    - Run the project's coverage tool (Jest, pytest-cov, etc.)
    - Generate coverage report for new/modified files only
-   - Verify ≥70% coverage on all new/modified code
-   - If <70%: Post TEST_COVERAGE_INCOMPLETE decision with specific files below threshold and route to Design
+   - Enforce the minimum threshold defined in the contract
+   - If below threshold: Post TEST_COVERAGE_INCOMPLETE with specific files below threshold and route to Design
 
 8. **Validate Test Suite Completeness:**
    - For each acceptance criterion, verify a corresponding test exists in the `tests_updated` list
@@ -104,19 +95,12 @@ You will be given an issue number that is ready for QA (already passed build).
 
 9. **Execute the Automated Test Suite:**
    - Run exact test command documented in Build Decision
-   - Monitor test execution time against timeout thresholds:
-     - Unit tests: 5 seconds per test (10 seconds total for suite)
-     - Integration tests: 15 seconds per test (60 seconds total for suite)
-     - End-to-end tests: 30 seconds per test (5 minutes total for suite)
+   - Monitor test execution time against timeout thresholds defined in the contract
    - Capture full test output (pass/fail counts, failures, any warnings)
    - If any test times out: Treat as FAIL; identify root cause (database_query, algorithm_complexity, api_call, blocking_io, or unknown)
 
 10. **Verify Environment Testing:**
-    - If **high-risk:** Tests must pass on full platform matrix (Windows, macOS, Linux)
-      - If multi-browser: Must pass on Chrome, Firefox, Safari
-      - If platform-specific tests exist, all must pass (no skips)
-    - If **low-risk:** Tests must pass on primary target platform only
-      - Platform-specific tests for other platforms may be skipped with documentation
+      - Apply environment matrix requirements exactly as defined in the contract for the determined risk level
 
 11. **Capture test results:**
     - Total number of tests
@@ -128,36 +112,10 @@ You will be given an issue number that is ready for QA (already passed build).
     - Test execution time summary
 
 12. **Determine decision:**
-    - **PASS** if ALL of: rebase succeeded, coverage ≥70%, all tests pass (100%), zero failures, zero skips, zero warnings, within timeouts, environment requirements met
-    - **FAIL** if ANY: test failure, timeout, warning, skip, code coverage <70%, environment requirements not met
-    - **TEST_COVERAGE_INCOMPLETE** if: coverage gaps found in Step 7 or 8
-    - **INTEGRATION_CONFLICT** if: rebase failed in Step 5
+   - Determine PASS / FAIL / TEST_COVERAGE_INCOMPLETE / INTEGRATION_CONFLICT using contract rules and thresholds
 
-13. Post the QA decision as a comment on the issue with this JSON structure:
-
-```json
-{
-  "contract": "QA",
-  "decision": "PASS | FAIL | TEST_COVERAGE_INCOMPLETE | INTEGRATION_CONFLICT",
-  "qa_date": "[today]",
-  "rebase_status": "success | conflict",
-  "rebased_onto_main": true,
-  "risk_level": "high-risk | low-risk",
-  "code_coverage_percent": "[number, must be >= 70, or null if INTEGRATION_CONFLICT]",
-  "total_tests": "[number, or null if INTEGRATION_CONFLICT]",
-  "tests_passed": "[number, or null if INTEGRATION_CONFLICT]",
-  "tests_failed": "[number, or null if INTEGRATION_CONFLICT]",
-  "test_skips": "[number, must be 0 for PASS]",
-  "test_warnings": "[number, must be 0 for PASS]",
-  "environment_tested": "[primary-platform | full-matrix, or null if INTEGRATION_CONFLICT]",
-  "timeout_violations": "[list of tests exceeding timeout, if any]",
-  "timeout_root_causes": "[if timeouts: {test_name: root_cause}]",
-  "test_failures": "[if FAIL: specific failing test names and root cause]",
-  "coverage_gaps": "[if incomplete: specific files/methods below 70%]",
-  "rebase_conflicts": "[if INTEGRATION_CONFLICT: list of conflicted files]",
-  "recommendations": "[if PASS: ready for release; if FAIL: specific tests needing fixes; if INCOMPLETE: coverage gaps; if CONFLICT: re-evaluate scope on current main]"
-}
-```
+13. Post the QA decision as a comment on the issue.
+      - Use the exact output schema from `.github/contracts/qa-agent.md`.
 
 14. Apply label:
     - If PASS: `gh issue label NUMBER --add qa-passed`
