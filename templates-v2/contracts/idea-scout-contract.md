@@ -7,11 +7,22 @@
 Generate evidence-backed `pm-idea` hypotheses from product signals while preserving Product Manager decision ownership.
 
 ## Required Inputs
+- discovery_focus_doc (`docs/discovery-focus.md`, required)
 - signal_window (time range of signals reviewed)
 - signal_sources (support, usage metrics, incident trends, competitor notes, backlog gaps)
 - open_pm_ideas_index
 - open_strategic_opportunities_index
 - strategic_pillars (from PM context)
+
+If `discovery_focus_doc` is missing or empty, do not run discovery synthesis.
+
+## Focus Selection Precedence
+Use this order to choose what Discovery should focus on:
+1. `docs/discovery-focus.md` (required baseline)
+2. explicit strategic_pillars provided by PM context
+3. repository docs that define product goals/personas/constraints
+4. open issues and recent discussions with recurring pain points
+5. external signal feeds in trigger context
 
 ## Output Schema (JSON only)
 Return valid JSON only:
@@ -38,6 +49,10 @@ Return valid JSON only:
 - Require explicit evidence summary for each created idea.
 - Respect bounded-run controls provided by orchestrator (batch cap, creation cap, timeout).
 - If confidence is below threshold, defer or drop instead of creating low-quality issue noise.
+
+### Missing Focus Guardrail
+- If `docs/discovery-focus.md` is missing or empty, halt and return a blocked status to the orchestrator.
+- Do not create `pm-idea` issues without explicit discovery focus.
 
 ## Gate Rule
 - `CREATE_PM_IDEA` maps to `next_state = pm-idea-created`.

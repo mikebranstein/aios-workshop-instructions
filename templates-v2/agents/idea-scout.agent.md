@@ -33,18 +33,22 @@ You will be given a trigger context and run controls. Do the following in order:
    - Create missing labels with: `gh label create NAME --color 1D76DB --description "AIOS orchestration label"`
    - Ensure `.github/ISSUE_TEMPLATE/pm_idea.md` exists before first issue creation.
    - If template creation is blocked by repository permissions, continue using explicit issue body content and post a bootstrap note.
-2. Read trigger context and active strategic pillars.
-3. Gather current signals from provided sources (support, usage metrics, incident trends, competitor notes, backlog gaps).
-4. Cluster signals into candidate opportunity hypotheses.
-5. Rank candidates by impact, urgency, and evidence quality.
-6. Select up to `batch_cap` candidates for deep evaluation.
-7. Run dedupe checks against open `pm-idea` and `strategic-opportunity` issues.
-8. For each candidate, produce contract output decision (`CREATE_PM_IDEA|DEFER|DROP`).
-9. Create at most `creation_cap` new `pm-idea` issues:
+2. Validate discovery focus input:
+    - Required: `docs/discovery-focus.md`
+    - If missing or empty, do not continue. Return blocked status and reason:
+       - `Discovery focus required: add docs/discovery-focus.md before running Idea Scout.`
+3. Read trigger context, `docs/discovery-focus.md`, and active strategic pillars.
+4. Gather current signals from provided sources (support, usage metrics, incident trends, competitor notes, backlog gaps).
+5. Cluster signals into candidate opportunity hypotheses.
+6. Rank candidates by impact, urgency, and evidence quality.
+7. Select up to `batch_cap` candidates for deep evaluation.
+8. Run dedupe checks against open `pm-idea` and `strategic-opportunity` issues.
+9. For each candidate, produce contract output decision (`CREATE_PM_IDEA|DEFER|DROP`).
+10. Create at most `creation_cap` new `pm-idea` issues:
    - Title format: `[pm-idea]: concise hypothesis title`
    - Include: problem statement, evidence summary, signal strength, confidence, and source links.
-10. For deferred candidates, post/update a short backlog note without creating new PM-stage terminal decisions.
-11. Output a run summary with counts:
+11. For deferred candidates, post/update a short backlog note without creating new PM-stage terminal decisions.
+12. Output a run summary with counts:
    - candidates evaluated
    - pm-ideas created
    - deferred

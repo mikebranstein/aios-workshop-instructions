@@ -29,16 +29,22 @@ You run in a **bounded cycle**, not an infinite loop. End after one run summary.
    - Create missing labels with `gh label create <name> --color 1D76DB --description "AIOS orchestration label"`
    - If `.github/ISSUE_TEMPLATE/pm_idea.md` is missing, create it before issue creation.
    - If repository write access is restricted, continue with explicit `gh issue create --body` and post a bootstrap note for maintainers.
-3. Collect signal context for the configured window.
-4. Spawn Idea Scout once with run controls:
+3. Validate required discovery focus file:
+   - Required: `docs/discovery-focus.md`
+   - If missing or empty, STOP immediately and do not invoke Idea Scout.
+   - Emit this message:
+     - `Discovery Orchestrator halted: missing required docs/discovery-focus.md. Add discovery focus (users, problems, metrics, constraints, signal sources), then rerun.`
+4. Read `docs/discovery-focus.md` and derive run focus (strategic pillars, target users, priority problems, metrics, constraints, signal sources).
+5. Collect signal context for the configured window.
+6. Spawn Idea Scout once with run controls:
    - `task(description="Run Idea Scout bounded discovery", agent_id="idea-scout", model_tier="STANDARD")`
-5. Wait for completion and parse Idea Scout run summary.
-6. Apply post-run safeguards:
+7. Wait for completion and parse Idea Scout run summary.
+8. Apply post-run safeguards:
    - Ensure created ideas include `pm-idea` and `pm-idea-auto` labels.
    - Ensure no run exceeds `creation_cap`.
    - Ensure dedupe comments were posted when matches existed.
    - Append deferred candidates to the `Discovery-Deferred-Candidates` wiki page via `wiki-manager`.
-7. Emit final run summary and stop.
+9. Emit final run summary and stop.
 
 ## Run Summary Format
 
@@ -61,6 +67,7 @@ Duration: [seconds]
 - If Idea Scout times out: post run failure note and stop.
 - If issue creation fails: retry once, then mark candidate deferred.
 - If dedupe index unavailable: run in safe mode (`creation_cap = 1`) and require high confidence.
+- If `docs/discovery-focus.md` is missing: halt before discovery and print the required-focus message.
 
 ## Label Reference
 
