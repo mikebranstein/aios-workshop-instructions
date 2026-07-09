@@ -45,6 +45,19 @@ Find the FIRST issue not in a terminal or waiting state. Process only that one i
 
 Read the labels on the actionable issue. Apply the routing rules below. After spawning any task, wait for it to complete before continuing.
 
+**QA DECISION ROUTING TABLE**
+
+When issue has `qa-failed` label, read the QA Decision JSON `decision` field:
+- `FAIL` → Route to Build (test failures; code issue)
+- `TEST_COVERAGE_INCOMPLETE` → Route to Design for clarification, then directly to Build to add tests (skip Intake)
+- `INTEGRATION_CONFLICT` → Route to Design (rebase conflicts; scope re-evaluation)
+- `PASS` → Should not see qa-failed label; this is an error state
+
+If QA JSON is missing, malformed, or decision field is absent:
+- Apply label: `feature-blocked`
+- Post comment: "Orchestrator: QA decision JSON malformed or missing. Manual review required."
+- Skip this issue
+
 ---
 
 #### INTAKE
@@ -116,6 +129,19 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 ---
 
+#### DESIGN CLARIFIED -- Direct to Build (after QA incomplete or Build ambiguity)
+
+**Condition:** Has `design-clarified` label (applied by Design after clarifying requirements for QA incomplete or Build ambiguity cases)
+
+**Action:**
+1. `gh issue comment NUMBER --body "**Orchestrator:** Requirements clarified. Routing directly to build (skipping re-intake)."`
+2. `gh issue label NUMBER --remove design-clarified`
+3. If this is first-time test addition: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build")`
+4. If this is re-evaluation after Build ambiguity: `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build")`
+5. Wait. Build completes; routes to QA.
+
+---
+
 #### DESIGN BLOCKED -- Hard Blocked
 
 **Condition:** Has `design-blocked` AND Design Decision shows `decision: BLOCKED`
@@ -177,10 +203,16 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 **Condition:** Has `qa-failed` AND QA Decision shows `TEST_COVERAGE_INCOMPLETE`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** QA found incomplete test coverage. Re-routing to design."`
+1. `gh issue comment NUMBER --body "**Orchestrator:** QA found incomplete test coverage. Routing to design for requirements clarification."`
 2. `gh issue label NUMBER --remove build-complete --remove qa-failed --remove design-approved`
 3. `task(description="Clarify testable requirements for issue #NUMBER: TITLE", agent_id="design")`
 4. Wait.
+5. After Design clarifies:
+   - Design will update the issue body with explicit acceptance criteria
+   - `gh issue label NUMBER --add design-clarified` (new label, signals Build to proceed without re-intake)
+6. **Skip Intake re-validation** (Intake already approved; only clarifying acceptance criteria)
+7. Route directly to Build: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build")`
+8. Wait. Build creates tests and updates implementation if needed.
 
 ---
 
@@ -189,10 +221,27 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 **Condition:** Has `qa-failed` AND QA Decision shows `FAIL`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** QA found test failures. Re-routing to build."`
+1. `gh issue comment NUMBER --body "**Orchestrator:** QA found test failures. Re-routing to build to fix."`
 2. `gh issue label NUMBER --remove build-complete --remove qa-failed`
 3. `task(description="Fix QA test failures on issue #NUMBER: TITLE", agent_id="build")`
-4. Wait.
+4. Wait. 
+5. Check Build Decision:
+   - If Build returns `COMPLETE`: Tests now pass; remove `build-blocked`, keep `build-complete`; route to QA again
+   - If Build returns `BLOCKED_REQUIRES_CLARIFICATION`: Build found acceptance criteria ambiguity (not code bug). Route to Design for clarification (see next section)
+
+---
+
+#### BUILD FAILED -- Requires Requirements Clarification (after QA FAIL)
+
+**Condition:** Has `build-blocked` AND Build Decision shows `BLOCKED_REQUIRES_CLARIFICATION` (from fixing QA failures)
+
+**Action:**
+1. `gh issue comment NUMBER --body "**Orchestrator:** Build found that QA test failures are due to acceptance criteria ambiguity, not implementation bugs. Routing to design for clarification."`
+2. `gh issue label NUMBER --remove design-approved`
+3. `task(description="Clarify acceptance criteria based on Build's test failure analysis for issue #NUMBER: TITLE", agent_id="design")`
+4. Wait. After Design clarifies:
+   - `gh issue label NUMBER --add design-clarified`
+   - Route directly to Build (skip Intake): `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build")`
 
 ---
 

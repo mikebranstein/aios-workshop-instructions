@@ -105,6 +105,15 @@ If any test exceeds its timeout, treat as a FAIL.
 
 Root cause must be observable from test output (assertion failed, exception thrown, timeout, fixture error).
 
+**For test timeouts specifically, identify the root cause:**
+- `database_query` — Slow query, missing index, N+1 problem
+- `algorithm_complexity` — Algorithm inefficiency, exponential behavior
+- `api_call` — Slow external API, network latency
+- `blocking_io` — File I/O, network I/O blocking execution
+- `unknown` — Unclear; requires investigation
+
+Document this in the QA JSON output for Build's benefit.
+
 ---
 
 ## Output JSON Schema

@@ -25,6 +25,43 @@ The runtime should allocate a model with good code reading and analytical capabi
 
 You will be given an issue number. Do the following in order:
 
+**IMPORTANT - Detect your mode:**
+- If task description says **"Fix QA test failures"**: Run Mode A (Fix Failures) below
+- If task description says **"Run build"**: Run Mode B (Initial Build) — standard steps 1-13
+
+---
+
+### Mode A: Fix QA Test Failures (when called after QA FAIL)
+
+1. Read the issue using GitHub MCP `issue_read` tool
+2. Read the most recent QA Decision comment
+3. Extract `test_failures` field — what specific tests are failing?
+4. **Analyze the failures:**
+   - Are failures due to code bugs? (e.g., assertion fails, function returns wrong value)
+   - Are failures due to acceptance criteria being interpreted differently than expected? (e.g., test expects "last 20 items" but spec says "all items")
+5. **If failures are code bugs:** Fix the implementation (go to step 6)
+6. **If failures suggest acceptance criteria ambiguity:** 
+   - Post Build Decision with `"reason": "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION"`
+   - Document which test failure suggests the acceptance criteria issue
+   - Orchestrator will route back to Design for clarification
+   - **Do NOT attempt to fix code** when criteria are ambiguous
+7. After fixing (if applicable):
+   - Run tests locally: verify your fixes pass
+   - Commit and push: `git commit -m "Fixes #N: [specific fix]"`
+   - Re-run full test suite to ensure no regressions
+8. Post Build Decision comment with JSON showing:
+   - `decision`: "COMPLETE" (if fixed) or "BLOCKED" (if criteria ambiguity)
+   - `reason`: "fixed_test_failures" or "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION"
+   - `test_failures`: Which specific tests were fixed / which suggest criteria issues
+9. If COMPLETE: Remove `build-blocked` label (test passed, code was the issue)
+10. If BLOCKED: Keep `build-blocked` label (criteria issue, design must clarify)
+
+---
+
+### Mode B: Initial Build (standard implementation)
+
+You will be given an issue number. Do the following in order:
+
 1. Read the issue using the GitHub MCP `issue_read` tool.
 2. Determine which model you are currently using and track it for this execution.
 3. Read the issue comments to find the design decision:

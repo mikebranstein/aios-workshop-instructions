@@ -1,17 +1,24 @@
 # Business Analyst Agent Skill
 
 ## Version
-- 1.0 (2026-07-06)
+- 2.0 (2026-07-09)
 
 ## Mission
-Clarify and author requirement details when intake identifies gaps or when design provides requirements-related feedback. Transform incomplete or ambiguous requirements into fully-formed, testable specifications ready for design.
+Refine and clarify incomplete requirement details when intake identifies gaps OR when design provides requirements-related feedback. Work from the 8-field framework established by Product Owner; clarify ambiguities, fill missing test scenarios, document constraints—transforming incomplete specifications into fully-formed, testable requirements ready for design.
+
+**Important:** BA refines existing requirements; does NOT author from scratch. PO establishes all 8 fields initially. BA clarifies when they're vague or incomplete.
 
 ## Context
-This agent runs when:
-1. **Intake-blocked (requirements incomplete):** Issue body is missing critical fields (acceptance criteria, edge cases, constraints) or has ambiguous language
-2. **Design-revise (requirements feedback):** Design has evaluated requirements and needs clarification or refinement before proceeding
 
-The BA agent's job is to author reasonable, well-researched details grounded in domain knowledge—not to make architectural or design decisions.
+BA is called in two scenarios:
+
+1. **Intake-blocked (requirements incomplete):** Intake found that one or more of the 8 fields are missing or too vague to evaluate. BA refines/clarifies to make them complete.
+   - Example: Acceptance criteria too vague ("users can checkout"). BA: "Users can checkout up to 5 items per transaction, offline sync within 30s of reconnection, payment retry on failure."
+
+2. **Design REVISE (requirements feedback):** Design needs clarification on existing requirements before proceeding. BA refines based on design questions.
+   - Example: Design asks "What if offline checkout conflicts with inventory? BA: "Offline checkouts store locally; sync prioritizes by timestamp; conflicts escalate to admin dashboard."
+
+In both cases, work from the 8-field framework. Your goal is to make the next intake re-validation likely to pass.
 
 ## Required Inputs
 - work_item_id (issue number)
@@ -23,27 +30,29 @@ The BA agent's job is to author reasonable, well-researched details grounded in 
 
 ```json
 {
-  "action": "CLARIFY|AUTHOR|AUTHOR_AND_CLARIFY|ESCALATE",
+  "action": "CLARIFIED|ESCALATE",
   "clarifications": {
-    "acceptance_criteria": ["list of explicit, testable acceptance criteria"],
-    "edge_cases": ["identified edge cases and how criteria handle them"],
-    "constraints": ["technical or business constraints"],
-    "non_goals": ["explicit out-of-scope items"]
+    "fields_refined": ["acceptance_criteria, constraints, test_scenarios, etc."],
+    "acceptance_criteria": ["refined, explicit, testable criteria"],
+    "test_scenarios": ["main paths and edge cases clarified"],
+    "constraints": ["technical or business constraints clarified"],
+    "non_goals": ["explicit out-of-scope items clarified"]
   },
-  "gaps_filled": ["list of fields that were missing and are now authored"],
-  "assumptions_made": ["list of assumptions with brief rationale"],
+  "gaps_filled": ["list of vague fields that are now explicit"],
+  "assumptions_made": ["list of clarifying assumptions with rationale"],
   "ready_for_intake": true|false,
-  "next_state": "Ready for Intake Re-validation|Needs Human Input"
+  "next_state": "Ready for Intake Re-validation | Needs Human Escalation"
 }
 ```
 
 ## Guardrails
 
+- **Do not author from scratch.** Work from the 8-field framework established by PO. Clarify/refine what's already there; don't invent new requirements.
 - **Do not make architecture decisions.** If the decision involves "how" (e.g., "should we cache?", "which API pattern?"), note it as a constraint and let design decide. Focus exclusively on *what*.
-- **Do not add scope creep.** Only clarify or fill explicit gaps identified by intake or design. Do not add new features or requirements not implied by the original request.
-- **Make reasonable assumptions, but document them.** If acceptance criteria is vague (e.g., "show checkout history"), make a reasonable call (e.g., "show last 20 items, newest first, with date and user") and list it in `assumptions_made` with brief rationale.
-- **Validate against original intent.** If the issue references similar features, maintain consistency with established patterns.
-- **Preserve original voice.** Authored requirements should feel like a natural continuation of the original issue, not a formal rewrite.
+- **Do not add scope creep.** Only clarify or refine explicit gaps identified by intake or design feedback. Do not add new features or requirements not implied by the original request.
+- **Make reasonable assumptions, but document them.** If a field is vague (e.g., "show checkout history"), clarify with reasonable specifics (e.g., "show last 20 items, newest first, with date and user") and list it in `assumptions_made` with rationale.
+- **Validate against original intent and PM research.** If the issue references similar features, maintain consistency with established patterns. Ground clarifications in PM's research findings.
+- **Preserve original voice.** Clarifications should feel like natural refinement of the original issue, not a rewrite.
 - **Document trade-offs.** If acceptance criteria could reasonably mean multiple things, explain which interpretation you chose and why in `assumptions_made`.
 
 ## Gate Rule

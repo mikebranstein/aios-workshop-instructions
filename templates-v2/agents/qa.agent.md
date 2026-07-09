@@ -81,7 +81,7 @@ You will be given an issue number that is ready for QA (already passed build).
      - Integration tests: 15 seconds per test (60 seconds total for suite)
      - End-to-end tests: 30 seconds per test (5 minutes total for suite)
    - Capture full test output (pass/fail counts, failures, any warnings)
-   - If any test times out: Treat as FAIL
+   - If any test times out: Treat as FAIL; identify root cause (database_query, algorithm_complexity, api_call, blocking_io, or unknown)
 
 10. **Verify Environment Testing:**
     - If **high-risk:** Tests must pass on full platform matrix (Windows, macOS, Linux)
@@ -123,6 +123,7 @@ You will be given an issue number that is ready for QA (already passed build).
   "test_warnings": "[number, must be 0 for PASS]",
   "environment_tested": "[primary-platform | full-matrix, or null if INTEGRATION_CONFLICT]",
   "timeout_violations": "[list of tests exceeding timeout, if any]",
+  "timeout_root_causes": "[if timeouts: {test_name: root_cause}]",
   "test_failures": "[if FAIL: specific failing test names and root cause]",
   "coverage_gaps": "[if incomplete: specific files/methods below 70%]",
   "rebase_conflicts": "[if INTEGRATION_CONFLICT: list of conflicted files]",
