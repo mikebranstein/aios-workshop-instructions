@@ -21,6 +21,39 @@ Select a model that excels at:
 
 The runtime should allocate a model with good code reading and analytical capability for this stage.
 
+## Critical: Temporary Workspace Isolation
+
+**All build work MUST happen in an isolated temporary workspace to avoid conflicts with parallel builds.**
+
+### Setup (Before any work)
+
+1. Generate unique workspace ID:
+   ```bash
+   WORKSPACE_ID=$(uuidgen)  # or: date +%s
+   TEMP_DIR="/tmp/build-${WORKSPACE_ID}"
+   mkdir -p "${TEMP_DIR}"
+   cd "${TEMP_DIR}"
+   ```
+
+2. Clone repository fresh:
+   ```bash
+   git clone <REPO_URL> .
+   ```
+
+3. All subsequent work happens in `${TEMP_DIR}` (not your main workspace)
+
+### Cleanup (After completion - MANDATORY)
+
+After steps complete (success or failure):
+```bash
+cd /
+rm -rf "${TEMP_DIR}"
+```
+
+**IMPORTANT:** Clean up MUST happen regardless of build success/failure. This prevents /tmp from filling up and ensures no state leaks between parallel builds.
+
+---
+
 ## Steps
 
 You will be given an issue number. Do the following in order:
@@ -55,6 +88,15 @@ You will be given an issue number. Do the following in order:
    - `test_failures`: Which specific tests were fixed / which suggest criteria issues
 9. If COMPLETE: Remove `build-blocked` label (test passed, code was the issue)
 10. If BLOCKED: Keep `build-blocked` label (criteria issue, design must clarify)
+
+### Mode A: CLEANUP
+
+After steps 1-10 complete (success or failure):
+```bash
+cd /
+rm -rf "${TEMP_DIR}"
+```
+**MANDATORY.** Do not skip cleanup.
 
 ---
 
@@ -113,3 +155,12 @@ You will be given an issue number. Do the following in order:
     - If COMPLETE: gh issue label NUMBER --add build-complete
     - If PARTIAL or BLOCKED: gh issue label NUMBER --add build-blocked
 13. Output a one-line summary: "Issue #NUMBER: build DECISION - PR CREATED: [pr_url]"
+
+### Mode B: CLEANUP
+
+After steps 1-13 complete (success or failure):
+```bash
+cd /
+rm -rf "${TEMP_DIR}"
+```
+**MANDATORY.** Do not skip cleanup.

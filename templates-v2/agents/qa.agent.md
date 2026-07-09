@@ -28,6 +28,39 @@ Select a model that excels at:
 - Providing actionable feedback when QA fails
 - Writing clear, user-facing communication
 
+## Critical: Temporary Workspace Isolation
+
+**All QA work MUST happen in an isolated temporary workspace to avoid conflicts with parallel QA runs and concurrent builds.**
+
+### Setup (Before any work)
+
+1. Generate unique workspace ID:
+   ```bash
+   WORKSPACE_ID=$(uuidgen)  # or: date +%s
+   TEMP_DIR="/tmp/qa-${WORKSPACE_ID}"
+   mkdir -p "${TEMP_DIR}"
+   cd "${TEMP_DIR}"
+   ```
+
+2. Clone repository fresh:
+   ```bash
+   git clone <REPO_URL> .
+   ```
+
+3. All subsequent work happens in `${TEMP_DIR}` (not your main workspace)
+
+### Cleanup (After completion - MANDATORY)
+
+After steps complete (success or failure):
+```bash
+cd /
+rm -rf "${TEMP_DIR}"
+```
+
+**IMPORTANT:** Clean up MUST happen regardless of QA success/failure. This prevents /tmp from filling up and ensures no state leaks between parallel QA runs.
+
+---
+
 ## Steps
 
 You will be given an issue number that is ready for QA (already passed build).
@@ -136,4 +169,13 @@ You will be given an issue number that is ready for QA (already passed build).
     - If FAIL: `gh issue label NUMBER --add qa-failed`
     - If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-failed` (same endpoint as FAIL for orchestrator routing)
     - If INTEGRATION_CONFLICT: `gh issue label NUMBER --add qa-failed` (routes to design via orchestrator)
+
+### CLEANUP
+
+After all steps complete (success or failure):
+```bash
+cd /
+rm -rf "${TEMP_DIR}"
+```
+**MANDATORY.** Do not skip cleanup. This ensures no state leaks between parallel QA runs and keeps /tmp clean.
 
