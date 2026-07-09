@@ -25,12 +25,7 @@ This registry defines:
 
 Foundation orchestrator runs when the project has not passed the foundational gate.
 
-**Decision from:** foundation-research + foundation-architect agents
-
-| Decision | Condition | Next Stage |
-|----------|-----------|------------|
-| START_FOUNDATION | Foundation issue picked up for processing | foundation-in-progress |
-| BLOCK_FOUNDATION | Critical contradiction prevents start | foundation-blocked |
+**Action on entry:** set `foundation-in-progress` and start foundation research.
 
 ---
 
@@ -38,11 +33,13 @@ Foundation orchestrator runs when the project has not passed the foundational ga
 
 Foundational decisions are being researched and documented.
 
+**Decision from:** foundation-research agent
+
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| DRAFT_FOUNDATION_DECISIONS | Research complete and decision pack drafted | foundation-review |
-| REVISE_FOUNDATION | Missing evidence or artifacts | foundation-in-progress |
-| BLOCK_FOUNDATION | Critical unresolved contradiction | foundation-blocked |
+| RECOMMEND | Research sufficient for gate review | foundation-review |
+| NEEDS_MORE_RESEARCH | Missing evidence or artifacts | foundation-in-progress |
+| BLOCKED | Critical unresolved contradiction | foundation-blocked |
 
 ---
 
@@ -348,11 +345,26 @@ Feature blocked (dependency, tech, policy, etc.). Issue closed.
 
 Architecture review orchestrator runs on schedule/event/manual trigger.
 
+**Action on entry:** set `arch-review-in-progress` and run architecture-review agent.
+
 **Decision from:** architecture-review agent
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| START_ARCH_REVIEW | Review started | arch-review-in-progress |
+| NO_ACTION | No action required | arch-review-no-action |
+| CREATE_REFACTOR_PLAN | Refactor planning required | arch-refactor-planned |
+| ESCALATE | High-impact unresolved uncertainty | arch-review-escalated |
+
+---
+
+### Stage: arch-review-in-progress
+
+Recovery stage if a run was interrupted after review started.
+
+**Decision from:** architecture-review agent
+
+| Decision | Condition | Next Stage |
+|----------|-----------|------------|
 | NO_ACTION | No action required | arch-review-no-action |
 | CREATE_REFACTOR_PLAN | Refactor planning required | arch-refactor-planned |
 | ESCALATE | High-impact unresolved uncertainty | arch-review-escalated |

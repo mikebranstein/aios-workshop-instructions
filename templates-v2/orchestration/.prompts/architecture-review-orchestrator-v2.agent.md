@@ -33,19 +33,23 @@ You run in a bounded cycle and stop after one run summary.
    - `./utilities/fitness-evaluator.md run --window "last-3-features"`
 5. Upsert architecture debt issues from fitness findings:
    - `./utilities/architecture-debt-manager.md sync --source fitness-report.json`
-6. Query `arch-review-pending` issues.
+6. Query actionable review issues with labels `arch-review-pending`, `arch-review-in-progress`, or `arch-refactor-planned`.
 7. For each issue:
-   - Apply `arch-review-in-progress`
-   - `task(description="Run architecture review on issue #NUMBER", agent_id="architecture-review", model_tier="STANDARD")`
-   - If decision is CREATE_REFACTOR_PLAN:
-     - Apply `arch-refactor-planned`
-     - `task(description="Create refactor requests from architecture review #NUMBER", agent_id="refactor-planner", model_tier="STANDARD")`
-     - For each created request issue, label as `feature-request` and `refactor-request`
-     - Apply `arch-refactor-requests-created`
-   - If decision is NO_ACTION:
-     - Apply `arch-review-no-action`
-   - If decision is ESCALATE:
-     - Apply `arch-review-escalated`
+    - If label is `arch-review-pending` or `arch-review-in-progress`:
+       - Apply `arch-review-in-progress`
+       - `task(description="Run architecture review on issue #NUMBER", agent_id="architecture-review", model_tier="STANDARD")`
+       - If architecture-review decision is `CREATE_REFACTOR_PLAN`:
+          - Apply `arch-refactor-planned`
+       - If architecture-review decision is `NO_ACTION`:
+          - Apply `arch-review-no-action`
+       - If architecture-review decision is `ESCALATE`:
+          - Apply `arch-review-escalated`
+    - If label is `arch-refactor-planned`:
+       - `task(description="Create refactor requests from architecture review #NUMBER", agent_id="refactor-planner", model_tier="STANDARD")`
+       - Read refactor-planner decision:
+          - `CREATE_REFACTOR_REQUESTS` -> for each created request issue, label as `feature-request` and `refactor-request`; apply `arch-refactor-requests-created`
+          - `DEFER` -> apply `debt-deferred`
+          - `BLOCKED` -> apply `arch-review-escalated`
 8. Post run summary and stop.
 
 ## Run Summary Format
