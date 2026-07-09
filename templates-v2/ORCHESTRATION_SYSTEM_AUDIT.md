@@ -353,12 +353,33 @@ GitHub Issue (example: #123 "Add customer support chatbot")
 - **Root cause:** Agent implementation not synchronized with contract
 - **Priority:** P1 (will break policy stage)
 
-**GAP #4: QA Agent & Contract Too Vague** ⚠️ HIGH
-- **What should be:** QA contract specifies exact test coverage %, pass criteria, acceptable failure rate
-- **What is:** Contract says "validate test coverage" but no thresholds specified
-- **Impact:** Agent can't determine PASS vs INCOMPLETE consistently; different runs might decide differently
-- **Root cause:** Contract incomplete; not operational-ready
-- **Priority:** P1 (will cause inconsistent decisions)
+**GAP #4: QA Agent & Contract Complete** ✅ RESOLVED
+- **What was:** Contract said "validate test coverage" and "all tests pass" but no specific thresholds
+- **What is now:** Specific, deterministic criteria with zero ambiguity
+- **Changes made to QA Contract (`templates-v2/contracts/qa-agent.md`):**
+  - **Code Coverage:** 70% minimum of new/modified code (deterministic threshold)
+  - **Pass Criteria:** 0% failures allowed; no warnings; no test skips; all tests must run and pass (strict from Option A)
+  - **Test Timeouts:** Variable by type (strict from Option C):
+    - Unit: 5s per test, 10s suite
+    - Integration: 15s per test, 60s suite
+    - E2E: 30s per test, 5min suite
+    - Database: 10s per test, 30s suite
+  - **Environment Testing:** Risk-based matrix (adaptive from Option C):
+    - High-risk features: Full matrix (Windows/Mac/Linux, all browsers)
+    - Low-risk features: Primary platform only
+- **Changes made to QA Agent (`templates-v2/agents/qa.agent.md`):**
+  - Step 2: Determine risk level from issue/design comments
+  - Step 7: Measure code coverage, fail if <70%
+  - Step 8: Validate zero skips, zero warnings, coverage gaps
+  - Step 9: Execute with timeout enforcement per test type
+  - Step 10: Verify environment matrix based on risk level
+  - Output JSON includes: risk_level, code_coverage_percent, test_skips, test_warnings, timeout_violations, environment_tested
+- **Decision Logic (Deterministic):**
+  - PASS: coverage ≥70% AND 100% test pass rate AND zero skips AND zero warnings AND within timeouts AND environment requirements met
+  - FAIL: Any single failure in above criteria
+  - TEST_COVERAGE_INCOMPLETE: coverage <70% OR missing test mappings OR skips/warnings detected
+- **Status:** ✅ Specific and deterministic; ready for execution
+- **Priority:** P1 — COMPLETE
 
 **GAP #5: Verification Agent & Contract Too Vague** ⚠️ HIGH
 - **What should be:** Verification contract specifies which checks must pass, thresholds, acceptable warnings
