@@ -39,6 +39,6 @@ You will be given an issue number. Do the following in order:
 
     Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/intake-agent.md`.
 5. Apply the label that matches the decision:
-   - If READY: gh issue label NUMBER --add intake-approved
-   - If BLOCKED: gh issue label NUMBER --add intake-blocked
+   - If READY: `gh issue label NUMBER --add intake-approved`
+   - If BLOCKED: `gh issue label NUMBER --add intake-blocked`
 6. Output a one-line summary: "Issue #NUMBER: intake DECISION - CONTRACT SUMMARY"

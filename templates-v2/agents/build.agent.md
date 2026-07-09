@@ -127,8 +127,8 @@ You will be given an issue number. Do the following in order:
 
     Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/build-agent.md`.
 12. Apply the label:
-    - If COMPLETE: gh issue label NUMBER --add build-complete
-    - If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: gh issue label NUMBER --add build-blocked
+   - If COMPLETE: `gh issue label NUMBER --add build-complete`
+   - If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: `gh issue label NUMBER --add build-blocked`
 13. Output a one-line summary: "Issue #NUMBER: build DECISION - PR CREATED: [pr_url]"
 
 ### Mode B: CLEANUP

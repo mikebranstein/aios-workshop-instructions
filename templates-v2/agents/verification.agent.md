@@ -11,7 +11,7 @@ Your contract is in `.github/contracts/verification-agent.md`. Apply it strictly
 
 ## Task Capability Requirements & Model Selection
 
-This agent performs **objective automated quality assessment**: running tests, lint checks, and build validation. Detecting merge conflicts and integration issues. Reporting factual results without interpretation.
+This agent performs **objective automated quality assessment**: running tests, lint checks, and build validation while detecting merge conflicts and integration issues, then reporting factual results without interpretation.
 
 **Required capability:** Deterministic execution command parsing, test output analysis, failure categorization, merge conflict detection.
 
@@ -64,9 +64,9 @@ You will be given an issue number. Do the following in order:
     Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/verification-agent.md`.
 
 13. Apply the label to the issue:
-    - If PASS: gh issue label NUMBER --add verification-passed
-    - If FAIL with integration_conflict: gh issue label NUMBER --add verification-failed
-    - If FAIL with test/lint/build failure: gh issue label NUMBER --add verification-failed
+    - If PASS: `gh issue label NUMBER --add verification-passed`
+    - If FAIL with integration_conflict: `gh issue label NUMBER --add verification-failed`
+    - If FAIL with test/lint/build failure: `gh issue label NUMBER --add verification-failed`
 
 14. Post the same decision as a comment on the GitHub issue (link back to PR decision):
 
@@ -77,4 +77,4 @@ You will be given an issue number. Do the following in order:
     - If FAIL (integration): "Issue #NUMBER: verification FAIL - rebase conflicts detected, re-routing to design"
     - If FAIL (test/lint/build after rebase): "Issue #NUMBER: verification FAIL - see PR for details"
 
-**IMPORTANT:** Do not merge the PR. The orchestrator will route verification-passed issues to QA for manual scenario testing. QA will decide whether to merge or re-route to build.
+**IMPORTANT:** Do not merge the PR. The orchestrator will route verification-passed issues to QA for contract-driven QA validation. QA decides pass/fail routing and release readiness.

@@ -117,7 +117,7 @@ You will be given an issue number that is ready for QA (already passed build).
 13. Post the QA decision as a comment on the issue.
       - Use the exact output schema from `.github/contracts/qa-agent.md`.
 
-14. Apply label:
+14. Apply the label:
     - If PASS: `gh issue label NUMBER --add qa-passed`
     - If FAIL: `gh issue label NUMBER --add qa-failed`
     - If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-failed` (same endpoint as FAIL for orchestrator routing)

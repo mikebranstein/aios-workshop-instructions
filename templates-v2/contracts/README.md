@@ -13,6 +13,7 @@ Each contract file is named after the stage it serves:
 - `policy-contract.md` - Release readiness and governance criteria
 - `business-analyst-agent.md` - Requirements clarification and authoring criteria
 - `product-manager-contract.md` - Strategic opportunity discovery and validation criteria
+- `product-owner-contract.md` - Feature-request definition, prioritization, and handoff criteria
 - `research-agent-contract.md` - Research evidence quality and synthesis criteria
 
 **How agents use contracts:**
