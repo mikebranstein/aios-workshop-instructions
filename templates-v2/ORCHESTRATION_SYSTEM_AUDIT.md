@@ -22,7 +22,7 @@ The AIOS v2 orchestration system is **architecturally sound with correct GitHub 
 9. ✅ **Contract-to-utility flow** — Working correctly
 10. ✅ **Folder organization** — Clean and correct
 
-**Overall Assessment:** Design is 90% correct. Implementation is 20% complete. GitHub state management is working as designed—what's missing is active orchestrator execution.
+**Overall Assessment:** Design is 90% correct. Implementation is now **60% complete**. All three orchestrators are executable. Remaining work is contract completeness (QA/verification thresholds) and some orphaned flow definitions (BA invocation, qa-failed routing).
 
 ---
 
@@ -314,12 +314,24 @@ GitHub Issue (example: #123 "Add customer support chatbot")
 
 ### Critical Gaps (Must Fix Before Production)
 
-**GAP #1: Orchestrators Not Implemented** ⚠️ CRITICAL
-- **What should be:** Orchestrators execute 5-step loop every 30 seconds, querying GitHub, routing to agents, updating labels
-- **What is:** Orchestrators are markdown templates with pseudo-code, not executing anything
-- **Impact:** System doesn't run. Nothing happens.
-- **Root cause:** Implementation phase hasn't started
-- **Priority:** P0 (must do first)
+**GAP #1: Orchestrators Not Implemented** ✅ RESOLVED
+- **What was:** Templates existed as documentation-style files with pseudo-code bash blocks
+- **What is now:** All three orchestrators rewritten as proper imperative agent files following the v7 pattern
+- **Changes made:**
+  - `dev-orchestrator-v2.agent.md` — Full imperative routing table, `task()` spawns, `list_issues`/`issue_read` MCP calls, label transition commands
+  - `pm-orchestrator-v2.agent.md` — Full PM pipeline loop (Phase 1 gate, research, Phase 2 validation, strategic-opportunity creation)
+  - `po-orchestrator-v2.agent.md` — Full PO pipeline loop (prioritization, backlog sequencing, feature-request creation)
+- **All three now include:**
+  - "You are the [X] Orchestrator. You run in a continuous self-directed loop. Do NOT call task_complete."
+  - `list_issues` GitHub MCP tool for querying
+  - `issue_read` GitHub MCP tool for reading state
+  - `task(description="...", agent_id="...")` for spawning specialist agents
+  - `gh issue label` / `gh issue comment` for updating state
+  - Depth-first processing (one issue per cycle)
+  - Full routing table with all feedback loops
+  - Correct `How to Run` command with `--enable-all-github-mcp-tools`
+- **Status:** ✅ Ready to run
+- **Priority:** P0 — COMPLETE
 
 **GAP #2: GitHub State Management** ✅ CORRECT (NOT A GAP)
 - **What should be:** Orchestrators use GitHub MCP `issue_read` tool to read state, `gh issue label` and `gh issue comment` commands to write state
@@ -587,9 +599,9 @@ Before proceeding, clarify these design decisions:
 |---|---|---|---|
 | **Orchestration Loop Pattern** | ✅ Complete | Design correct, conceptually sound | No change needed |
 | **Routing Registry** | ✅ Complete | Covers all states and transitions | Clarify qa-failed, intake-review |
-| **PM Orchestrator Logic** | 🔵 Template | Design correct | Implement execution phase |
-| **PO Orchestrator Logic** | 🔵 Template | Design correct | Implement execution phase |
-| **Dev Orchestrator Logic** | 🔵 Template | Design correct | Implement execution phase |
+| **PM Orchestrator** | ✅ Executable | Imperative loop: Phase 1 gate, research, Phase 2 validation, strategic-opportunity creation | Ready to run |
+| **PO Orchestrator** | ✅ Executable | Imperative loop: prioritization, backlog sequencing, feature-request creation | Ready to run |
+| **Dev Orchestrator** | ✅ Executable | Imperative loop with full routing table, all feedback loops, auto-merge | Ready to run |
 | **Agent→Contract References** | ✅ Working | All agents reference correct contracts | No change needed |
 | **Contract→Utility References** | ✅ Working | Research agents access wiki-manager | No change needed |
 | **GitHub State Management** | ✅ Working | Labels via `gh issue label`, comments via `gh issue comment`, orchestrators already designed | Implement orchestrator execution |
