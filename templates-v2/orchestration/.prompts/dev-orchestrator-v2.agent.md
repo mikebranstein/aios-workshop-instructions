@@ -38,6 +38,7 @@ ensure_label() {
 }
 
 ensure_label "feature-request"
+ensure_label "refactor-request"
 ensure_label "intake-approved"
 ensure_label "intake-blocked"
 ensure_label "requirements-clarified"

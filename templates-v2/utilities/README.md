@@ -12,6 +12,12 @@ An autonomous expert librarian utility that manages the GitHub wiki repository. 
 ### metrics-reporter.md
 Metrics utility for agent and orchestrator telemetry. Supports continuous loops (PM/PO/Dev) and bounded runs (Discovery).
 
+### fitness-evaluator.md
+Deterministic architecture fitness-function utility. Evaluates predefined checks and emits structured findings (`PASS|WARN|FAIL_CRITICAL`) for architecture-review processing.
+
+### architecture-debt-manager.md
+Deterministic debt upsert utility. Creates or updates architecture-debt issues from fitness and architecture review findings using dedupe fingerprints.
+
 Common usage:
 ```bash
 ./utilities/metrics-reporter.md report \

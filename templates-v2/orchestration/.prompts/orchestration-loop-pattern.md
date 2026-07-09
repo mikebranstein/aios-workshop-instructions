@@ -1,6 +1,6 @@
 # Orchestration Loop Pattern
 
-**Purpose:** Reusable 5-step loop that all orchestrators (PM, PO, Dev) follow  
+**Purpose:** Reusable loop pattern that all orchestrators (Foundation, Discovery, PM, PO, Dev, Architecture Review) follow  
 **Status:** Template for all orchestrators  
 **File Location:** Referenced by orchestrators, not executed directly  
 
@@ -11,7 +11,7 @@
 There are two orchestration loop patterns:
 
 1. Continuous loop (PM, PO, Dev): always-on polling with 30s sleep.
-2. Bounded run (Discovery): single run with explicit caps and timeout.
+2. Bounded run (Foundation, Discovery, Architecture Review): single run with explicit caps and timeout.
 
 Continuous-loop orchestrators follow this fundamental loop:
 
@@ -102,6 +102,25 @@ Low / Medium / High
 EOF
   echo "Created missing issue template: feature_request.md"
 fi
+
+if [ ! -f .github/ISSUE_TEMPLATE/architecture_review.md ]; then
+  cat > .github/ISSUE_TEMPLATE/architecture_review.md <<'EOF'
+---
+name: Architecture review
+about: Trigger architecture review cycle
+title: "[architecture-review]: "
+labels: 'arch-review-pending'
+assignees: ''
+---
+
+## Review Trigger
+
+## Scope Window
+
+## Objectives
+EOF
+  echo "Created missing issue template: architecture_review.md"
+fi
 ```
 
 Persist missing-template fixes using normal repo workflow:
@@ -127,7 +146,9 @@ gh issue list --label pm-idea --state open --json number,title,labels
 # PM Orchestrator: issues with `pm-idea` label
 # PO Orchestrator: issues with `strategic-opportunity` label
 # Dev Orchestrator: issues with `feature-request` label
+# Foundation Orchestrator (bounded): foundation-needed/foundation-in-progress
 # Discovery Orchestrator (bounded): scans signals, creates `pm-idea` + `pm-idea-auto`
+# Architecture Review Orchestrator (bounded): arch-review-pending and architecture-debt
 
 # Filter out issues already being processed:
 # - Skip if issue has label indicating current stage (e.g., `pm-validating`)
@@ -312,6 +333,49 @@ fi
 3. Create up to creation cap `pm-idea` issues
 4. Output run summary
 5. Stop
+
+**Bounded run summary (Foundation and Architecture Review):**
+
+1. Query required labels/issues for that loop
+2. Spawn specialized agents for that loop
+3. Apply contract-mapped transitions
+4. Emit run summary
+5. Stop
+
+---
+
+## State Taxonomy (Explicit)
+
+### Foundation States
+
+- `foundation-needed`
+- `foundation-in-progress`
+- `foundation-review`
+- `foundation-approved`
+- `foundation-blocked`
+
+### Architecture Review States
+
+- `arch-review-pending`
+- `arch-review-in-progress`
+- `arch-review-no-action`
+- `arch-refactor-planned`
+- `arch-refactor-requests-created`
+- `arch-review-escalated`
+
+### Architecture Debt States
+
+- `architecture-debt`
+- `debt-triaged`
+- `debt-scheduled`
+- `debt-resolved`
+- `debt-deferred`
+
+### Fitness Outcome States
+
+- `fitness-pass`
+- `fitness-warn`
+- `fitness-fail-critical`
 
 **All state visible on GitHub:** Labels show stage, comments show decisions
 - 100 issues: ~3-5 cycles to process all

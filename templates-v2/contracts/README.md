@@ -15,6 +15,10 @@ Each contract file is named after the stage it serves:
 - `product-owner-contract.md` - Feature-request definition, prioritization, and handoff criteria
 - `research-agent-contract.md` - Research evidence quality and synthesis criteria
 - `idea-scout-contract.md` - Autonomous signal-to-idea hypothesis generation criteria
+- `foundation-research-contract.md` - Foundational option research and recommendation criteria
+- `foundation-architect-contract.md` - Foundation decision-pack gate and approval criteria
+- `architecture-review-contract.md` - Continuous architecture health assessment criteria
+- `refactor-planner-contract.md` - Bounded refactor request planning criteria
 
 **How agents use contracts:**
 ```

@@ -148,13 +148,13 @@ Pages created:
 
 ## Integration Checklist
 
-**For Each Agent (10 total: intake, design, build, qa, policy, ba, research, pm, po, idea-scout):**
+**For Each Agent (14 total: intake, design, build, qa, policy, ba, research, pm, po, idea-scout, foundation-research, foundation-architect, architecture-review, refactor-planner):**
 
 - [ ] Add `start` call at agent initialization
 - [ ] Add `report` call at agent completion
 - [ ] Test with one execution (check wiki page appears)
 
-**For Each Orchestrator (3 total: PM, PO, Dev):**
+**For Each Orchestrator (6 total: Foundation, Discovery, PM, PO, Dev, Architecture Review):**
 
 - [ ] Add `report-cycle` call at cycle end
 - [ ] Test with one cycle (check Cycles-* page appears)

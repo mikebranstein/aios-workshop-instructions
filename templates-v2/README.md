@@ -8,7 +8,7 @@
 
 ## Overview
 
-Templates-v2 is a refactored implementation of the three-loop orchestration system (PM, PO, Dev) with these improvements:
+Templates-v2 is a refactored implementation of a multi-loop orchestration system (Foundation, Discovery, PM, PO, Dev, Architecture Review) with these improvements:
 
 - ✅ **GitHub as state** (issue labels + comments, no external vault)
 - ✅ **Centralized routing logic** (routing-registry.md, not duplicated in 3 files)
@@ -20,7 +20,23 @@ Templates-v2 is a refactored implementation of the three-loop orchestration syst
 
 ## Architecture
 
-### Three Independent Loops
+### Core Loops
+
+**Foundation Loop** (`foundation-orchestrator-v2.agent.md`)
+- Establishes and gates foundational decisions for new projects
+- Produces and validates Foundation Decision Pack + ADR baseline
+- Must reach `foundation-approved` before discovery can run
+
+**Discovery Loop** (`discovery-orchestrator-v2.agent.md`)
+- Generates `pm-idea` hypotheses from bounded signal scans
+- Requires `docs/discovery-focus.md` and foundation gate pass
+
+**Architecture Review Loop** (`architecture-review-orchestrator-v2.agent.md`)
+- Runs periodic/event-driven architecture review
+- Executes fitness checks and upserts architecture debt
+- Creates bounded refactor requests that route into Dev loop
+
+### Continuous Delivery Loops
 
 **PM Loop** (`pm-orchestrator-v2.agent.md`)
 - Discovers opportunities (pm-idea issues)
@@ -50,7 +66,7 @@ All state lives in **GitHub issues**:
 
 ### Reusable Orchestration Pattern
 
-All three orchestrators follow the same loop (see [orchestration-loop-pattern.md](orchestration/.prompts/orchestration-loop-pattern.md)):
+Continuous and bounded orchestrators follow the same routing pattern (see [orchestration-loop-pattern.md](orchestration/.prompts/orchestration-loop-pattern.md)):
 
 ```
 1. Query GitHub for issues with specific label
@@ -80,9 +96,12 @@ templates-v2/
 │   │
 │   └── .prompts/
 │       ├── orchestration-loop-pattern.md (reusable loop documentation)
+│       ├── foundation-orchestrator-v2.agent.md (Foundation bounded loop)
+│       ├── discovery-orchestrator-v2.agent.md (Discovery bounded loop)
 │       ├── pm-orchestrator-v2.agent.md (PM loop)
 │       ├── po-orchestrator-v2.agent.md (PO loop)
-│       └── dev-orchestrator-v2.agent.md (Dev loop)
+│       ├── dev-orchestrator-v2.agent.md (Dev loop)
+│       └── architecture-review-orchestrator-v2.agent.md (Architecture review bounded loop)
 ```
 
 ---
@@ -133,12 +152,12 @@ copilot-cli templates-v2/orchestration/.prompts/pm-orchestrator-v2.agent.md --au
 **GitHub-native:** All state visible on GitHub—no separate tools needed  
 **Minimal setup:** Just GitHub + Copilot CLI  
 **Non-breaking:** Run v1 and v2 in parallel indefinitely  
-**Single loop pattern:** Reusable across PM, PO, and Dev loops
+**Single loop pattern:** Reusable across Foundation, Discovery, PM, PO, Dev, and Architecture Review loops
 
 **Week 2:** Validate v2 stability
 - All issues processed correctly
 - State consistency verified
-- All three orchestrators working
+- All orchestrators working across foundation, discovery, delivery, and architecture review
 
 ---
 
@@ -188,4 +207,4 @@ copilot-cli templates-v2/orchestration/.prompts/pm-orchestrator-v2.agent.md --au
 2. ⏳ Run PM orchestrator v2 end-to-end
 3. ⏳ Deploy PO orchestrator v2
 4. ⏳ Deploy Dev orchestrator v2
-5. ⏳ Validate all three orchestrators working together
+5. ⏳ Validate Foundation, Discovery, PM, PO, Dev, and Architecture Review orchestrators working together
