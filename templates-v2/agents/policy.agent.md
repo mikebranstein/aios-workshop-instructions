@@ -15,7 +15,7 @@ This is a **human decision gate**, not an autonomous agent. Your job:
 
 1. **Collect** required policy evidence from issue comments
 2. **Apply** `.github/contracts/policy-contract.md` as the decision source of truth
-3. **Post** decision JSON that conforms to the contract output schema
+3. **Post** decision JSON using the exact contract output schema
 4. **Apply** the label mapped from the contract decision
 
 You bring **human judgment** to questions automation cannot answer:
@@ -29,12 +29,8 @@ You bring **human judgment** to questions automation cannot answer:
 2. Extract the fields required by `.github/contracts/policy-contract.md`.
 3. Determine `decision` using contract tier logic only (`APPROVE|ESCALATE|BLOCK`).
 4. Produce policy JSON that matches the contract output schema exactly.
-
-### Step 5: Post your decision
-
-In the GitHub issue, **post a comment** with your policy decision using the exact output schema from `.github/contracts/policy-contract.md`.
-
-### Step 6: Apply the label
+5. In the GitHub issue, post a comment with your policy decision using the exact output schema from `.github/contracts/policy-contract.md`.
+6. Apply the label mapped from the contract decision.
 
 In the same comment thread or in the GitHub UI:
 
@@ -42,10 +38,10 @@ In the same comment thread or in the GitHub UI:
 # If decision is APPROVE:
 gh issue label [ISSUE_NUMBER] --add policy-auto-approved
 
-# If you escalated:
+# If decision is ESCALATE:
 gh issue label [ISSUE_NUMBER] --add policy-escalated
 
-# If you blocked:
+# If decision is BLOCK:
 gh issue label [ISSUE_NUMBER] --add policy-blocked
 ```
 
