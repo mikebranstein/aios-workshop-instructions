@@ -47,7 +47,12 @@ The Product Manager creates `strategic-opportunity` GitHub issues after validati
    - "What's the competitive advantage vs. Competitor X?"
    - "Does this fit with our Q3 priorities?"
 3. **Wait for PM to respond** with additional context if needed
-4. **Create a `feature-request`** with all 8 required fields from the contract:
+4. **Preflight labels/templates before creation:**
+   - Ensure labels exist: `feature-request`, `feature-requests-created`, `po-deferred`, `po-rejected`
+   - Create missing labels with: `gh label create NAME --color 1D76DB --description "AIOS orchestration label"`
+   - Ensure `.github/ISSUE_TEMPLATE/feature_request.md` exists before creating any feature-request issue.
+   - If template creation is blocked by repository permissions, continue with explicit issue body content and post a bootstrap note for maintainers.
+5. **Create a `feature-request`** with all 8 required fields from the contract:
    - Problem statement (from PM research)
    - Scope: What's included
    - Scope: What's NOT included (non-goals)
@@ -56,7 +61,7 @@ The Product Manager creates `strategic-opportunity` GitHub issues after validati
    - Test scenarios (main paths, 5-10 scenarios)
    - Risk level (High/Medium/Low)
    - Value scores (user, business, complexity) + calculated priority score
-5. Close the strategic-opportunity issue
+6. Close the strategic-opportunity issue
    - Post a final comment: "Strategic planning complete. Prioritized and created feature-request #N for development backlog."
    - Apply label: `feature-requests-created`
    - Close with reason: "completed"

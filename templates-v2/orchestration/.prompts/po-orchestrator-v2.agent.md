@@ -23,6 +23,30 @@ git checkout main
 git pull origin main
 ```
 
+### Step 0: Ensure Labels and Templates Exist
+
+Before querying work, ensure PO/dev handoff labels exist. Create any missing labels:
+
+```bash
+EXISTING_LABELS=$(gh label list --limit 500 --json name --jq '.[].name')
+
+ensure_label() {
+   local label_name="$1"
+   if ! echo "$EXISTING_LABELS" | grep -Fxq "$label_name"; then
+      gh label create "$label_name" --color "1D76DB" --description "AIOS orchestration label"
+   fi
+}
+
+ensure_label "strategic-opportunity"
+ensure_label "pm-opportunity"
+ensure_label "feature-request"
+ensure_label "feature-requests-created"
+ensure_label "po-deferred"
+ensure_label "po-rejected"
+```
+
+If `.github/ISSUE_TEMPLATE/feature_request.md` is missing, create it before creating feature-request issues. If repository write access is restricted, continue with explicit issue bodies and post a bootstrap note for maintainers.
+
 ### Step 1: Query GitHub & Check for Work
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `strategic-opportunity` label.

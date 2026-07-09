@@ -24,16 +24,21 @@ You run in a **bounded cycle**, not an infinite loop. End after one run summary.
 1. Start run on `main` branch:
    - `git checkout main`
    - `git pull origin main`
-2. Collect signal context for the configured window.
-3. Spawn Idea Scout once with run controls:
+2. Ensure required labels and templates exist before creating any issues:
+   - Ensure labels: `pm-idea`, `pm-idea-auto`
+   - Create missing labels with `gh label create <name> --color 1D76DB --description "AIOS orchestration label"`
+   - If `.github/ISSUE_TEMPLATE/pm_idea.md` is missing, create it before issue creation.
+   - If repository write access is restricted, continue with explicit `gh issue create --body` and post a bootstrap note for maintainers.
+3. Collect signal context for the configured window.
+4. Spawn Idea Scout once with run controls:
    - `task(description="Run Idea Scout bounded discovery", agent_id="idea-scout", model_tier="STANDARD")`
-4. Wait for completion and parse Idea Scout run summary.
-5. Apply post-run safeguards:
+5. Wait for completion and parse Idea Scout run summary.
+6. Apply post-run safeguards:
    - Ensure created ideas include `pm-idea` and `pm-idea-auto` labels.
    - Ensure no run exceeds `creation_cap`.
    - Ensure dedupe comments were posted when matches existed.
    - Append deferred candidates to the `Discovery-Deferred-Candidates` wiki page via `wiki-manager`.
-6. Emit final run summary and stop.
+7. Emit final run summary and stop.
 
 ## Run Summary Format
 

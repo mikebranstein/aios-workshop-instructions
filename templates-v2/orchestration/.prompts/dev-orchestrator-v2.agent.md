@@ -23,6 +23,43 @@ git checkout main
 git pull origin main
 ```
 
+### Step 0: Ensure Labels and Templates Exist
+
+Before querying work, ensure dev pipeline labels exist. Create any missing labels:
+
+```bash
+EXISTING_LABELS=$(gh label list --limit 500 --json name --jq '.[].name')
+
+ensure_label() {
+  local label_name="$1"
+  if ! echo "$EXISTING_LABELS" | grep -Fxq "$label_name"; then
+    gh label create "$label_name" --color "1D76DB" --description "AIOS orchestration label"
+  fi
+}
+
+ensure_label "feature-request"
+ensure_label "intake-approved"
+ensure_label "intake-blocked"
+ensure_label "requirements-clarified"
+ensure_label "design-approved"
+ensure_label "design-blocked"
+ensure_label "design-clarified"
+ensure_label "policy-review-required"
+ensure_label "build-complete"
+ensure_label "build-blocked"
+ensure_label "qa-passed"
+ensure_label "qa-failed"
+ensure_label "policy-auto-approved"
+ensure_label "policy-escalated"
+ensure_label "policy-blocked"
+ensure_label "released"
+ensure_label "feature-blocked"
+ensure_label "orchestrator-timeout"
+ensure_label "requirements-needs-human"
+```
+
+If `.github/ISSUE_TEMPLATE/feature_request.md` is missing, create it before processing new intake-bound feature requests. If repository write access is restricted, continue using current issue body format and post a bootstrap note for maintainers.
+
 ### Step 1: Query GitHub & Check for Work
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `feature-request` label. Also read any issues with active pipeline labels (intake-blocked, design-blocked, qa-failed, policy-escalated, policy-blocked).

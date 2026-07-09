@@ -23,6 +23,40 @@ git checkout main
 git pull origin main
 ```
 
+### Step 0: Ensure Labels and Templates Exist
+
+Before querying work, ensure PM/research labels exist. Create any missing labels:
+
+```bash
+EXISTING_LABELS=$(gh label list --limit 500 --json name --jq '.[].name')
+
+ensure_label() {
+   local label_name="$1"
+   if ! echo "$EXISTING_LABELS" | grep -Fxq "$label_name"; then
+      gh label create "$label_name" --color "1D76DB" --description "AIOS orchestration label"
+   fi
+}
+
+ensure_label "pm-idea"
+ensure_label "pm-idea-auto"
+ensure_label "pm-validating"
+ensure_label "pm-provisional-champion"
+ensure_label "pm-finalizing"
+ensure_label "pm-opportunity"
+ensure_label "pm-deferred"
+ensure_label "pm-blocked"
+ensure_label "pm-escalated"
+ensure_label "research"
+ensure_label "research-complete"
+ensure_label "research-priority-high"
+ensure_label "research-priority-medium"
+ensure_label "research-blocked"
+ensure_label "strategic-opportunity"
+ensure_label "follow-on-research"
+```
+
+If `.github/ISSUE_TEMPLATE/pm_idea.md`, `.github/ISSUE_TEMPLATE/strategic_opportunity.md`, or `.github/ISSUE_TEMPLATE/research_work_item.md` is missing, create it before creating issues. If write access is restricted, continue with explicit `gh issue create --body` and post a bootstrap note for maintainers.
+
 ### Step 1: Query GitHub & Check for Work
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `pm-idea` label.

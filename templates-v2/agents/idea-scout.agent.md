@@ -28,18 +28,23 @@ Stop when any limit is reached.
 
 You will be given a trigger context and run controls. Do the following in order:
 
-1. Read trigger context and active strategic pillars.
-2. Gather current signals from provided sources (support, usage metrics, incident trends, competitor notes, backlog gaps).
-3. Cluster signals into candidate opportunity hypotheses.
-4. Rank candidates by impact, urgency, and evidence quality.
-5. Select up to `batch_cap` candidates for deep evaluation.
-6. Run dedupe checks against open `pm-idea` and `strategic-opportunity` issues.
-7. For each candidate, produce contract output decision (`CREATE_PM_IDEA|DEFER|DROP`).
-8. Create at most `creation_cap` new `pm-idea` issues:
+1. Ensure label/template prerequisites for issue creation:
+   - Ensure labels exist: `pm-idea`, `pm-idea-auto`
+   - Create missing labels with: `gh label create NAME --color 1D76DB --description "AIOS orchestration label"`
+   - Ensure `.github/ISSUE_TEMPLATE/pm_idea.md` exists before first issue creation.
+   - If template creation is blocked by repository permissions, continue using explicit issue body content and post a bootstrap note.
+2. Read trigger context and active strategic pillars.
+3. Gather current signals from provided sources (support, usage metrics, incident trends, competitor notes, backlog gaps).
+4. Cluster signals into candidate opportunity hypotheses.
+5. Rank candidates by impact, urgency, and evidence quality.
+6. Select up to `batch_cap` candidates for deep evaluation.
+7. Run dedupe checks against open `pm-idea` and `strategic-opportunity` issues.
+8. For each candidate, produce contract output decision (`CREATE_PM_IDEA|DEFER|DROP`).
+9. Create at most `creation_cap` new `pm-idea` issues:
    - Title format: `[pm-idea]: concise hypothesis title`
    - Include: problem statement, evidence summary, signal strength, confidence, and source links.
-9. For deferred candidates, post/update a short backlog note without creating new PM-stage terminal decisions.
-10. Output a run summary with counts:
+10. For deferred candidates, post/update a short backlog note without creating new PM-stage terminal decisions.
+11. Output a run summary with counts:
    - candidates evaluated
    - pm-ideas created
    - deferred

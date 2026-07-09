@@ -39,6 +39,83 @@ Bounded-run orchestrators (like Discovery) use the same decision/update principl
 
 ---
 
+## Step 0: Repository Metadata Bootstrap (Required)
+
+Before querying issues, ensure required labels and issue templates exist.
+
+### Labels
+
+Use `gh label create` only when a label is missing:
+
+```bash
+EXISTING_LABELS=$(gh label list --limit 500 --json name --jq '.[].name')
+
+ensure_label() {
+  local label_name="$1"
+  local color="$2"
+  local description="$3"
+  if ! echo "$EXISTING_LABELS" | grep -Fxq "$label_name"; then
+    gh label create "$label_name" --color "$color" --description "$description"
+    echo "Created missing label: $label_name"
+  fi
+}
+```
+
+### Issue Templates
+
+If an issue template file is missing, create it in `.github/ISSUE_TEMPLATE/` before first issue creation.
+
+```bash
+mkdir -p .github/ISSUE_TEMPLATE
+
+if [ ! -f .github/ISSUE_TEMPLATE/feature_request.md ]; then
+  cat > .github/ISSUE_TEMPLATE/feature_request.md <<'EOF'
+---
+name: Feature request
+about: Suggest an idea for this project
+title: "[feature-request]: "
+labels: ''
+assignees: ''
+---
+
+## Problem Statement
+
+## Scope
+
+## Non-Goals
+
+## Acceptance Criteria
+- [ ] AC1:
+- [ ] AC2:
+- [ ] AC3:
+
+## Test Scenarios
+- Scenario 1:
+- Scenario 2:
+
+## Risk Level
+Low / Medium / High
+
+## Dependencies
+
+## Notes
+EOF
+  echo "Created missing issue template: feature_request.md"
+fi
+```
+
+Persist missing-template fixes using normal repo workflow:
+- Commit directly if branch policy allows.
+- If branch protection blocks direct push, open a PR with the template files.
+
+### Special Requirements
+
+- Label creation requires GitHub issues write permission.
+- Template creation requires repository contents write permission (commit/PR access).
+- If permissions are missing, post a bootstrap comment on the relevant issue with exact missing assets and continue with inline issue bodies.
+
+---
+
 ## Step-by-Step Pattern
 
 ### Step 1: Query GitHub

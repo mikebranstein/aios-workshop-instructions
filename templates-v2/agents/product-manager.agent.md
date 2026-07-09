@@ -148,6 +148,15 @@ Execute when: Orchestrator finds a `pm-idea` issue with no labels yet
      → Proceed to create research item
    ```
 
+4b. **Repository metadata preflight (before creating issues):**
+   - Ensure labels exist before issue creation:
+     - `research`, `research-complete`, `research-blocked`, `research-priority-high`, `research-priority-medium`
+     - `pm-opportunity`, `strategic-opportunity`, `pm-provisional-champion`
+     - dynamic research trace label format: `pm-idea-$PM_IDEA_NUMBER`
+   - Create missing static labels with `gh label create NAME --color 1D76DB --description "AIOS orchestration label"`.
+   - Ensure templates exist: `.github/ISSUE_TEMPLATE/research_work_item.md` and `.github/ISSUE_TEMPLATE/strategic_opportunity.md`.
+   - If template creation is blocked by repository permissions, continue with explicit `gh issue create --body` and post a bootstrap note for maintainers.
+
 5. **Identify research needs** (Post as comment on `pm-idea`):
    - What personas are affected? (Search wiki)
    - What journey stages? (Search wiki)
