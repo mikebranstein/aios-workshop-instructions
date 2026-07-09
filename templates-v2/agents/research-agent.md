@@ -26,7 +26,7 @@ Every finding must include source tier, methodology notes, and confidence level.
 
 **IMPORTANT:** Research Agent instances are executed **sequentially, one at a time**, NOT in parallel.
 
-**Wiki Operations:** All wiki management is handled by the `wiki-manager` utility (templates-v2/utilities/wiki-manager.md). The utility manages:
+**Wiki Operations:** All wiki management is handled by the `wiki-manager` utility (.github/utilities/wiki-manager.md). The utility manages:
 - Cloning the GitHub Wiki repository to an isolated temp directory
 - Creating/updating markdown pages
 - Committing and pushing changes

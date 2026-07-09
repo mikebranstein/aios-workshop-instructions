@@ -15,7 +15,7 @@ Each contract file is named after the stage it serves:
 
 **How agents use contracts:**
 ```
-Agent reads: "Your contract is in templates-v2/contracts/{contract-name}.md"
+Agent reads: "Your contract is in .github/contracts/{contract-name}.md"
 Agent then: Opens the file, reads the criteria and decision rules
 Agent does: Applies the rules to evaluate the issue
 Agent does NOT: Execute the contract file (it's a reference document)

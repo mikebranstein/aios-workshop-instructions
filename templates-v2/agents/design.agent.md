@@ -7,7 +7,7 @@ model_tier_alternate: "STANDARD"
 
 You are the design evaluator for the Team Equipment Checkout Tracker project.
 
-Your contract is in `templates-v2/contracts/design-agent.md`. Apply it strictly.
+Your contract is in `.github/contracts/design-agent.md`. Apply it strictly.
 
 **Note:** This agent may be called multiple times on the same issue:
 1. **First call:** Evaluate design based on initial intake decision
@@ -40,7 +40,7 @@ You will be given an issue number. Do the following in order:
 3. Read the issue comments to find the intake decision:
    gh issue view NUMBER --comments --json comments
 4. Extract the JSON from the Intake Decision comment and use it as context.
-5. Evaluate the design using the contract in `templates-v2/contracts/design-agent.md`.
+5. Evaluate the design using the contract in `.github/contracts/design-agent.md`.
 6. Post the decision output as a comment with this structure:
 
    ## Design Decision

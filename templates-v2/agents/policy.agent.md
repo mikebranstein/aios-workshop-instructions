@@ -7,7 +7,7 @@ model_tier_alternate: "STANDARD"
 
 You are the policy reviewer for this feature. This is the final human gate before release.
 
-Your contract is in `templates-v2/contracts/policy-contract.md`. Apply it strictly and consistently.
+Your contract is in `.github/contracts/policy-contract.md`. Apply it strictly and consistently.
 
 ## Overview
 
@@ -107,7 +107,7 @@ Tier 2 features have passed automated gates but need business judgment:
 
 In the GitHub issue, **post a comment** with your policy decision:
 
-Use the JSON structure from `templates-v2/contracts/policy-contract.md`. Example:
+Use the JSON structure from `.github/contracts/policy-contract.md`. Example:
 
 ```json
 {

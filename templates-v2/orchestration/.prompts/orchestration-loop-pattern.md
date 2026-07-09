@@ -15,7 +15,7 @@ All three orchestrators follow the same fundamental loop:
 2. For each issue:
    a. Read current stage from GitHub issue label
    b. Check if already processing (to avoid re-entrance)
-   c. Spawn specialist agent (from templates-v2/agents/)
+   c. Spawn specialist agent (from .github/agents/)
    d. Collect decision from agent
    e. Update GitHub issue: change label to next stage, post decision comment
    f. Look up next stage from routing-registry.md
@@ -105,7 +105,7 @@ The agent to run depends on the current stage and orchestrator:
 **Call agent with issue data:**
 ```bash
 # Pass issue data to agent
-AGENT_RESULT=$(copilot-cli templates-v2/agents/${AGENT_NAME}.agent.md --input '{
+AGENT_RESULT=$(copilot-cli .github/agents/${AGENT_NAME}.agent.md --input '{
   "issue_id": 123,
   "title": "Issue Title",
   "stage": "'$STAGE'",
@@ -136,7 +136,7 @@ echo "Decision: $DECISION - $REASONING"
 
 ```bash
 # Look up next stage from routing-registry.md
-NEXT_STAGE=$(grep -A1 "^$CURRENT_STAGE$" routing-registry.md | grep "$DECISION" | awk '{print $2}')
+NEXT_STAGE=$(grep -A1 "^$CURRENT_STAGE$" .github/orchestration/routing-registry.md | grep "$DECISION" | awk '{print $2}')
 
 # Remove old stage label and add new one
 OLD_LABEL="${ORCHESTRATOR_PREFIX}-${CURRENT_STAGE}"
@@ -156,7 +156,7 @@ Next Stage: $NEXT_STAGE"
 
 ## Routing Registry
 
-Orchestrators consult [routing-registry.md](../routing-registry.md) to determine next stage based on current stage + decision.
+Orchestrators consult [routing-registry.md](../orchestration/routing-registry.md) to determine next stage based on current stage + decision.
 
 Example:
 ```

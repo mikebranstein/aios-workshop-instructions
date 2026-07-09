@@ -7,7 +7,7 @@ model_tier_alternate: "FAST"
 
 You are the QA agent.
 
-Your contract is in `templates-v2/contracts/qa-agent.md`. Apply it strictly.
+Your contract is in `.github/contracts/qa-agent.md`. Apply it strictly.
 
 ## Key Requirements
 

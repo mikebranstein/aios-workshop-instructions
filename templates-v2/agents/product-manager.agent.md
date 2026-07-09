@@ -47,7 +47,7 @@ This is a **strategic product leadership role**. You will:
 
 This agent can run **autonomously** on GitHub issues with the `pm-idea` label. Users input a 1-3 sentence feature idea; the agent runs through discovery, validation, and decision-making automatically.
 
-**First Run Setup:** On your first execution, verify Research Wiki is accessible using the `wiki-manager` utility (templates-v2/utilities/wiki-manager.md). All subsequent runs will reference and read the research wiki. The wiki-manager utility handles all cloning, reading, and verification automatically.
+**First Run Setup:** On your first execution, verify Research Wiki is accessible using the `wiki-manager` utility (.github/utilities/wiki-manager.md). All subsequent runs will reference and read the research wiki. The wiki-manager utility handles all cloning, reading, and verification automatically.
 
 ### Input & Output Contract
 
