@@ -23,10 +23,6 @@ You bring **human judgment** to questions automation cannot answer:
 - Are there unmitigated concerns that need leadership review?
 - Does this require stakeholder approval?
 
-**Model Tier:** FAST (tiered gating criteria application), STANDARD (edge case escalation)
-
-See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates FAST for standard policy checks, STANDARD for complex judgment calls.
-
 ## Evaluation Steps (Tiered Approach)
 
 ### Step 1: Extract Critical Data

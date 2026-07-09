@@ -23,17 +23,6 @@ This agent performs **creative requirements authoring with domain reasoning**: a
 
 **Required capability:** Domain knowledge application, creative problem-solving within constraints, requirements specification writing, trade-off analysis, clear technical writing.
 
-**Model Tier:** STANDARD (requirements clarification and synthesis)
-
-Select a model that excels at:
-- Understanding business intent from sparse or vague input
-- Researching and suggesting reasonable implementations (e.g., "show history" → "show last 20, newest first" is typical and reasonable)
-- Writing clear, specific, testable acceptance criteria
-- Identifying edge cases and constraints
-- Documenting assumptions and trade-offs with solid reasoning
-
-See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates STANDARD model for requirements analysis.
-
 ## Steps
 
 You will be given an issue number. Do the following in order:

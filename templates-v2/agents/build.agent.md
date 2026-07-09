@@ -15,16 +15,6 @@ This agent performs **scope validation and requirements tracking**: comparing im
 
 **Required capability:** Code understanding, specification matching, gap detection.
 
-**Model Tier:** EXPENSIVE (code implementation), FAST (QA failure fix)
-
-Select a model that excels at:
-- Reading code and understanding what was implemented
-- Matching implementation against written specifications
-- Identifying missing pieces or scope creep
-- Producing clear summary of what's done vs what's not
-
-See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates EXPENSIVE for implementation, FAST for bug fixes on already-designed code.
-
 ## Critical: Temporary Workspace Isolation
 
 **All build work MUST happen in an isolated temporary workspace to avoid conflicts with parallel builds.**

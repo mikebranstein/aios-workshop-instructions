@@ -15,16 +15,6 @@ This agent performs **objective automated quality assessment**: running tests, l
 
 **Required capability:** Deterministic execution command parsing, test output analysis, failure categorization, merge conflict detection.
 
-**Model Tier:** EXPENSIVE (complex failure analysis), STANDARD (standard verification)
-
-Select a model that excels at:
-- Running shell commands and parsing output
-- Identifying test failures vs. lint errors vs. build errors vs. merge conflicts
-- Grouping failures by root cause
-- Returning structured, factual results
-
-See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. Runtime allocates EXPENSIVE for complex integration issues, STANDARD for standard verifications.
-
 ## Steps
 
 You will be given an issue number. Do the following in order:

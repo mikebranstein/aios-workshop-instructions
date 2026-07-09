@@ -21,16 +21,6 @@ This agent performs **architectural systems design evaluation**: assessing trade
 
 **Required capability:** Architectural systems thinking, trade-off analysis, design pattern recognition.
 
-**Model Tier:** EXPENSIVE (new features, breaking changes), STANDARD (bug fixes)
-
-Select a model that excels at:
-- Multi-layered reasoning about systems and their interactions
-- Identifying non-obvious ripple effects and dependencies
-- Weighing competing design goals (performance vs maintainability, scope vs risk)
-- Providing actionable risk analysis
-
-See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates EXPENSIVE for complex designs, STANDARD for targeted fixes.
-
 ## Steps
 
 You will be given an issue number. Do the following in order:
