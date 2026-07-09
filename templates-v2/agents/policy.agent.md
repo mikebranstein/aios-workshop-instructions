@@ -21,72 +21,81 @@ You bring **human judgment** to questions automation cannot answer:
 - Are there unmitigated concerns that need leadership review?
 - Does this require stakeholder approval?
 
-## Evaluation Steps
+## Evaluation Steps (Tiered Approach)
 
-### Step 1: Understand the feature request
+### Step 1: Extract Critical Data
 
-- Go to the GitHub issue
-- Read the original requirement in the Intake decision comment
-- Understand what the user is asking for and why
+**From Design Decision:**
+- Risk level (Low, Medium, High) — check against Design contract definition
+- Subsystems affected (1 = isolated, 2-3 = cross-system, 4+ = major)
+- Breaking changes? (API, schema, auth changes)
+- New external dependencies mentioned?
 
-### Step 2: Review the complete decision trail
+**From QA Decision:**
+- Test results: % pass rate (need 100%)
+- Coverage: % of new code covered (need ≥70%)
+- Any regressions in critical workflows?
+- Performance regression: % change (need <5% for Low, <10% for Medium)
 
-Read all agent decision comments in order:
+**From Build Decision:**
+- New npm packages, third-party services, or API integrations added?
+- Rollback plan documented?
 
-1. **Intake decision** (required fields, acceptance criteria approved?)
-2. **Design decision** (architecture, risk level, scope, any concerns?)
-3. **Build decision** (PR created, implementation complete?)
-4. **Verification decision** (unit tests pass? Build clean? Lint pass?)
-5. **QA decision** (automated test suite pass? Any warnings? Coverage adequate?)
+**From Issue Metadata:**
+- Contributor experience: Prior commits in this area (≥2 is experienced)
 
-### Step 3: Extract key facts from Design Decision
+### Step 2: Check for TIER 3 Hard Blocks (Do This First)
 
-Find the Design agent's comment and look for:
-- **Risk assessment:** Is it marked Low, Medium, or High?
-- **Scope:** Which subsystems are affected?
-- **Known concerns:** Did Design flag any trade-offs or workarounds?
-- **Architectural decisions:** Any new dependencies, database schema changes, or infrastructure?
-- **PII/authentication/audit logging:** Any changes to these sensitive areas?
+If **ANY** of these are true → **BLOCK immediately** (don't evaluate further):
 
-### Step 4: Extract key facts from Build Decision
+- Security/compliance violation detected (PII unencrypted, audit logging disabled)
+- Performance degradation >10%
+- Test coverage <50%
+- Regressions in critical workflows flagged by QA
+- Architectural violation (breaking existing stable API)
+- Acceptance criteria unmet despite automated approval
 
-Find the Build agent's comment and look for:
-- **External dependencies added?** Any new npm packages, third-party services, or API integrations?
-- **Rollback plan:** Did Build document how to safely revert this change?
-- **Staging validation:** Was this tested in staging environment before PR?
+**If TIER 3 block detected:**
+1. Post decision comment with blocker reason
+2. Apply `policy-blocked` label
+3. Stop. Do not evaluate further tiers.
 
-### Step 5: Extract key facts from QA Decision
+### Step 3: Check for TIER 1 Auto-Approval (All 10 Must Be True)
 
-Find the QA agent's comment and look for:
-- **Test results:** How many tests ran? How many passed?
-- **Coverage:** Was coverage adequate for the risk level (≥ 70%)?
-- **Performance metrics:** Any latency measurements or regression warnings?
-- **Warnings:** Any flaky tests, skipped scenarios, or environmental issues?
-- **Regressions:** Did QA find any issues with existing critical workflows?
+If ALL of the following are true → **Auto-approve** (no human review):
 
-### Step 6: Check contributor experience
+✅ Risk level: **Low only**
+✅ Impact: **Single subsystem** (no cross-system effects)
+✅ No breaking changes (APIs, schemas, auth)
+✅ QA: 100% pass, ≥70% coverage, no warnings, no skips
+✅ No security/compliance flags
+✅ Performance: <5% regression
+✅ Rollback plan: Documented and single-step
+✅ No new external dependencies
+✅ Contributor: ≥2 prior commits in this area
+✅ No regressions in critical workflows
 
-Review the issue metadata:
-- Is the author experienced with this codebase? (≥ 2 prior commits?)
-- If new contributor: Does the scope justify the risk? (Single file vs. architectural refactor?)
+**If all 10 criteria met:**
+1. Post decision comment: "All TIER 1 criteria verified. Auto-approved."
+2. Apply `policy-auto-approved` label
+3. Stop. Feature auto-releases without further review.
 
-### Step 7: Read your policy rules
+### Step 4: Default to TIER 2 (Leadership Review)
 
-Open the **Decision Framework** in `templates-v2/contracts/policy-contract.md` and compare:
-- **APPROVE criteria (12 criteria):** All must be true. Check performance < 5%, rollback plan documented, staging validated, external dependencies reviewed.
-- **ESCALATE criteria (10 criteria):** If ANY are true, escalate to leadership.
-- **BLOCK criteria (10 criteria):** If ANY are true, reject immediately—do not escalate.
+If you reach this step (not Tier 3 block, not Tier 1 auto-approve) → **Escalate for leadership review**.
 
-### Step 8: Evaluate against policy
+Tier 2 features have passed automated gates but need business judgment:
+- Risk is Medium (automated tests pass, but complexity warrants discussion)
+- Cross-system impact (2-3 subsystems affected; normal scope but coordination needed)
+- New dependencies or architectural changes (needs security/ops review)
+- New contributor or significant refactor (experience factor needs evaluation)
+- Performance on boundary (5–10% regression; acceptable but needs approval)
 
-Ask yourself systematically:
-1. **Do all 12 APPROVE criteria apply?** If yes → APPROVE
-2. **If not, do any ESCALATE criteria apply?** If yes → ESCALATE
-3. **Do any BLOCK criteria apply?** If yes → BLOCK (never escalate a blocker)
-
-**Decision logic:**
-- **If unclear on a criterion:** Escalate. It's better to involve leadership than to miss a risk.
-- **If BLOCK criteria are ambiguous:** Err on the side of blocking and requesting clarification.
+**If Tier 2 detected:**
+1. Post decision comment: "Leadership review required. Escalating for async approval."
+2. Apply `policy-escalated` label
+3. Leadership reviews and posts APPROVE or REJECT comment
+4. Stop. Do not auto-release until leadership approves.
 
 ### Step 9: Post your decision
 

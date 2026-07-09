@@ -245,63 +245,63 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 ---
 
-#### POLICY GATE -- High-Risk Feature
+#### POLICY TIER EVALUATION
 
-**Condition:** Has `qa-passed` + `policy-review-required`, no policy decision label yet
+**Condition:** Has `qa-passed`, no policy decision label yet
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** QA passed. Feature flagged for policy review."`
-2. `task(description="Run policy review on issue #NUMBER: TITLE", agent_id="policy")`
-3. Wait. Agent applies `policy-approved`, `policy-escalated`, or `policy-blocked`.
+1. `gh issue comment NUMBER --body "**Orchestrator:** QA passed. Running tiered policy evaluation..."`
+2. `task(description="Evaluate feature against tiered policy framework for issue #NUMBER: TITLE", agent_id="policy")`
+3. Wait. Agent applies one of: `policy-auto-approved`, `policy-escalated`, or `policy-blocked`.
 
 ---
 
-#### LOW-RISK RELEASE (Auto-Merge)
+#### POLICY AUTO-APPROVED -- Auto-Release
 
-**Condition:** Has `qa-passed`, does NOT have `policy-review-required`
+**Condition:** Has `policy-auto-approved`
 
 **Action:**
 1. Read Build Decision comment to get the PR number.
 2. `gh pr merge PR_NUMBER --merge --admin`
-3. `gh issue comment NUMBER --body "**Orchestrator:** QA passed. Low-risk feature. PR #PR_NUMBER merged. Feature released."`
+3. `gh issue comment NUMBER --body "**Orchestrator:** Policy tier evaluation: TIER 1 auto-approved. PR #PR_NUMBER merged. Feature released."`
 4. `gh issue label NUMBER --add released`
 5. `gh issue close NUMBER --reason completed`
 
 ---
 
-#### POLICY APPROVED -- Release
+#### POLICY APPROVED -- Leadership-Approved Release
 
 **Condition:** Has `policy-approved`
 
 **Action:**
 1. Read Build Decision comment to get the PR number.
 2. `gh pr merge PR_NUMBER --merge --admin`
-3. `gh issue comment NUMBER --body "**Orchestrator:** Policy approved. PR #PR_NUMBER merged. Feature released."`
+3. `gh issue comment NUMBER --body "**Orchestrator:** Policy tier evaluation: TIER 2 leadership approved. PR #PR_NUMBER merged. Feature released."`
 4. `gh issue label NUMBER --add released`
 5. `gh issue close NUMBER --reason completed`
 
 ---
 
-#### POLICY ESCALATED
+#### POLICY ESCALATED -- Tier 2 Leadership Review
 
 **Condition:** Has `policy-escalated`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Awaiting leadership decision. Issue paused."`
-2. Skip this issue.
+1. `gh issue comment NUMBER --body "**Orchestrator:** Policy tier evaluation: TIER 2 escalation. Awaiting leadership review (~30 min async). Leadership will post APPROVE or REJECT comment."`
+2. Skip this issue (do not auto-release; wait for leadership decision).
 
 ---
 
-#### POLICY BLOCKED -- Return to Design
+#### POLICY BLOCKED -- Tier 3 Hard Block
 
 **Condition:** Has `policy-blocked`
 
 **Action:**
 1. Read Policy Decision for blocker reason.
-2. `gh issue comment NUMBER --body "**Orchestrator:** Policy blocked. Re-routing to design. Blocker: [reason]"`
-3. `gh issue label NUMBER --remove build-complete --remove policy-blocked --remove design-approved`
-4. `task(description="Re-evaluate issue #NUMBER after policy block: TITLE", agent_id="design")`
-5. Wait.
+2. `gh issue comment NUMBER --body "**Orchestrator:** Policy tier evaluation: TIER 3 hard block. Re-routing to design. Blocker reason: [REASON]"`
+3. `gh issue label NUMBER --remove build-complete --remove design-approved`
+4. `task(description="Fix policy blocker and re-evaluate issue #NUMBER: TITLE. Blocker: [REASON]", agent_id="design")`
+5. Wait for Design to fix and re-route.
 
 ---
 

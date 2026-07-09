@@ -2,52 +2,80 @@
 
 ## Scope
 
-You are the policy reviewer. Your contract is to evaluate whether a feature (that has passed all automated gates) is ready for release from a governance, risk, and impact perspective.
+Policy gate uses a **tiered approach** to minimize manual review while maintaining governance safety. Most features auto-approve (Tier 1); risky features escalate for leadership review (Tier 2); dangerous features block immediately (Tier 3).
 
-You make the final human judgment: APPROVE (ready for release), ESCALATE (leadership review needed), or BLOCK (return to design).
+You make the final human judgment for Tier 2 features: ESCALATE (leadership review) or APPROVE (with conditions).
 
-## Decision Framework
+## Decision Framework - Three Tiers
 
-### APPROVE if all of the following are true:
+### TIER 1: Automatic Approval (No Human Review)
 
-- Risk level: Low or Medium (not High)
-- Impact is **isolated** to one subsystem or well-scoped across components
-- **No breaking changes** to public APIs, database schema, or authentication
-- Blast radius: No existing critical workflows at risk of regression
-- QA test results: 100% pass rate, no warnings, no skipped tests
-- Test coverage: At least 70% of new code covered by automated tests
-- No security or compliance concerns (PII handling unchanged; encryption/audit logging unaffected)
-- All acceptance criteria verified as met by QA
-- **Performance regression < 5%** in affected code paths; no new N+1 queries or blocking I/O
-- **Rollback plan documented and tested**; single-step revert (flag toggle, config change, or git revert); ≤ 5 min downtime if needed
-- **No new external dependencies** added; existing dependencies not upgraded
-- **Staging environment validated** before production merge; no integration test failures
+**Feature Auto-Approves if ALL of the following are true:**
 
-### ESCALATE if any of these conditions apply:
+✅ Risk level: **Low only** (not Medium, not High)
+✅ Impact: **Isolated to single subsystem** (no cross-subsystem effects)
+✅ No breaking changes: APIs, schemas, authentication unaffected
+✅ QA: 100% pass rate, ≥70% coverage, no warnings, no skipped tests
+✅ No security/compliance flags: PII handling, encryption, audit logging unchanged
+✅ Performance: <5% regression in affected paths; no N+1 queries
+✅ Rollback plan: Documented and single-step (flag toggle or git revert)
+✅ No new external dependencies: No npm packages, third-party services, or API integrations added
+✅ Contributor: ≥2 prior commits in this codebase area
+✅ No regressions: QA verified no impact on critical workflows
 
-- Risk level is High
-- Impact affects multiple subsystems or core APIs
-- Blast radius may affect critical existing workflows or dependencies
-- **Breaking changes** to public interfaces or data models
-- Security review needed (new external calls, permission changes, encryption decisions, PII access patterns)
-- Compliance implications (data retention changes, audit trail modifications, PII handling)
-- **Performance risk detected** — latency regression 5–10%, new external API call in hot path, database query complexity increased
-- **New external dependencies** or third-party service integration; requires license, cost, or security review
-- **Contributor unfamiliar** with this codebase or **major refactor** (≥3 files, ≥30% of a service, architectural pattern change)
-- Deployment requires **downtime**, **data migration**, or **coordination with ops/other teams**
-- Executive judgment required (e.g., architectural pivots, business priorities, risk tolerance decisions)
+**When all 10 criteria are met:** Orchestrator applies `policy-auto-approved` label and releases without manual review.
 
-### BLOCK if any of these conditions apply:
+---
 
-- Acceptance criteria not fully met despite automated approval
-- QA findings indicate **regressions** in existing critical workflows or performance degradation > 10%
-- Test coverage inadequate for the risk level (< 70% new code coverage)
-- Architectural concerns unresolved or conflicting with documented design patterns
-- Critical bugs found post-QA that weren't caught by automated tests; test strategy is insufficient
-- **PII data stored unencrypted** or audit logging disabled/compromised; compliance violation risk
-- **Insufficient credentials** — low contributor experience with this codebase AND multiple files changed AND architectural complexity
+### TIER 2: Leadership Review (Standard Review Path)
+
+**Feature Escalates if ANY of the following are true (but none of the BLOCK conditions apply):**
+
+⚠️ Risk level: **Medium** (automated gates passed, but business judgment needed)
+⚠️ Impact: **Touches 2-3 subsystems** (normal scope, but cross-system coordination risk)
+⚠️ Performance: Regression 5–10% (acceptable but warrants discussion)
+⚠️ New external dependencies: New npm packages, API integrations, or third-party services (needs review)
+⚠️ Contributor experience: New to this codebase (<2 prior commits) but scope is small and well-tested
+⚠️ Architecture: Multiple files changed (3+) but follows existing patterns
+⚠️ Deployment: Coordination needed with ops, other teams, or data migration (but not blocking)
+
+**When any of these apply:** Orchestrator applies `policy-escalated` label; leadership reviews in async fashion (~30 min). Leadership can APPROVE or request changes. Feature does NOT auto-release; leadership makes the call.
+
+---
+
+### TIER 3: Hard Block (Never Release)
+
+**Feature Blocks Immediately if ANY of the following are true:**
+
+🛑 Security/Compliance Violation: PII unencrypted, audit logging disabled, or encryption compromised
+🛑 Test Failures: Regressions in critical workflows detected by QA
+🛑 Inadequate Testing: Test coverage <50% for risk level (actual gap, not just <70%)
+🛑 Acceptance Criteria Unmet: Feature does not satisfy requirements despite passing automated gates
+🛑 Architectural Violation: Conflicts with documented design patterns or breaking change to stable API
+🛑 Critical Bug Post-QA: Edge case bugs caught that QA strategy missed
+🛑 Performance Degradation: >10% latency regression or new blocking I/O in hot path
+
+**When any of these apply:** Orchestrator applies `policy-blocked` label and routes back to Design for fixes. Feature does NOT release; blocker is unambiguous.
+
+---
+
+## Decision Logic
+
+**For Policy Reviewer (Human):**
+
+1. Check for **TIER 3 hard blocks** first
+   - If any apply → BLOCK immediately (no nuance)
+2. Check for **TIER 1 auto-approve** criteria
+   - If all 10 apply → Auto-approved (feature releases, no human review needed)
+3. If neither Tier 1 nor Tier 3 → **TIER 2** (escalate for leadership review)
+
+**For Orchestrator (Automated):**
+
+- If feature meets all TIER 1 criteria → Apply `policy-auto-approved` label; route to release
+- If feature has any TIER 3 blocker → Apply `policy-blocked` label; route back to Design
+- If feature has any TIER 2 escalation criteria → Apply `policy-escalated` label; wait for leadership
 
 ## Gate Rule
-- APPROVE: Feature is released
-- ESCALATE: Leadership review required
-- BLOCK: Return to design for fixes
+- TIER 1 (Auto-Approve): Feature is auto-released
+- TIER 2 (Leadership Review): Hold for async leadership review (~30 min); leadership decides
+- TIER 3 (Hard Block): Return to design for fixes; blocker reason documented
