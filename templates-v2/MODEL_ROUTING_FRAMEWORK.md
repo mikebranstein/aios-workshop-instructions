@@ -80,7 +80,7 @@ This framework optimizes task execution cost and latency by routing work to appr
 **Examples:**
 - Build agent: implementing code from design spec ✅
 - Design agent: creating new feature architecture ✅
-- Verification agent: debugging complex integration issues ✅
+- Product manager agent: evaluating strategy trade-offs ✅
 
 ---
 
@@ -93,7 +93,7 @@ This framework optimizes task execution cost and latency by routing work to appr
 | **Build** | EXPENSIVE | FAST | EXPENSIVE for implementation; FAST for retry after QA failure (already-approved design) |
 | **QA** | STANDARD | FAST | STANDARD for scenario execution; FAST for coverage classification-only |
 | **Policy** | FAST | STANDARD | FAST for tiered gating rules; STANDARD for edge case escalation |
-| **Verification** | EXPENSIVE | STANDARD | EXPENSIVE for complex failures; STANDARD for simple documentation |
+| **Idea Scout** | STANDARD | FAST | STANDARD for signal synthesis; FAST for dedupe/formatting-only updates |
 | **Research** | STANDARD | FAST | STANDARD for research synthesis; FAST for wiki formatting |
 | **Business Analyst** | FAST | STANDARD | FAST for wiki updates/formatting; STANDARD for content synthesis |
 | **Product Manager** | STANDARD | EXPENSIVE | STANDARD for Phase 1/2 gate decisions; EXPENSIVE for strategy trade-offs |
@@ -232,15 +232,6 @@ task(description="Evaluate policy gate for issue #NUMBER",
      model_tier="FAST")  # Tiered gating criteria
 ```
 
-**Verification (Verification Agent):**
-```bash
-task(description="Verify and release issue #NUMBER", 
-     agent_id="verification",
-     model_tier="EXPENSIVE")  # Complex integration verification
-```
-
----
-
 ## Runtime Model Selection
 
 When an orchestrator spawns a task with `model_tier="FAST"`, the runtime:
@@ -260,8 +251,8 @@ When an orchestrator spawns a task with `model_tier="FAST"`, the runtime:
 ### Realistic Scenario: 5 Concurrent Features (Dev Pipeline)
 
 **Naive (all EXPENSIVE models):**
-- 5 features × 4 EXPENSIVE tasks (design, build, QA, verification) = 20 expensive tasks
-- 20 × 20 seconds average = 400 seconds = 6.7 min
+- 5 features × 3 EXPENSIVE tasks (design, build, policy edge-case escalations) = 15 expensive tasks
+- 15 × 20 seconds average = 300 seconds = 5.0 min
 - Cost: High (all premium tokens)
 
 **Optimized (with model routing):**
@@ -270,8 +261,7 @@ When an orchestrator spawns a task with `model_tier="FAST"`, the runtime:
 - 5 Build (EXPENSIVE): 5 × 18s = 90s (batched after design)
 - 5 QA (STANDARD): 5 × 8s = 40s (concurrent, during build)
 - 5 Policy (FAST): 5 × 1s = 5s (concurrent)
-- Verification (EXPENSIVE): 1 × 20s = 20s (single path-to-production)
-- **Total: ~125 seconds** (dominated by expensive tasks, others overlap)
+- **Total: ~105 seconds** (dominated by expensive tasks, others overlap)
 - **Cost: 60-70% lower** (intake, policy, QA handle bulk of workload on cheap models)
 
 ---

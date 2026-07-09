@@ -537,7 +537,7 @@ policy-blocked
 
 ## Part 4: Agent-to-Contract-to-Utility Flow (Complete Verification)
 
-### Agent Mapping (✅ 10 AGENTS, ALL MAPPED)
+### Agent Mapping (✅ 9 AGENTS, ALL MAPPED)
 
 | Agent | Stage(s) | Contract | Model Tier | Utilities |
 |-------|----------|----------|-----------|-----------|
@@ -550,9 +550,8 @@ policy-blocked
 | **Research** | pm-provisional-champion → research-complete/blocked | research-agent.md | STANDARD/FAST | wiki-manager utility |
 | **Product Manager** | pm-idea → pm-provisional-champion/blocked, research-priority-high → pm-opportunity | product-manager.agent.md | STANDARD/EXPENSIVE | None (reads GitHub) |
 | **Product Owner** | strategic-opportunity → po-backlog/deferred/rejected, po-backlog → feature-requests-created | product-owner.agent.md | STANDARD/FAST | None (creates feature-request issues) |
-| **Verification** | qa-passed → release verification | verification-agent.md | EXPENSIVE/STANDARD | None (reads GitHub) |
 
-**Status:** ✅ All 10 agents properly contracted, tiered, and routed
+**Status:** ✅ All 9 active agents properly contracted, tiered, and routed
 
 ---
 

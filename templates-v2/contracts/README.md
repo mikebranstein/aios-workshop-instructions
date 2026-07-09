@@ -9,7 +9,6 @@ Each contract file is named after the stage it serves:
 - `design-agent.md` - Technical design and architecture criteria
 - `build-agent.md` - Implementation scope and test criteria
 - `qa-agent.md` - Test coverage and quality criteria
-- `verification-agent.md` - Automated quality gates (build, test, lint)
 - `policy-contract.md` - Release readiness and governance criteria
 - `business-analyst-agent.md` - Requirements clarification and authoring criteria
 - `product-manager-contract.md` - Strategic opportunity discovery and validation criteria

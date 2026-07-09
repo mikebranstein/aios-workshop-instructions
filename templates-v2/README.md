@@ -34,7 +34,7 @@ Templates-v2 is a refactored implementation of the three-loop orchestration syst
 
 **Dev Loop** (`dev-orchestrator-v2.agent.md`)
 - Executes feature requests through pipeline
-- Stages: intake → design → build → qa → verification → policy → release
+- Stages: intake → design → build → qa → policy → release
 - Handles feedback loops (Design REVISE → Intake, etc.)
 
 ### State Management

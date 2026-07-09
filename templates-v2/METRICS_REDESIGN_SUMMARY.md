@@ -123,7 +123,7 @@ Visit: `https://github.com/<owner>/<repo>/wiki`
 
 ## Implementation Checklist
 
-**For Each Agent (10 agents: intake, design, build, qa, policy, ba, research, pm, po, verification):**
+**For Each Agent (10 agents: intake, design, build, qa, policy, ba, research, pm, po, idea-scout):**
 - [ ] Add `./utilities/metrics-reporter.md start` at startup
 - [ ] Add `./utilities/metrics-reporter.md report` at completion
 
@@ -141,7 +141,7 @@ Visit: `https://github.com/<owner>/<repo>/wiki`
 1. **Review** [METRICS_INTEGRATION.md](templates-v2/METRICS_INTEGRATION.md) for copy-paste examples
 2. **Add** the 2 utility calls to one agent (e.g., intake) and test
 3. **Verify** metrics appear in GitHub wiki
-4. **Repeat** for remaining 9 agents and 3 orchestrators
+4. **Repeat** for remaining 9 agents and 4 orchestrators
 5. **Monitor** via wiki pages or utility queries
 
 ---

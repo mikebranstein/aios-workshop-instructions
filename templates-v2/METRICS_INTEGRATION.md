@@ -38,7 +38,7 @@ gh issue comment "$ISSUE_NUMBER" --body "## Intake Decision: $DECISION"
 
 ### All Other Agents
 
-Same pattern for: design, build, qa, policy, business-analyst, research, product-manager, product-owner, verification
+Same pattern for: design, build, qa, policy, business-analyst, research, product-manager, product-owner, idea-scout
 
 ```bash
 # At startup:
@@ -148,7 +148,7 @@ Pages created:
 
 ## Integration Checklist
 
-**For Each Agent (10 total: intake, design, build, qa, policy, ba, research, pm, po, verification):**
+**For Each Agent (10 total: intake, design, build, qa, policy, ba, research, pm, po, idea-scout):**
 
 - [ ] Add `start` call at agent initialization
 - [ ] Add `report` call at agent completion
@@ -159,7 +159,7 @@ Pages created:
 - [ ] Add `report-cycle` call at cycle end
 - [ ] Test with one cycle (check Cycles-* page appears)
 
-**Verification:**
+**Validation:**
 
 - [ ] Visit wiki: `https://github.com/<owner>/<repo>/wiki`
 - [ ] See `Metrics-YYYY-MM-DD` page for today
