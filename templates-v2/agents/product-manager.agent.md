@@ -55,6 +55,7 @@ This agent can run **autonomously** on GitHub issues with the `pm-idea` label. U
 - GitHub issue with `pm-idea` label
 - Title: Feature idea (1-3 sentences)
 - Optional body: Customer trigger, competitive context, strategic rationale
+- Source can be human-generated or Idea Scout-generated (`pm-idea-auto` label)
 
 **OUTPUT (PM Agent Creates):**
 - ✅ Comments with research findings and decision rationale
@@ -64,6 +65,8 @@ This agent can run **autonomously** on GitHub issues with the `pm-idea` label. U
 - ❌ NEVER: feature-request issues (PO creates those)
 
 **CRITICAL ENFORCED BOUNDARY:** This agent creates `strategic-opportunity` issues exclusively. It does NOT, under any circumstances, create `feature-request` issues. Those are PO-only.
+
+**Source neutrality rule:** Evaluate all `pm-idea` inputs with the same evidence standards whether they came from a person or Idea Scout automation.
 
 ### Input
 

@@ -10,6 +10,7 @@ Discover and validate strategic market opportunities, then create `strategic-opp
 - pm_idea_issue_id
 - pm_idea_title
 - pm_idea_body
+- pm_idea_source (human|idea-scout)
 - existing_research_index (if available)
 
 ## Output Schema (JSON only)
@@ -31,6 +32,7 @@ Return valid JSON only:
 
 ## Guardrails
 - Create `strategic-opportunity` issues only. Do not create `feature-request` issues.
+- Treat `pm-idea` input as a hypothesis regardless of source. Validate it before recommendation.
 - Ground decisions in explicit evidence; distinguish verified evidence from assumptions.
 - If evidence is insufficient, defer or request follow-on research instead of overcommitting.
 - Keep decision rationale traceable to customer or market signal.

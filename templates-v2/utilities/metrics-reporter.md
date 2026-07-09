@@ -27,6 +27,15 @@ That's it. The utility handles:
 - ✅ Writing to GitHub wiki (automatic)
 - ✅ Organizing by date/agent/metric (automatic)
 
+Idea Scout example:
+```bash
+./utilities/metrics-reporter.md report \
+  --agent-id "idea-scout" \
+  --issue-number "128" \
+  --decision "CREATE_PM_IDEA" \
+  --confidence "0.87"
+```
+
 ### For Orchestrators (Copy-Paste)
 
 **At cycle end:**
@@ -41,6 +50,17 @@ That's it. The utility handles:
 ```
 
 Utility handles all the rest.
+
+Discovery orchestrator bounded-run example:
+```bash
+./utilities/metrics-reporter.md report-cycle \
+  --orchestrator "discovery" \
+  --cycle-number "18" \
+  --duration-seconds "540" \
+  --issues-processed "5" \
+  --issues-completed "3" \
+  --agents-spawned "1"
+```
 
 ---
 
@@ -196,7 +216,7 @@ echo "Cycle $CYCLE_NUMBER complete: ${CYCLE_DURATION}s, 3/5 issues complete"
 - **Format:** Markdown table (time, issue, decision, confidence, duration)
 
 ### Orchestrator Pages
-- **Page:** `Cycles-<Orchestrator>` (e.g., `Cycles-Dev`, `Cycles-Pm`, `Cycles-Po`)
+- **Page:** `Cycles-<Orchestrator>` (e.g., `Cycles-Dev`, `Cycles-Pm`, `Cycles-Po`, `Cycles-Discovery`)
 - **Contains:** All cycle metrics for that orchestrator
 - **Format:** Markdown table (cycle #, duration, processed, completed, success rate, agents spawned)
 
@@ -229,7 +249,7 @@ Report agent completion metrics (called at agent finish).
 ./utilities/metrics-reporter.md report \
   --agent-id <agent-id> \
   --issue-number <number> \
-  --decision <PASS|FAIL|BLOCKED|REVISE> \
+  --decision <PASS|FAIL|BLOCKED|REVISE|CREATE_PM_IDEA|DEFER|DROP> \
   --confidence <0.0-1.0> \
   [--notes "optional notes"]
 ```
@@ -249,7 +269,7 @@ Report orchestrator cycle metrics (called at cycle end).
 
 ```bash
 ./utilities/metrics-reporter.md report-cycle \
-  --orchestrator <pm|po|dev> \
+  --orchestrator <pm|po|dev|discovery> \
   --cycle-number <number> \
   --duration-seconds <number> \
   --issues-processed <number> \

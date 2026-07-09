@@ -19,6 +19,47 @@ This registry defines:
 
 ---
 
+## Discovery Loop Routing
+
+### Stage: signal-scan (Initial)
+
+Discovery orchestrator runs on schedule/event/manual trigger and scans product signals.
+
+**Decision from:** idea-scout agent (signal synthesis and hypothesis generation)
+
+| Decision | Condition | Next Stage |
+|----------|-----------|------------|
+| CREATE_PM_IDEA | Candidate passes evidence + dedupe gate | pm-idea-created |
+| DEFER | Candidate lacks confidence or needs more data | candidate-deferred |
+| DROP | Duplicate/noise/low-value signal | dropped |
+
+**Action on transition:**
+- CREATE_PM_IDEA → Create issue with labels `pm-idea` + `pm-idea-auto`
+- DEFER → Record deferred candidate note for next run
+- DROP → Record dropped rationale for auditability
+
+**Typical duration:** 10-20min bounded run (hard timeout 30min)
+
+---
+
+### Stage: pm-idea-created (Terminal for Discovery)
+
+Discovery handoff complete. PM loop picks up from `pm-idea`.
+
+---
+
+### Stage: candidate-deferred (Terminal for Run)
+
+Candidate retained for reconsideration in future Discovery run.
+
+---
+
+### Stage: dropped (Terminal for Run)
+
+Candidate dropped due to low quality, low confidence, or duplicate signal.
+
+---
+
 ## PM Loop Routing
 
 ### Stage: pm-idea (Initial)
@@ -356,6 +397,9 @@ Feature blocked (dependency, tech, policy, etc.). Issue closed.
 
 | Stage | Status | Issue Action |
 |-------|--------|--------------|
+| pm-idea-created | ✅ Discovery output | Create `pm-idea` + `pm-idea-auto` |
+| candidate-deferred | ⏸️ Deferred | Keep for later Discovery runs |
+| dropped | ❌ Dropped | No PM issue created |
 | pm-opportunity | ✅ Success | Close, create strategic-opportunity |
 | pm-blocked | ❌ Blocked | Close |
 | pm-escalated | ⏸️ Paused | Awaiting manual decision |

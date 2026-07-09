@@ -8,7 +8,12 @@
 
 ## Overview
 
-All three orchestrators follow the same fundamental loop:
+There are two orchestration loop patterns:
+
+1. Continuous loop (PM, PO, Dev): always-on polling with 30s sleep.
+2. Bounded run (Discovery): single run with explicit caps and timeout.
+
+Continuous-loop orchestrators follow this fundamental loop:
 
 ```
 1. Query GitHub for unprocessed issues (with specific label)
@@ -30,6 +35,8 @@ This pattern ensures:
 - ✅ Decoupled from specific business logic
 - ✅ Clear error handling and recovery
 
+Bounded-run orchestrators (like Discovery) use the same decision/update principles but stop when limits are reached (batch cap, creation cap, timeout).
+
 ---
 
 ## Step-by-Step Pattern
@@ -43,6 +50,7 @@ gh issue list --label pm-idea --state open --json number,title,labels
 # PM Orchestrator: issues with `pm-idea` label
 # PO Orchestrator: issues with `strategic-opportunity` label
 # Dev Orchestrator: issues with `feature-request` label
+# Discovery Orchestrator (bounded): scans signals, creates `pm-idea` + `pm-idea-auto`
 
 # Filter out issues already being processed:
 # - Skip if issue has label indicating current stage (e.g., `pm-validating`)
@@ -219,6 +227,14 @@ fi
    - Post decision comment
 3. Sleep 30 seconds
 4. Repeat
+
+**Bounded run summary (Discovery):**
+
+1. Query signal sources for candidate hypotheses
+2. Spawn Idea Scout with bounded controls
+3. Create up to creation cap `pm-idea` issues
+4. Output run summary
+5. Stop
 
 **All state visible on GitHub:** Labels show stage, comments show decisions
 - 100 issues: ~3-5 cycles to process all

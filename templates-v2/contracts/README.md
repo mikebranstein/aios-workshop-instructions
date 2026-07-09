@@ -15,6 +15,7 @@ Each contract file is named after the stage it serves:
 - `product-manager-contract.md` - Strategic opportunity discovery and validation criteria
 - `product-owner-contract.md` - Feature-request definition, prioritization, and handoff criteria
 - `research-agent-contract.md` - Research evidence quality and synthesis criteria
+- `idea-scout-contract.md` - Autonomous signal-to-idea hypothesis generation criteria
 
 **How agents use contracts:**
 ```

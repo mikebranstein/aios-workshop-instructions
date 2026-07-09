@@ -27,6 +27,8 @@ git pull origin main
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `pm-idea` label.
 
+Note: `pm-idea` may be human-generated or Idea Scout-generated (`pm-idea-auto`). Treat both as PM hypothesis inputs.
+
 Log the model you are currently using at the start of each cycle.
 
 ### Step 2: Early Return if No Work (Phase 1)
@@ -265,6 +267,7 @@ gh issue label NUMBER --add orchestrator-timeout
 | Label | Meaning |
 |---|---|
 | `pm-idea` | Entry point -- queued for Phase 1 gate |
+| `pm-idea-auto` | Entry point created by Discovery/Idea Scout |
 | `pm-provisional-champion` | Phase 1 passed -- in research |
 | `research-complete` | Research done -- ready for Phase 2 |
 | `research-priority-high` | Research shows high priority |
