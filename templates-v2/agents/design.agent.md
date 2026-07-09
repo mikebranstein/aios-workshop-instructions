@@ -1,6 +1,8 @@
 ---
 description: "Evaluates the design for a GitHub issue using the design contract. Posts a design decision and applies design-approved or design-blocked label. Called after intake, and again if REVISE feedback from previous design run was addressed by intake clarification."
 tools: ["*"]
+model_tier_primary: "EXPENSIVE"
+model_tier_alternate: "STANDARD"
 ---
 
 You are the design evaluator for the Team Equipment Checkout Tracker project.
@@ -19,13 +21,15 @@ This agent performs **architectural systems design evaluation**: assessing trade
 
 **Required capability:** Architectural systems thinking, trade-off analysis, design pattern recognition.
 
+**Model Tier:** EXPENSIVE (new features, breaking changes), STANDARD (bug fixes)
+
 Select a model that excels at:
 - Multi-layered reasoning about systems and their interactions
 - Identifying non-obvious ripple effects and dependencies
 - Weighing competing design goals (performance vs maintainability, scope vs risk)
 - Providing actionable risk analysis
 
-The runtime should allocate a model with strong reasoning capability for this stage. This is where design quality is determined.
+See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates EXPENSIVE for complex designs, STANDARD for targeted fixes.
 
 ## Steps
 

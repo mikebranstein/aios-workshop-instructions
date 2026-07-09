@@ -99,7 +99,7 @@ Result: Up to 5 issues ready for Policy
 #### 4a. Intake Stage (Parallel - Up to 5)
 ```bash
 # For each issue from Step 3a
-task(description="Run intake evaluation on issue #NUMBER: TITLE", agent_id="intake")
+task(description="Run intake evaluation on issue #NUMBER: TITLE", agent_id="intake", model_tier="FAST")
 # (Allow multiple task() calls to execute concurrently - up to 5)
 ```
 **Wait for all intake tasks to complete.** Then for each issue's Intake Decision:
@@ -109,7 +109,7 @@ task(description="Run intake evaluation on issue #NUMBER: TITLE", agent_id="inta
 #### 4b. Design Stage (Parallel - Up to 5)
 ```bash
 # For each issue from Step 3b
-task(description="Run design evaluation on issue #NUMBER: TITLE", agent_id="design")
+task(description="Run design evaluation on issue #NUMBER: TITLE", agent_id="design", model_tier="EXPENSIVE")
 # (Allow up to 5 design tasks concurrently)
 ```
 **Wait for all design tasks to complete.** Then for each issue's Design Decision:
@@ -120,7 +120,7 @@ task(description="Run design evaluation on issue #NUMBER: TITLE", agent_id="desi
 #### 4c. Build Stage (Parallel - Up to 5)
 ```bash
 # For each issue from Step 3c
-task(description="Run build on issue #NUMBER: TITLE", agent_id="build")
+task(description="Run build on issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")
 # (Allow up to 5 build tasks concurrently)
 ```
 **Wait for all build tasks to complete.** Then for each issue's Build Decision:
@@ -130,7 +130,7 @@ task(description="Run build on issue #NUMBER: TITLE", agent_id="build")
 #### 4d. QA Stage (Parallel - Up to 5)
 ```bash
 # For each issue from Step 3d
-task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa")
+task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa", model_tier="STANDARD")
 # (Allow up to 5 QA tasks concurrently)
 ```
 **Wait for all QA tasks to complete.** Then for each issue's QA Decision (read JSON from comment):
@@ -142,7 +142,7 @@ task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa")
 #### 4e. Policy Stage (Parallel - Up to 5)
 ```bash
 # For each issue from Step 3e
-task(description="Run policy review on issue #NUMBER: TITLE", agent_id="policy")
+task(description="Run policy review on issue #NUMBER: TITLE", agent_id="policy", model_tier="FAST")
 # (Allow up to 5 policy tasks concurrently)
 ```
 **Wait for all policy tasks to complete.** Then for each issue's Policy Decision (read labels applied by policy agent):
@@ -186,7 +186,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Intake blocked on requirements. Routing to business analyst."`
-2. `task(description="Clarify requirements on issue #NUMBER: TITLE", agent_id="business-analyst")`
+2. `task(description="Clarify requirements on issue #NUMBER: TITLE", agent_id="business-analyst", model_tier="STANDARD")`
 3. Wait for completion.
 4. `gh issue label NUMBER --add requirements-clarified`
 5. `gh issue label NUMBER --remove intake-blocked`
@@ -233,7 +233,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Design needs clarification. Re-routing to intake."`
 2. `gh issue label NUMBER --remove design-blocked --remove intake-approved`
-3. `task(description="Re-evaluate intake based on design feedback on issue #NUMBER: TITLE", agent_id="intake")`
+3. `task(description="Re-evaluate intake based on design feedback on issue #NUMBER: TITLE", agent_id="intake", model_tier="STANDARD")`
 4. Wait. Agent applies intake label.
 
 ---
@@ -245,8 +245,8 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Requirements clarified. Routing directly to build (skipping re-intake)."`
 2. `gh issue label NUMBER --remove design-clarified`
-3. If this is first-time test addition: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build")`
-4. If this is re-evaluation after Build ambiguity: `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build")`
+3. If this is first-time test addition: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")`
+4. If this is re-evaluation after Build ambiguity: `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")`
 5. Wait. Build completes; routes to QA.
 
 ---
@@ -268,7 +268,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Design approved. Routing to build."`
-2. `task(description="Run build on issue #NUMBER: TITLE", agent_id="build")`
+2. `task(description="Run build on issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")`
 3. Wait. Agent applies `build-complete` or `build-blocked`.
 
 ---
@@ -279,7 +279,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Build complete. Routing to QA for integration verification and testing."`
-2. `task(description="Run QA with integration verification on issue #NUMBER: TITLE", agent_id="qa")`
+2. `task(description="Run QA with integration verification on issue #NUMBER: TITLE", agent_id="qa", model_tier="STANDARD")`
 3. Wait. Agent applies `qa-passed` or `qa-failed`.
 
 ---
@@ -302,7 +302,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** QA detected rebase conflict with main. Re-routing to design to re-evaluate scope."`
 2. `gh issue label NUMBER --remove build-complete --remove qa-failed --remove design-approved`
-3. `task(description="Re-evaluate design on main after integration conflict on issue #NUMBER: TITLE", agent_id="design")`
+3. `task(description="Re-evaluate design on main after integration conflict on issue #NUMBER: TITLE", agent_id="design", model_tier="EXPENSIVE")`
 4. Wait.
 
 ---
@@ -314,13 +314,13 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** QA found incomplete test coverage. Routing to design for requirements clarification."`
 2. `gh issue label NUMBER --remove build-complete --remove qa-failed --remove design-approved`
-3. `task(description="Clarify testable requirements for issue #NUMBER: TITLE", agent_id="design")`
+3. `task(description="Clarify testable requirements for issue #NUMBER: TITLE", agent_id="design", model_tier="EXPENSIVE")`
 4. Wait.
 5. After Design clarifies:
    - Design will update the issue body with explicit acceptance criteria
    - `gh issue label NUMBER --add design-clarified` (new label, signals Build to proceed without re-intake)
 6. **Skip Intake re-validation** (Intake already approved; only clarifying acceptance criteria)
-7. Route directly to Build: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build")`
+7. Route directly to Build: `task(description="Add tests based on clarified acceptance criteria for issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")`
 8. Wait. Build creates tests and updates implementation if needed.
 
 ---
@@ -332,7 +332,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** QA found test failures. Re-routing to build to fix."`
 2. `gh issue label NUMBER --remove build-complete --remove qa-failed`
-3. `task(description="Fix QA test failures on issue #NUMBER: TITLE", agent_id="build")`
+3. `task(description="Fix QA test failures on issue #NUMBER: TITLE", agent_id="build", model_tier="FAST")`
 4. Wait. 
 5. Check Build Decision:
    - If Build returns `COMPLETE`: Tests now pass; remove `build-blocked`, keep `build-complete`; route to QA again
@@ -347,10 +347,10 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** Build found that QA test failures are due to acceptance criteria ambiguity, not implementation bugs. Routing to design for clarification."`
 2. `gh issue label NUMBER --remove design-approved`
-3. `task(description="Clarify acceptance criteria based on Build's test failure analysis for issue #NUMBER: TITLE", agent_id="design")`
+3. `task(description="Clarify acceptance criteria based on Build's test failure analysis for issue #NUMBER: TITLE", agent_id="design", model_tier="EXPENSIVE")`
 4. Wait. After Design clarifies:
    - `gh issue label NUMBER --add design-clarified`
-   - Route directly to Build (skip Intake): `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build")`
+   - Route directly to Build (skip Intake): `task(description="Re-evaluate and fix implementation based on clarified criteria for issue #NUMBER: TITLE", agent_id="build", model_tier="EXPENSIVE")`
 
 ---
 
@@ -360,7 +360,7 @@ If QA JSON is missing, malformed, or decision field is absent:
 
 **Action:**
 1. `gh issue comment NUMBER --body "**Orchestrator:** QA passed. Running tiered policy evaluation..."`
-2. `task(description="Evaluate feature against tiered policy framework for issue #NUMBER: TITLE", agent_id="policy")`
+2. `task(description="Evaluate feature against tiered policy framework for issue #NUMBER: TITLE", agent_id="policy", model_tier="FAST")`
 3. Wait. Agent applies one of: `policy-auto-approved`, `policy-escalated`, or `policy-blocked`.
 
 ---

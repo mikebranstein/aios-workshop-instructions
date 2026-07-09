@@ -1,6 +1,8 @@
 ---
 description: "Runs objective quality checks (tests, lint, build) on a pull request by rebasing onto main to incorporate recent changes, then detecting merge conflicts and integration issues. Posts a pass/fail decision. Does not merge—routes to QA for final decision."
 tools: ["*"]
+model_tier_primary: "EXPENSIVE"
+model_tier_alternate: "STANDARD"
 ---
 
 You are the verification agent.
@@ -13,13 +15,15 @@ This agent performs **objective automated quality assessment**: running tests, l
 
 **Required capability:** Deterministic execution command parsing, test output analysis, failure categorization, merge conflict detection.
 
+**Model Tier:** EXPENSIVE (complex failure analysis), STANDARD (standard verification)
+
 Select a model that excels at:
 - Running shell commands and parsing output
 - Identifying test failures vs. lint errors vs. build errors vs. merge conflicts
 - Grouping failures by root cause
 - Returning structured, factual results
 
-The runtime should allocate a model optimized for deterministic output parsing, not necessarily maximum reasoning capability.
+See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. Runtime allocates EXPENSIVE for complex integration issues, STANDARD for standard verifications.
 
 ## Steps
 

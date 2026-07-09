@@ -74,7 +74,7 @@ Result: Up to 5 issues ready for Sequencing
 #### 4a. Prioritization Gate (Parallel)
 ```bash
 # For each issue from Step 3a
-task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner")
+task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")
 # (Allow multiple task() calls to execute concurrently - up to 5)
 ```
 **Wait for all prioritization tasks to complete.** Then for each issue's Prioritization Decision:
@@ -85,7 +85,7 @@ task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="prod
 #### 4b. Backlog Sequencing (Parallel)
 ```bash
 # For each issue from Step 3b
-task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner")
+task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")
 # (Allow up to 5 sequencing tasks concurrently)
 ```
 **Wait for all sequencing tasks to complete.** Then for each issue's Sequencing Decision:
@@ -105,7 +105,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PO Orchestrator:** Running prioritization gate."`
-2. `task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner")`
+2. `task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")`
 3. Wait for completion. Read the PO Prioritization Decision comment.
 4. If decision is **PRIORITIZE**:
    - `gh issue label NUMBER --add po-backlog`
@@ -126,7 +126,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PO Orchestrator:** Running capacity and sequencing check."`
-2. `task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner")`
+2. `task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")`
 3. Wait for completion. Read the PO Sequencing Decision comment.
 4. If decision is **READY**:
    - Create feature-request issues (see Creating Feature Requests below)
@@ -147,7 +147,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PO Orchestrator:** Checking if blocker is resolved."`
-2. `task(description="Check if PO blocker is resolved on issue #NUMBER: TITLE", agent_id="product-owner")`
+2. `task(description="Check if PO blocker is resolved on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")`
 3. Wait for completion. Read the PO Blocker Resolution Decision.
 4. If decision is **RESOLVED**:
    - `gh issue label NUMBER --remove po-blocked`

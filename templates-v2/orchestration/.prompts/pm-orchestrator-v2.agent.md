@@ -83,7 +83,7 @@ Result: Up to 5 issues ready for Phase 2 (High Priority)
 #### 4a. Phase 1 Gate (Parallel)
 ```bash
 # For each issue from Step 3a
-task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager")
+task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")
 # (Allow multiple task() calls to execute concurrently - up to 5)
 ```
 **Wait for all Phase 1 tasks to complete.** Then for each issue's Phase 1 Decision:
@@ -93,7 +93,7 @@ task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="produc
 #### 4b. Research Phase (Parallel)
 ```bash
 # For each issue from Step 3b
-task(description="Run market research on issue #NUMBER: TITLE", agent_id="research-agent")
+task(description="Run market research on issue #NUMBER: TITLE", agent_id="research-agent", model_tier="STANDARD")
 # (Allow up to 5 research tasks concurrently)
 ```
 **Wait for all research tasks to complete.** Then for each issue's Research Decision:
@@ -104,7 +104,7 @@ task(description="Run market research on issue #NUMBER: TITLE", agent_id="resear
 #### 4c. Phase 2 Gate - High Priority (Parallel)
 ```bash
 # For each issue from Step 3c
-task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager")
+task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")
 # (Allow up to 5 Phase 2 tasks concurrently)
 ```
 **Wait for all Phase 2 tasks to complete.** Then for each issue's Phase 2 Decision:
@@ -124,7 +124,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Running Phase 1 strategic gate."`
-2. `task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager")`
+2. `task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
 3. Wait for completion. Read the PM Phase 1 Decision comment.
 4. If decision is **PASS**:
    - `gh issue label NUMBER --add pm-provisional-champion`
@@ -142,7 +142,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 1 passed. Routing to research for market validation."`
-2. `task(description="Run market research on issue #NUMBER: TITLE", agent_id="research-agent")`
+2. `task(description="Run market research on issue #NUMBER: TITLE", agent_id="research-agent", model_tier="STANDARD")`
 3. Wait for completion. Read the Research Decision comment.
 4. Extract priority from decision (priority-high, priority-medium, priority-low).
 5. If **priority-high** AND research confidence HIGH:
@@ -172,7 +172,7 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Research complete (high priority). Running Phase 2 full validation."`
-2. `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager")`
+2. `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
 3. Wait for completion. Read the PM Phase 2 Decision comment.
 4. If decision is **PASS**:
    - Create strategic-opportunity issue (see below)

@@ -1,6 +1,8 @@
 ---
 description: "Executes manual QA scenarios on a verified feature. Records scenario results and decides PASS/FAIL based on real-world test workflows."
 tools: ["*"]
+model_tier_primary: "STANDARD"
+model_tier_alternate: "FAST"
 ---
 
 You are the QA agent.
@@ -21,12 +23,16 @@ This agent performs **manual scenario-based quality assessment**: executing pred
 
 **Required capability:** Scenario orchestration, observational documentation, defect analysis, clear communication of test results and blockers.
 
+**Model Tier:** STANDARD (scenario execution & analysis), FAST (coverage classification)
+
 Select a model that excels at:
 - Understanding test scenarios and expected behaviors
 - Documenting observations clearly
 - Identifying and categorizing defects by severity and impact
 - Providing actionable feedback when QA fails
 - Writing clear, user-facing communication
+
+See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates STANDARD for test scenario execution, FAST for classification-only tasks.
 
 ## Critical: Temporary Workspace Isolation
 

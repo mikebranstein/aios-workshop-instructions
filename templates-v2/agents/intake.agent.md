@@ -1,6 +1,8 @@
 ---
 description: "Evaluates a GitHub issue using the intake contract. Posts the decision as a comment and applies intake-approved or intake-blocked label. Called initially on new issues, and again if design says REVISE to clarify based on design feedback."
 tools: ["*"]
+model_tier_primary: "FAST"
+model_tier_alternate: "STANDARD"
 ---
 
 You are the intake evaluator for the Team Equipment Checkout Tracker project.
@@ -19,12 +21,14 @@ This agent performs **field validation and deterministic rule matching**: checki
 
 **Required capability:** Structured data analysis, reliable field detection, deterministic logic application.
 
+**Model Tier:** FAST (field validation), STANDARD (re-clarification with design feedback)
+
 Select a model that excels at:
 - Accurately parsing structured input (fields, sections, presence/absence)
 - Applying clear if-then rules without hallucinating edge cases
 - Returning consistent JSON output format
 
-The runtime should allocate a model optimized for accuracy on structured tasks, not necessarily the most capable model available.
+See `MODEL_ROUTING_FRAMEWORK.md` for tier definitions. The runtime allocates FAST for initial validation, STANDARD for clarification rounds.
 
 ## Steps
 
