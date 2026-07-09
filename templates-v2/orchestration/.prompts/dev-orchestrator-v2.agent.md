@@ -1,5 +1,5 @@
 ﻿---
-description: "Dev Orchestrator v2: Continuous loop that executes feature requests through the development pipeline (intake, design, build, verification, QA, policy, released) using GitHub issues as state."
+description: "Dev Orchestrator v2: Continuous loop that executes feature requests through the development pipeline (intake, design, build, QA with integration verification, policy, released) using GitHub issues as state."
 tools: ["*"]
 ---
 
@@ -138,6 +138,17 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 ---
 
+#### BUILD COMPLETE -- Routing to QA
+
+**Condition:** Has `build-complete`, no `qa-passed` or `qa-failed`
+
+**Action:**
+1. `gh issue comment NUMBER --body "**Orchestrator:** Build complete. Routing to QA for integration verification and testing."`
+2. `task(description="Run QA with integration verification on issue #NUMBER: TITLE", agent_id="qa")`
+3. Wait. Agent applies `qa-passed` or `qa-failed`.
+
+---
+
 #### BUILD BLOCKED
 
 **Condition:** Has `build-blocked`
@@ -149,49 +160,15 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 ---
 
-#### VERIFICATION
+#### QA FAILED -- Integration Conflict
 
-**Condition:** Has `build-complete`, no `verification-passed` or `verification-failed`
-
-**Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Build complete. Routing to verification."`
-2. `task(description="Run verification on issue #NUMBER: TITLE", agent_id="verification")`
-3. Wait. Agent applies `verification-passed` or `verification-failed`.
-
----
-
-#### VERIFICATION FAILED -- Integration Conflict
-
-**Condition:** Has `verification-failed` AND `failure_type: integration_conflict`
+**Condition:** Has `qa-failed` AND QA Decision shows `INTEGRATION_CONFLICT`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Verification failed -- integration conflict. Re-routing to design."`
-2. `gh issue label NUMBER --remove build-complete --remove verification-failed --remove design-approved`
-3. `task(description="Resolve integration conflict on issue #NUMBER: TITLE", agent_id="design")`
+1. `gh issue comment NUMBER --body "**Orchestrator:** QA detected rebase conflict with main. Re-routing to design to re-evaluate scope."`
+2. `gh issue label NUMBER --remove build-complete --remove qa-failed --remove design-approved`
+3. `task(description="Re-evaluate design on main after integration conflict on issue #NUMBER: TITLE", agent_id="design")`
 4. Wait.
-
----
-
-#### VERIFICATION FAILED -- Test/Lint/Build
-
-**Condition:** Has `verification-failed` AND `failure_type` is test, lint, or build failure
-
-**Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Verification failed -- test/lint/build. Re-routing to build."`
-2. `gh issue label NUMBER --remove build-complete --remove verification-failed`
-3. `task(description="Fix verification failures on issue #NUMBER: TITLE", agent_id="build")`
-4. Wait.
-
----
-
-#### QA
-
-**Condition:** Has `verification-passed`, no `qa-passed` or `qa-failed`
-
-**Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Verification passed. Routing to QA."`
-2. `task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa")`
-3. Wait. Agent applies `qa-passed` or `qa-failed`.
 
 ---
 

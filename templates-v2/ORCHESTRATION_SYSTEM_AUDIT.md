@@ -10,19 +10,20 @@
 
 The AIOS v2 orchestration system is **architecturally sound with correct GitHub state management design**. The orchestration loop pattern is proven (used in orchestrator.v7.agent.md) and properly uses GitHub MCP tools for reading (`issue_read`, `list_issues`) and GitHub CLI for state updates (`gh issue label`, `gh issue comment`).
 
-**Critical Gaps Found:**
-1. ⚠️ **Orchestrators not executing** — Templates exist but not actively running the loop
-2. ⚠️ **QA/Verification contracts incomplete** — Missing specific decision thresholds
-3. ⚠️ **Policy agent alignment unclear** — Verify agent follows contract decision framework
-4. ⚠️ **Business analyst orphaned** — Never called by orchestrators; invocation flow undefined
-5. ⚠️ **qa-failed state routing unclear** — Who decides if investigate vs redesign?
-6. ⚠️ **intake-review flow incomplete** — Stakeholder clarification loop not fully defined
-7. ✅ **GitHub state management** — Working correctly; pattern proven in orchestrator.v7
-8. ✅ **Agent-to-contract flow** — Working correctly
-9. ✅ **Contract-to-utility flow** — Working correctly
-10. ✅ **Folder organization** — Clean and correct
+**Gaps Resolved:**
+1. ✅ **Orchestrators implemented** — All three orchestrators are executable agents with full routing
+2. ✅ **QA contract specific** — Deterministic 70% coverage, 0% failure tolerance, timeout-by-type, environment matrix
+3. ✅ **Verification removed** — Redundant stage eliminated; integration check (rebase) moved to QA
+4. ✅ **Business analyst integrated** — Called by orchestrator when requirements gaps detected
+5. ✅ **qa-failed routing deterministic** — QA decision JSON splits failures by type (FAIL→build, INCOMPLETE→design, CONFLICT→design)
+6. ✅ **requirements-clarified flow complete** — BA posts clarification, orchestrator applies requirements-clarified label, intake re-runs automatically
 
-**Overall Assessment:** Design is 90% correct. Implementation is now **60% complete**. All three orchestrators are executable. Remaining work is contract completeness (QA/verification thresholds) and some orphaned flow definitions (BA invocation, qa-failed routing).
+**Remaining Work (LOW PRIORITY):**
+- Gap #3: Verify policy-agent.md matches policy-contract.md decision framework
+- Design Issues: Clarify feedback loop mechanics for edge cases
+- Operational: Monitoring and recovery patterns for failed cycles
+
+**Overall Assessment:** Design is 95% correct. Implementation now **80% complete**. All three orchestrators executable with complete routing. Dev loop is 6 stages (was 7): intake → design → build → QA (with integration) → policy → released.
 
 ---
 
@@ -72,7 +73,7 @@ Step 2f: LOOP
 |---|---|---|---|---|
 | **PM Loop** | `pm-idea` | pm-validating | pm-opportunity | product-manager, research-agent |
 | **PO Loop** | `strategic-opportunity` | po-prioritizing | create-feature-requests | product-owner |
-| **Dev Loop** | `feature-request` | intake | released | intake-agent, design-agent, build-agent, qa-agent, verification-agent, policy-agent |
+| **Dev Loop** | `feature-request` | intake | released | intake-agent, design-agent, build-agent, qa-agent, policy-agent |
 
 **Assessment:** ✅ Correct. Each orchestrator has distinct entry point and terminal state.
 
@@ -125,54 +126,50 @@ po-blocked (paused)
 
 ---
 
-### Dev Loop States (⚠️ COMPLEX, some concerns)
+### Dev Loop States (✅ CORRECT)
 
 ```
 feature-request (START) → intake
     ├─ PASS → design-approved
-    ├─ REVISE → intake-review (stakeholder clarification)
+    ├─ REVISE → requirements-clarified (→ business-analyst)
     └─ BLOCKED → feature-blocked (terminal)
 
 design-approved → design-agent
     ├─ PASS → build-approved
-    ├─ REVISE → intake (FEEDBACK LOOP: design found req gaps)
+    ├─ REVISE → requirements-clarified (→ business-analyst)
     └─ BLOCKED → feature-blocked (terminal)
 
 build-approved → build-agent
-    ├─ PASS → qa-testing
+    ├─ PASS → qa-testing (build complete)
     ├─ PARTIAL → qa-testing (some features built)
     └─ BLOCKED → feature-blocked (terminal)
 
-qa-testing → qa-agent
-    ├─ PASS → verification
-    ├─ INCOMPLETE → design-approved (FEEDBACK LOOP: test coverage issue)
-    ├─ FAIL → qa-failed
-    └─ (other states not in registry)
-
-qa-failed → (routing unclear)
-    ├─ investigate → qa-testing (retest)
-    ├─ BLOCKED → design-approved (architectural issue)
-    └─ (who decides this? orchestrator or manual?)
-
-verification → verification-agent
+qa-testing → qa-agent (with rebase + integration check)
     ├─ PASS → policy-approval
-    ├─ FAIL → design-approved (FEEDBACK LOOP: verification issue)
-    └─ BLOCKED → feature-blocked (terminal)
+    ├─ FAIL → qa-failed (test failures, routes to build)
+    ├─ TEST_COVERAGE_INCOMPLETE → design-approved (missing test mappings)
+    ├─ INTEGRATION_CONFLICT → design-approved (merge conflict with main)
+    └─ qa-failed: orchestrator routes based on QA Decision JSON
 
 policy-approval → policy-agent
     ├─ APPROVE → released (terminal, SUCCESS)
     ├─ ESCALATE → policy-escalated (manual review)
-    └─ BLOCK → feature-blocked (terminal)
+    └─ BLOCK → design-approved (policy-blocked, feedback loop)
 
 policy-escalated (manual)
     ├─ APPROVE → released (terminal, SUCCESS)
-    └─ BLOCK → feature-blocked (terminal)
+    └─ BLOCK → design-approved (feedback loop)
+
+requirements-clarified (after BA clarification)
+    └─ → intake-agent (re-run intake with clarified requirements)
 ```
 
-**Assessment:** ⚠️ **Multiple routing concerns:**
-- ❓ qa-failed state: Who decides if it's "investigate" vs "BLOCKED"? Is there an agent? Is it manual?
-- ❓ intake-review state: Who decides when stakeholder clarifies? Manual or orchestrator re-runs intake?
-- ⚠️ Feedback loops exist but unclear who triggers re-entry (orchestrator polling vs manual comment)
+**Assessment:** ✅ **State machine correct and fully defined:**
+- ✅ All terminal states identified (released, feature-blocked)
+- ✅ All feedback loops defined (design→requirements, policy→design, qa-failed split logic)
+- ✅ Integration conflict handling in QA (rebase check before testing)
+- ✅ BA invocation on requirements gaps (both intake and design can trigger)
+- ✅ qa-failed split routing (FAIL→build, INCOMPLETE→design, CONFLICT→design)
 
 ---
 
@@ -202,10 +199,9 @@ Next Stage or Orchestrator
 | **intake-agent** | intake | ✅ intake-agent.md | ❌ NONE |
 | **design-agent** | design-approved | ✅ design-agent.md | ❌ NONE |
 | **build-agent** | build-approved, qa-failed | ✅ build-agent.md | ❌ NONE |
-| **qa-agent** | qa-testing | ✅ qa-agent.md | ❌ NONE (test executor) |
-| **verification-agent** | verification | ✅ verification-agent.md | ❌ NONE (verification executor) |
+| **qa-agent** | qa-testing | ✅ qa-agent.md (with rebase) | ❌ NONE (test executor) |
 | **policy-agent** | policy-approval | ✅ policy-contract.md | ❌ NONE (human review) |
-| **business-analyst** | (orphaned) | ✅ business-analyst-agent.md | ❌ NONE |
+| **business-analyst** | requirements-clarified | ✅ business-analyst-agent.md | ❌ NONE |
 
 **Assessment:** ✅ **All agent-contract references working correctly.** ✅ **Utility access correct for research-based agents.** ⚠️ **Most agents don't need utilities (they're decision makers, not tool users).**
 
@@ -381,12 +377,25 @@ GitHub Issue (example: #123 "Add customer support chatbot")
 - **Status:** ✅ Specific and deterministic; ready for execution
 - **Priority:** P1 — COMPLETE
 
-**GAP #5: Verification Agent & Contract Too Vague** ⚠️ HIGH
-- **What should be:** Verification contract specifies which checks must pass, thresholds, acceptable warnings
-- **What is:** Contract says "run checks" but unclear what checks, what pass/fail means
-- **Impact:** Agent can't determine PASS vs FAIL consistently
-- **Root cause:** Contract incomplete
-- **Priority:** P1
+**GAP #5: Verification Removed — Integration Verification Moved to QA** ✅ RESOLVED
+- **What was:** Verification was a separate agent running checks after build, making it feel redundant with build and QA
+- **Architectural Issue:** Three stages (build, verification, QA) were all running tests; verification added rebase + merge conflict detection
+- **What is now:** Verification stage eliminated; QA agent now integrates rebase + merge conflict detection as Step 0
+- **Changes made:**
+  - **Removed VERIFICATION section** entirely from dev-orchestrator
+  - **Updated BUILD routing:** Routes directly to QA (removed intermediate verification step)
+  - **Updated QA Contract** to include rebase as Step 0 with `INTEGRATION_CONFLICT` decision option
+  - **Updated QA Agent** to execute rebase before running tests; detects merge conflicts
+  - **Updated QA routing in orchestrator:** Added `INTEGRATION_CONFLICT` case that routes to Design for re-evaluation
+  - **Updated QA output schema:** Includes `rebase_status`, `rebased_onto_main`, `rebase_conflicts` fields
+  - **Dev loop now 6 stages** (was 7): intake → design → build → QA → policy → released
+- **Design Rationale:**
+  - Rebase should happen right before final test execution (makes logical sense)
+  - Merge conflicts are integration issues (design concern, not verification concern)
+  - Eliminates redundant test execution; build tests thoroughly, QA validates with latest main state
+  - Simpler orchestrator: fewer stages, clearer state machine
+- **Status:** ✅ Resolved; orchestrator and contracts updated
+- **Priority:** P1 — COMPLETE
 
 **GAP #6: Business Analyst Agent Orphaned** ⚠️ MEDIUM
 - **What should be:** Business analyst called by orchestrator when intake or design triggers REVISE needing clarification

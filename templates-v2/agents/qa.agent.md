@@ -30,25 +30,37 @@ Select a model that excels at:
 
 ## Steps
 
-You will be given an issue number that is ready for QA (already passed verification).
+You will be given an issue number that is ready for QA (already passed build).
 
 1. Read the issue using the GitHub MCP `issue_read` tool.
 
-2. **Determine Risk Level:**
+2. Read the issue comments to find the build decision:
+   gh issue view NUMBER --comments --json comments
+
+3. Extract the PR URL, branch name, and `tests_updated` field from the Build Decision comment.
+
+4. Read the design specification comment to extract acceptance criteria.
+
+5. **Check out and rebase onto main:**
+   git fetch origin main
+   git checkout BRANCH_NAME
+   git pull origin BRANCH_NAME
+   git rebase origin/main
+
+   **If rebase fails with conflicts:**
+   - Post decision with `decision: "INTEGRATION_CONFLICT"`
+   - List the conflicted files in `rebase_conflicts`
+   - Do NOT run any tests
+   - Route back to Design for re-evaluation and Build to resolve conflicts
+   - Exit here
+
+   **If rebase succeeds:**
+   - Continue to Step 6 with rebased code
+
+6. **Determine Risk Level:**
    - Read the design specification and build decision comments
    - Classify as **high-risk** if: breaking API changes, data model changes, auth changes, PII handling, payment processing, critical workflows
    - Otherwise classify as **low-risk**
-
-3. Read the issue comments to find the build decision:
-   gh issue view NUMBER --comments --json comments
-
-4. Extract the PR URL, branch name, and `tests_updated` field from the Build Decision comment.
-
-5. Read the design specification comment to extract acceptance criteria.
-
-6. **Check out and pull the PR branch:**
-   git checkout BRANCH_NAME
-   git pull origin BRANCH_NAME
 
 7. **Measure Code Coverage:**
    - Run the project's coverage tool (Jest, pytest-cov, etc.)
@@ -88,29 +100,33 @@ You will be given an issue number that is ready for QA (already passed verificat
     - Test execution time summary
 
 12. **Determine decision:**
-    - **PASS** if ALL of: coverage ≥70%, all tests pass (100%), zero failures, zero skips, zero warnings, within timeouts, environment requirements met
+    - **PASS** if ALL of: rebase succeeded, coverage ≥70%, all tests pass (100%), zero failures, zero skips, zero warnings, within timeouts, environment requirements met
     - **FAIL** if ANY: test failure, timeout, warning, skip, code coverage <70%, environment requirements not met
     - **TEST_COVERAGE_INCOMPLETE** if: coverage gaps found in Step 7 or 8
+    - **INTEGRATION_CONFLICT** if: rebase failed in Step 5
 
 13. Post the QA decision as a comment on the issue with this JSON structure:
 
 ```json
 {
   "contract": "QA",
-  "decision": "PASS | FAIL | TEST_COVERAGE_INCOMPLETE",
+  "decision": "PASS | FAIL | TEST_COVERAGE_INCOMPLETE | INTEGRATION_CONFLICT",
   "qa_date": "[today]",
+  "rebase_status": "success | conflict",
+  "rebased_onto_main": true,
   "risk_level": "high-risk | low-risk",
-  "code_coverage_percent": "[number, must be >= 70]",
-  "total_tests": "[number]",
-  "tests_passed": "[number]",
-  "tests_failed": "[number]",
+  "code_coverage_percent": "[number, must be >= 70, or null if INTEGRATION_CONFLICT]",
+  "total_tests": "[number, or null if INTEGRATION_CONFLICT]",
+  "tests_passed": "[number, or null if INTEGRATION_CONFLICT]",
+  "tests_failed": "[number, or null if INTEGRATION_CONFLICT]",
   "test_skips": "[number, must be 0 for PASS]",
   "test_warnings": "[number, must be 0 for PASS]",
-  "environment_tested": "[primary-platform | full-matrix]",
+  "environment_tested": "[primary-platform | full-matrix, or null if INTEGRATION_CONFLICT]",
   "timeout_violations": "[list of tests exceeding timeout, if any]",
   "test_failures": "[if FAIL: specific failing test names and root cause]",
   "coverage_gaps": "[if incomplete: specific files/methods below 70%]",
-  "recommendations": "[if PASS: ready for verification; if FAIL: specific tests needing fixes]"
+  "rebase_conflicts": "[if INTEGRATION_CONFLICT: list of conflicted files]",
+  "recommendations": "[if PASS: ready for release; if FAIL: specific tests needing fixes; if INCOMPLETE: coverage gaps; if CONFLICT: re-evaluate scope on current main]"
 }
 ```
 
@@ -118,4 +134,5 @@ You will be given an issue number that is ready for QA (already passed verificat
     - If PASS: `gh issue label NUMBER --add qa-passed`
     - If FAIL: `gh issue label NUMBER --add qa-failed`
     - If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-failed` (same endpoint as FAIL for orchestrator routing)
+    - If INTEGRATION_CONFLICT: `gh issue label NUMBER --add qa-failed` (routes to design via orchestrator)
 

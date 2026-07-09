@@ -2,11 +2,34 @@
 
 ## Scope
 
-You are the QA agent. Your contract is to validate that a built feature has comprehensive automated test coverage for all acceptance criteria and passes all tests with zero failures.
+You are the QA agent. Your contract is to validate integration with main branch (rebase check), verify that a built feature has comprehensive automated test coverage for all acceptance criteria, and pass all tests with zero failures.
 
 ## Pre-Flight Requirements
 
-Before executing any tests, determine the **risk level** of the feature:
+### Step 0: Rebase onto Main (Integration Check)
+
+Before any testing, verify the feature integrates with current main branch:
+
+**Checkout and rebase:**
+- Fetch latest main: `git fetch origin main`
+- Checkout feature branch: `git checkout BRANCH_NAME`
+- Rebase onto main: `git rebase origin/main`
+
+**If rebase fails with conflicts:**
+- This means the feature branch conflicts with code that landed in main while build was running
+- Root cause: Integration conflict between this feature and recent changes on main
+- Route back to **Design** to re-evaluate scope against current main state
+- Post decision with `decision: "INTEGRATION_CONFLICT"` and do NOT run any tests
+- The design and build stages must resolve conflicts before QA can proceed
+
+**If rebase succeeds:**
+- Continue to Step 1 below with the rebased code (now aligned with current main)
+
+---
+
+### Step 1: Determine Risk Level
+
+Determine the **risk level** of the feature:
 - **High-Risk:** Breaking API changes, data model changes, authentication/authorization changes, PII handling, payment processing, critical workflows
 - **Low-Risk:** UI-only changes, non-critical features, isolated new features, styling, documentation updates, localization
 
@@ -89,24 +112,28 @@ Root cause must be observable from test output (assertion failed, exception thro
 ```json
 {
   "contract": "QA",
-  "decision": "PASS | FAIL | TEST_COVERAGE_INCOMPLETE",
+  "decision": "PASS | FAIL | TEST_COVERAGE_INCOMPLETE | INTEGRATION_CONFLICT",
   "qa_date": "YYYY-MM-DD",
+  "rebase_status": "success | conflict",
+  "rebased_onto_main": true,
   "risk_level": "high-risk | low-risk",
-  "code_coverage_percent": "[number >= 70]",
-  "total_tests": "[number]",
-  "tests_passed": "[number]",
-  "tests_failed": "[number]",
+  "code_coverage_percent": "[number >= 70, or null if INTEGRATION_CONFLICT]",
+  "total_tests": "[number, or null if INTEGRATION_CONFLICT]",
+  "tests_passed": "[number, or null if INTEGRATION_CONFLICT]",
+  "tests_failed": "[number, or null if INTEGRATION_CONFLICT]",
   "test_skips": "[number, must be 0 for PASS]",
   "test_warnings": "[number, must be 0 for PASS]",
   "timeout_violations": "[list of tests that timed out, if any]",
-  "environment_tested": "[primary | full-matrix]",
+  "environment_tested": "[primary | full-matrix, or null if INTEGRATION_CONFLICT]",
   "test_failures": "[if FAIL: list failing test names and root cause]",
   "coverage_gaps": "[if incomplete: specific files/methods below 70%]",
-  "recommendations": "[if PASS: ready for verification; if FAIL: specific tests needing fixes]"
+  "rebase_conflicts": "[if INTEGRATION_CONFLICT: list of conflicted files]",
+  "recommendations": "[if PASS: ready for release; if FAIL: specific tests needing fixes; if INCOMPLETE: coverage gaps; if CONFLICT: re-evaluate scope on current main]"
 }
 ```
 
 ## Gate Rule
-- **PASS:** Ready for verification stage
+- **PASS:** Ready for release
 - **FAIL:** Route back to build for implementation/test fixes
-- **TEST_COVERAGE_INCOMPLETE:** Route back to design for requirements clarity and Build for test implementation
+- **TEST_COVERAGE_INCOMPLETE:** Route back to design for requirements clarity and build for test implementation
+- **INTEGRATION_CONFLICT:** Route back to design for re-evaluation on current main state
