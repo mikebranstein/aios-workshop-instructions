@@ -107,8 +107,8 @@ fi
 
 The agent to run depends on the current stage and orchestrator:
 - **PM Orchestrator**: pm-validating → product-manager, pm-provisional-champion → research-agent, pm-finalizing → product-manager
-- **PO Orchestrator**: po-prioritizing → product-owner, po-backlog → product-owner, po-ready-to-staff → product-owner
-- **Dev Orchestrator**: intake → intake-agent, design-approved → design-agent, build-approved → build-agent, qa-testing → qa-agent, verification → verification-agent, policy-approval → policy-agent
+- **PO Orchestrator**: strategic-opportunity → product-owner
+- **Dev Orchestrator**: feature-request → intake-agent, intake-approved → design-agent, design-approved → build-agent, build-complete → qa-agent, qa-passed → policy-agent
 
 **Call agent with issue data:**
 ```bash
@@ -168,7 +168,7 @@ Orchestrators consult [routing-registry.md](../orchestration/routing-registry.md
 
 Example:
 ```
-pm-validating + PASS → pm-provisional-champion
+pm-validating + PROVISIONAL_CHAMPION → pm-provisional-champion
 design-approved + PASS → build-approved  
 qa-testing + INCOMPLETE → design-approved (feedback loop)
 ```

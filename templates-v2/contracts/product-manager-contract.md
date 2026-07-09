@@ -11,6 +11,7 @@ Discover and validate strategic market opportunities, then create `strategic-opp
 - pm_idea_title
 - pm_idea_body
 - pm_idea_source (human|idea-scout)
+- pm_phase (phase1|phase2)
 - existing_research_index (if available)
 
 ## Output Schema (JSON only)
@@ -18,7 +19,7 @@ Return valid JSON only:
 
 ```json
 {
-  "decision": "CHAMPION|DEFER|BLOCK",
+  "decision": "PROVISIONAL_CHAMPION|CHAMPION|DEFER|BLOCK|ESCALATE",
   "opportunity_summary": "string",
   "evidence_sources": ["string"],
   "customer_signal_strength": "low|medium|high",
@@ -26,7 +27,7 @@ Return valid JSON only:
   "risks": ["string"],
   "follow_on_research_needed": true,
   "research_gaps": ["string"],
-  "next_state": "Create Strategic Opportunity|Deferred|Closed"
+  "next_state": "Research In Progress|Create Strategic Opportunity|Deferred|Closed|Leadership Review"
 }
 ```
 
@@ -38,6 +39,8 @@ Return valid JSON only:
 - Keep decision rationale traceable to customer or market signal.
 
 ## Gate Rule
+- `PROVISIONAL_CHAMPION` maps to `next_state = Research In Progress`.
 - `CHAMPION` maps to `next_state = Create Strategic Opportunity`.
 - `DEFER` maps to `next_state = Deferred`.
 - `BLOCK` maps to `next_state = Closed`.
+- `ESCALATE` maps to `next_state = Leadership Review`.

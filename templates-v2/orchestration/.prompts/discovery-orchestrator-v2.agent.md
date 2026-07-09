@@ -32,6 +32,7 @@ You run in a **bounded cycle**, not an infinite loop. End after one run summary.
    - Ensure created ideas include `pm-idea` and `pm-idea-auto` labels.
    - Ensure no run exceeds `creation_cap`.
    - Ensure dedupe comments were posted when matches existed.
+   - Append deferred candidates to the `Discovery-Deferred-Candidates` wiki page via `wiki-manager`.
 6. Emit final run summary and stop.
 
 ## Run Summary Format
@@ -62,7 +63,8 @@ Duration: [seconds]
 |---|---|
 | `pm-idea` | PM idea entry point for PM loop |
 | `pm-idea-auto` | Created by Idea Scout automation |
-| `pm-idea-candidate-deferred` | Candidate deferred by scout in current run |
+
+Deferred candidates are persisted in the Research Wiki page `Discovery-Deferred-Candidates` for reconsideration in future runs.
 
 ## How to Run
 

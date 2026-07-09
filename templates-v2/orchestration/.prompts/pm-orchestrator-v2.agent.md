@@ -89,7 +89,8 @@ task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="produc
 # (Allow multiple task() calls to execute concurrently - up to 5)
 ```
 **Wait for all Phase 1 tasks to complete.** Then for each issue's Phase 1 Decision:
-- If PASS: `gh issue label NUMBER --add pm-provisional-champion`
+- If PROVISIONAL_CHAMPION: `gh issue label NUMBER --add pm-provisional-champion`
+- If DEFER: `gh issue label NUMBER --add pm-deferred && gh issue close NUMBER --reason "not planned"`
 - If BLOCK: `gh issue label NUMBER --add pm-blocked && gh issue close NUMBER --reason "not planned"`
 
 #### 4b. Research Phase (Parallel)
@@ -110,8 +111,9 @@ task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent
 # (Allow up to 5 Phase 2 tasks concurrently)
 ```
 **Wait for all Phase 2 tasks to complete.** Then for each issue's Phase 2 Decision:
-- If PASS: Create strategic-opportunity issue, `gh issue close NUMBER --reason completed`
-- If REVISE: `gh issue label NUMBER --add research-needed && gh issue label NUMBER --remove research-complete`
+- If CHAMPION: `gh issue label NUMBER --add pm-opportunity && gh issue close NUMBER --reason completed`
+- If DEFER: `gh issue label NUMBER --add pm-deferred && gh issue close NUMBER --reason "not planned"`
+- If BLOCK: `gh issue label NUMBER --add pm-blocked && gh issue close NUMBER --reason "not planned"`
 - If ESCALATE: `gh issue label NUMBER --add pm-escalated`
 
 ### Step 5: Cycle Summary & Sleep
@@ -126,12 +128,17 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Running Phase 1 strategic gate."`
-2. `task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
-3. Wait for completion. Read the PM Phase 1 Decision comment.
-4. If decision is **PASS**:
+2. `gh issue label NUMBER --add pm-validating`
+3. `task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
+4. Wait for completion. Read the PM Phase 1 Decision comment.
+5. If decision is **PROVISIONAL_CHAMPION**:
    - `gh issue label NUMBER --add pm-provisional-champion`
    - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 1 passed. Routing to research."`
-5. If decision is **BLOCK**:
+6. If decision is **DEFER**:
+   - `gh issue label NUMBER --add pm-deferred`
+   - `gh issue close NUMBER --reason "not planned"`
+   - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 1 deferred. Not proceeding at this time."`
+7. If decision is **BLOCK**:
    - `gh issue label NUMBER --add pm-blocked`
    - `gh issue close NUMBER --reason "not planned"`
    - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 1 blocked. Not strategic. Issue closed."`
@@ -174,17 +181,19 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Research complete (high priority). Running Phase 2 full validation."`
-2. `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
-3. Wait for completion. Read the PM Phase 2 Decision comment.
-4. If decision is **PASS**:
-   - Create strategic-opportunity issue (see below)
+2. `gh issue label NUMBER --add pm-finalizing`
+3. `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
+4. Wait for completion. Read the PM Phase 2 Decision comment.
+5. If decision is **CHAMPION**:
    - `gh issue label NUMBER --add pm-opportunity`
    - `gh issue close NUMBER --reason completed`
-5. If decision is **REVISE**:
-   - `gh issue label NUMBER --add research-needed`
-   - `gh issue label NUMBER --remove research-complete`
-   - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 2 needs more research. Re-routing to research."`
-6. If decision is **ESCALATE**:
+6. If decision is **DEFER**:
+   - `gh issue label NUMBER --add pm-deferred`
+   - `gh issue close NUMBER --reason "not planned"`
+7. If decision is **BLOCK**:
+   - `gh issue label NUMBER --add pm-blocked`
+   - `gh issue close NUMBER --reason "not planned"`
+8. If decision is **ESCALATE**:
    - `gh issue label NUMBER --add pm-escalated`
    - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 2 escalated to leadership. Awaiting decision."`
 
@@ -202,9 +211,9 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 ---
 
-#### RESEARCH RE-RUN (After REVISE)
+#### RESEARCH RE-RUN (Follow-On Research)
 
-**Condition:** Has `pm-provisional-champion` + `research-needed`, no `research-complete`
+**Condition:** Has `pm-provisional-champion`, follow-on research issue open, no `pm-finalizing`
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 2 needs more research. Re-running research."`
@@ -221,21 +230,6 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 **Action:**
 1. `gh issue comment NUMBER --body "**PM Orchestrator:** Awaiting leadership decision. Issue paused."`
 2. Skip this issue.
-
----
-
-### Creating the Strategic Opportunity Issue
-
-When PM Phase 2 returns PASS, create a new `strategic-opportunity` issue for the PO loop:
-
-```bash
-gh issue create \
-  --title "Strategic Opportunity: ORIGINAL_TITLE" \
-  --body "**Source:** pm-idea #NUMBER\n\n**PM Research Summary:**\n[summary from Phase 2 decision]\n\n**Recommendation:** [recommendation from Phase 2 decision]" \
-  --label "strategic-opportunity"
-```
-
-Then close the original pm-idea issue.
 
 ---
 
@@ -268,12 +262,13 @@ gh issue label NUMBER --add orchestrator-timeout
 |---|---|
 | `pm-idea` | Entry point -- queued for Phase 1 gate |
 | `pm-idea-auto` | Entry point created by Discovery/Idea Scout |
+| `pm-validating` | Phase 1 in progress |
 | `pm-provisional-champion` | Phase 1 passed -- in research |
+| `pm-finalizing` | Phase 2 in progress |
 | `research-complete` | Research done -- ready for Phase 2 |
 | `research-priority-high` | Research shows high priority |
 | `research-priority-medium` | Research shows medium/low priority |
 | `research-blocked` | Research failed -- waiting |
-| `research-needed` | Phase 2 needs more research |
 | `pm-opportunity` | Phase 2 passed -- strategic-opportunity created |
 | `pm-blocked` | Hard blocked -- terminal |
 | `pm-deferred` | Deferred -- terminal |

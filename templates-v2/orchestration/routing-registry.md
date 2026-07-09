@@ -35,7 +35,7 @@ Discovery orchestrator runs on schedule/event/manual trigger and scans product s
 
 **Action on transition:**
 - CREATE_PM_IDEA → Create issue with labels `pm-idea` + `pm-idea-auto`
-- DEFER → Record deferred candidate note for next run
+- DEFER → Append candidate to `Discovery-Deferred-Candidates` wiki page for future runs
 - DROP → Record dropped rationale for auditability
 
 **Typical duration:** 10-20min bounded run (hard timeout 30min)
@@ -70,11 +70,13 @@ Issues start here when labeled `pm-idea` on GitHub.
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| PASS | Quick gate passed | pm-provisional-champion |
+| PROVISIONAL_CHAMPION | Quick gate passed | pm-provisional-champion |
+| DEFER | Valid direction, not urgent | pm-deferred |
 | BLOCK | Not strategic | pm-blocked |
 
 **Action on transition:**
-- PASS → Spawn research agent to dive deep
+- PROVISIONAL_CHAMPION → Spawn research agent to dive deep
+- DEFER → Close issue, update label to `pm-deferred`
 - BLOCK → Close issue, update label to `pm-blocked`
 
 ---
@@ -104,12 +106,13 @@ Preparing strategic opportunity for product owner prioritization.
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| PASS | Charter complete, team alignment strong | pm-opportunity |
-| REVISE | Need more research or clarification | pm-provisional-champion |
+| CHAMPION | Charter complete, team alignment strong | pm-opportunity |
+| DEFER | Opportunity not ready | pm-deferred |
+| BLOCK | Opportunity is not strategic | pm-blocked |
 | ESCALATE | Strategic decision needed from leadership | pm-escalated |
 
 **Action on transition:**
-- PASS → Close pm-idea, create strategic-opportunity issue for PO loop
+- CHAMPION → Close pm-idea and hand off the already-created strategic-opportunity issue to the PO loop
 
 ---
 
@@ -139,47 +142,20 @@ Needs manual leadership decision. No automatic progression.
 
 Issues start here when PM loop creates them.
 
-**Decision from:** product-owner agent (prioritization gate)
+**Decision from:** product-owner agent (feature-request conversion gate)
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| PRIORITIZE | Prioritized in roadmap | po-backlog |
-| DEFER | Deferred (keep for next sprint) | po-deferred |
+| CREATE_FEATURE_REQUESTS | Opportunity converted into execution work | feature-requests-created |
+| DEFER | Deferred (keep for later prioritization) | po-deferred |
 | REJECT | Not proceeding | po-rejected |
-
----
-
-### Stage: po-backlog (Backlog Sequencing)
-
-Waiting for team capacity to begin.
-
-**Decision from:** product-owner agent (capacity + sequencing)
-
-| Decision | Condition | Next Stage |
-|----------|-----------|------------|
-| READY | Capacity available, ready to staff | create-feature-requests |
-| BLOCKED | Blocked on dependency | po-blocked |
 
 **Action on transition:**
-- READY → Create N feature-request issues (one per dev workstream)
-- Hand off to Dev loop
+- CREATE_FEATURE_REQUESTS → Create N `feature-request` issues, close strategic-opportunity, hand off to Dev loop
 
 ---
 
-### Stage: po-blocked (Paused)
-
-Waiting on external dependency or capacity.
-
-**Decision from:** product-owner agent (dependency resolution)
-
-| Decision | Condition | Next Stage |
-|----------|-----------|------------|
-| RESOLVED | Dependency resolved | po-backlog |
-| REJECT | Not proceeding | po-rejected |
-
----
-
-### Stage: create-feature-requests (Terminal)
+### Stage: feature-requests-created (Terminal)
 
 Strategic opportunity closed. Feature requests created and handed to Dev loop.
 
@@ -242,7 +218,7 @@ Ready for technical design.
 
 ---
 
-### Stage: build-approved (Build Phase)
+### Stage: design-approved (Build Handoff)
 
 Ready for implementation.
 
@@ -250,8 +226,9 @@ Ready for implementation.
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| PASS | Build complete, ready for QA | qa-testing |
-| PARTIAL | Some features built, ready for testing | qa-testing |
+| COMPLETE | Build complete, ready for QA | qa-testing |
+| PARTIAL | Build incomplete, needs more work | build-blocked |
+| BLOCKED_REQUIRES_CLARIFICATION | Acceptance criteria ambiguous | design-blocked |
 | BLOCKED | Build blocked (dependency, tech issue) | feature-blocked |
 
 **Typical duration:** 4-8 hours (depends on complexity)
@@ -266,44 +243,13 @@ Ready for quality assurance testing.
 
 | Decision | Condition | Next Stage |
 |----------|-----------|------------|
-| PASS | All tests pass | verification |
+| PASS | All tests pass | policy-approval |
 | INCOMPLETE | Test coverage incomplete, needs design revision | design-approved (feedback loop) |
 | FAIL | Test failures found | qa-failed |
 
 **Typical duration:** 1-2 hours
 
 **Feedback loop INCOMPLETE → design:** Means tests revealed design issue. Architect revises, rebuild.
-
----
-
-### Stage: qa-failed (QA Issue)
-
-QA tests failed. Needs investigation.
-
-**Decision from:** build-agent (failure investigation)
-
-| Decision | Condition | Next Stage |
-|----------|-----------|------------|
-| investigate | Investigating failure | qa-testing (retest) |
-| BLOCKED | Root cause is architectural | design-approved (feedback loop) |
-
----
-
-### Stage: verification (Verification Phase)
-
-Ready for final verification.
-
-**Decision from:** verification-agent (quality checklist)
-
-| Decision | Condition | Next Stage |
-|----------|-----------|------------|
-| PASS | All verification gates passed | policy-approval |
-| FAIL | Verification failed (performance, security, etc.) | design-approved (feedback loop) |
-| BLOCKED | Blocker found | feature-blocked |
-
-**Typical duration:** 30min - 1 hour
-
-**Feedback loop FAIL → design:** Means verification found issue requiring design changes.
 
 ---
 
@@ -376,20 +322,6 @@ Feature blocked (dependency, tech, policy, etc.). Issue closed.
 3. Design agent revises architecture
 4. Build phase re-enters with updated design
 5. Re-run QA
-
----
-
-### Feedback Loop: Verification FAIL → Design
-
-**Trigger:** verification-agent returns FAIL outcome
-
-**Reason:** Performance, security, or other verification failure in design
-
-**Action:**
-1. Post comment: "Verification failed. Design revision needed."
-2. Transition issue back to `design-approved` stage
-3. Same as QA INCOMPLETE feedback loop
-4. Re-enter design review process
 
 ---
 

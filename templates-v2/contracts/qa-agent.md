@@ -137,12 +137,12 @@ Document this in the QA JSON output for Build's benefit.
   "test_failures": "[if FAIL: list failing test names and root cause]",
   "coverage_gaps": "[if incomplete: specific files/methods below 70%]",
   "rebase_conflicts": "[if INTEGRATION_CONFLICT: list of conflicted files]",
-  "recommendations": "[if PASS: ready for release; if FAIL: specific tests needing fixes; if INCOMPLETE: coverage gaps; if CONFLICT: re-evaluate scope on current main]"
+  "recommendations": "[if PASS: ready for policy review; if FAIL: specific tests needing fixes; if INCOMPLETE: coverage gaps; if CONFLICT: re-evaluate scope on current main]"
 }
 ```
 
 ## Gate Rule
-- **PASS:** Ready for release
+- **PASS:** Ready for policy review
 - **FAIL:** Route back to build for implementation/test fixes
 - **TEST_COVERAGE_INCOMPLETE:** Route back to design for requirements clarity and build for test implementation
 - **INTEGRATION_CONFLICT:** Route back to design for re-evaluation on current main state

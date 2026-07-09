@@ -34,7 +34,7 @@ Return valid JSON only:
   "reason": "[if BLOCKED_REQUIRES_CLARIFICATION: which test failure suggests criteria ambiguity]",
   "risks": ["string"],
   "design_dependencies_used": ["string"],
-  "next_state": "In Build|In Verification|Blocked|Awaiting Requirements Clarification"
+  "next_state": "In Build|In QA|Blocked|Awaiting Requirements Clarification"
 }
 ```
 
@@ -45,7 +45,7 @@ Return valid JSON only:
 - Do not expand scope without explicit decision log update.
 - Do not introduce new architectural decisions that should have been handled in design.
 - Keep changes traceable to acceptance criteria.
-- **Create automated UI tests for each acceptance criterion.** Tests must be runnable via the appropriate test command for your tech stack (e.g., `npm test`, `pytest`, `gradle test`, `dotnet test`) and documented in `tests_updated` field. Each test should validate the corresponding acceptance criterion. **Document the test command in the PR body** (e.g., "Run tests with: `npm test`") so QA and verification can execute them. If UI tests cannot be created due to missing tooling, escalate via BLOCKED.
+- **Create automated UI tests for each acceptance criterion.** Tests must be runnable via the appropriate test command for your tech stack (e.g., `npm test`, `pytest`, `gradle test`, `dotnet test`) and documented in `tests_updated` field. Each test should validate the corresponding acceptance criterion. **Document the test command in the PR body** (e.g., "Run tests with: `npm test`") so QA can execute them. If UI tests cannot be created due to missing tooling, escalate via BLOCKED.
 - Create branch using naming convention: `issue-{number}-{slug}`.
 - Push the branch and open the PR autonomously.
 - Commit message must reference issue number: `Implements #N: [summary]`.
@@ -55,7 +55,7 @@ Return valid JSON only:
 - `tests_updated` must include all UI tests created for this build.
 - `remaining_work` should be empty when decision is `COMPLETE`.
 - `blocker_reason` should be `null` unless decision is `BLOCKED`.
-- Use `COMPLETE` only when the approved scope is implemented, all UI tests are created and passing, PR is created, and ready for verification.
+- Use `COMPLETE` only when the approved scope is implemented, all UI tests are created and passing, PR is created, and ready for QA.
 - Use `PARTIAL` when implementation made progress but more build work or tests are still required.
 - Use `BLOCKED` when implementation cannot proceed without escalation (e.g., missing test tooling, design ambiguity).
 - Use `BLOCKED_REQUIRES_CLARIFICATION` when fixing QA test failures reveals that acceptance criteria are ambiguous (not a code bug). Router will send back to Design for clarification.
@@ -64,8 +64,8 @@ Return valid JSON only:
 Escalate when required implementation conflicts with approved design, non-goals, or branch policy.
 
 ## Gate Rule
-- `COMPLETE` maps to `next_state = In Verification`.
+- `COMPLETE` maps to `next_state = In QA`.
 - `PARTIAL` maps to `next_state = In Build`.
 - `BLOCKED` maps to `next_state = Blocked`.
 - `BLOCKED_REQUIRES_CLARIFICATION` maps to `next_state = Awaiting Requirements Clarification` (router sends to Design).
-- Verification starts only when decision is COMPLETE.
+- QA starts only when decision is COMPLETE.

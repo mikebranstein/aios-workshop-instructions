@@ -1,5 +1,5 @@
 ﻿---
-description: "PO Orchestrator v2: Continuous loop that prioritizes strategic opportunities and creates feature requests (strategic-opportunity to feature-request) using GitHub issues as state."
+description: "PO Orchestrator v2: Continuous loop that converts strategic opportunities into feature requests or terminal defer/reject outcomes using GitHub issues as state."
 tools: ["*"]
 ---
 
@@ -51,46 +51,27 @@ Return to main loop
 
 **FIND ALL actionable issues per stage:**
 
-#### 3a. Find All Prioritization Gate Issues (up to 5)
+#### 3a. Find All Actionable Strategic Opportunities (up to 5)
 ```bash
 gh issue list --label strategic-opportunity --json number,title,labels \
-  --jq '.[] | select((.labels[].name | contains("po-backlog", "po-deferred", "po-rejected", "feature-requests-created")) | not) | {number, title}' \
+   --jq '.[] | select((.labels[].name | contains("po-deferred", "po-rejected", "feature-requests-created")) | not) | {number, title}' \
   | head -5
 ```
 Result: Up to 5 issues ready for Prioritization
 
-#### 3b. Find All Backlog Sequencing Issues (up to 5)
-```bash
-gh issue list --label po-backlog --json number,title,labels \
-  --jq '.[] | select((.labels[].name | contains("feature-requests-created", "po-blocked")) | not) | {number, title}' \
-  | head -5
-```
-Result: Up to 5 issues ready for Sequencing
-
 ### Step 4: Spawn Parallel Tasks (Phase 2)
 
-**SPAWN PARALLEL TASKS for all issues found (up to 5 per stage):**
+**SPAWN PARALLEL TASKS for all issues found (up to 5):**
 
-#### 4a. Prioritization Gate (Parallel)
+#### 4a. Strategic Opportunity Processing (Parallel)
 ```bash
 # For each issue from Step 3a
-task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")
+task(description="Convert strategic opportunity to feature requests on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")
 # (Allow multiple task() calls to execute concurrently - up to 5)
 ```
-**Wait for all prioritization tasks to complete.** Then for each issue's Prioritization Decision:
-- If PRIORITIZE: `gh issue label NUMBER --add po-backlog`
-- If DEFER: `gh issue label NUMBER --add po-deferred`
-- If REJECT: `gh issue label NUMBER --add po-rejected && gh issue close NUMBER --reason "not planned"`
-
-#### 4b. Backlog Sequencing (Parallel)
-```bash
-# For each issue from Step 3b
-task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")
-# (Allow up to 5 sequencing tasks concurrently)
-```
-**Wait for all sequencing tasks to complete.** Then for each issue's Sequencing Decision:
-- If READY: Create feature-request issues, `gh issue label NUMBER --add feature-requests-created`, `gh issue close NUMBER --reason completed`
-- If BLOCKED: `gh issue label NUMBER --add po-blocked`
+**Wait for all tasks to complete.** Then for each issue's Product Owner Decision:
+- If CREATE_FEATURE_REQUESTS: `gh issue label NUMBER --add feature-requests-created && gh issue close NUMBER --reason completed`
+- If DEFER: `gh issue label NUMBER --add po-deferred && gh issue close NUMBER --reason "not planned"`
 - If REJECT: `gh issue label NUMBER --add po-rejected && gh issue close NUMBER --reason "not planned"`
 
 ### Step 5: Cycle Summary & Sleep
@@ -99,85 +80,26 @@ Read the labels on the actionable issue. Apply the routing rules below. After sp
 
 ---
 
-#### PRIORITIZATION GATE (Initial)
+#### STRATEGIC OPPORTUNITY PROCESSING
 
 **Condition:** Has `strategic-opportunity`, no PO pipeline labels
 
 **Action:**
 1. `gh issue comment NUMBER --body "**PO Orchestrator:** Running prioritization gate."`
-2. `task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")`
-3. Wait for completion. Read the PO Prioritization Decision comment.
-4. If decision is **PRIORITIZE**:
-   - `gh issue label NUMBER --add po-backlog`
-   - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Added to prioritized backlog."`
+2. `task(description="Convert strategic opportunity to feature requests on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="STANDARD")`
+3. Wait for completion. Read the Product Owner Decision comment.
+4. If decision is **CREATE_FEATURE_REQUESTS**:
+   - `gh issue label NUMBER --add feature-requests-created`
+   - `gh issue close NUMBER --reason completed`
+   - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Feature requests created and handed to development."`
 5. If decision is **DEFER**:
    - `gh issue label NUMBER --add po-deferred`
+   - `gh issue close NUMBER --reason "not planned"`
    - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Deferred to next cycle."`
 6. If decision is **REJECT**:
    - `gh issue label NUMBER --add po-rejected`
    - `gh issue close NUMBER --reason "not planned"`
    - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Rejected. Not proceeding."`
-
----
-
-#### BACKLOG SEQUENCING
-
-**Condition:** Has `po-backlog`, no `feature-requests-created` or `po-blocked`
-
-**Action:**
-1. `gh issue comment NUMBER --body "**PO Orchestrator:** Running capacity and sequencing check."`
-2. `task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")`
-3. Wait for completion. Read the PO Sequencing Decision comment.
-4. If decision is **READY**:
-   - Create feature-request issues (see Creating Feature Requests below)
-   - `gh issue label NUMBER --add feature-requests-created`
-   - `gh issue close NUMBER --reason completed`
-5. If decision is **BLOCKED**:
-   - `gh issue label NUMBER --add po-blocked`
-   - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Blocked on capacity or dependency. Pausing."`
-6. If decision is **REJECT**:
-   - `gh issue label NUMBER --add po-rejected`
-   - `gh issue close NUMBER --reason "not planned"`
-
----
-
-#### BACKLOG BLOCKED -- Dependency Resolution
-
-**Condition:** Has `po-blocked`
-
-**Action:**
-1. `gh issue comment NUMBER --body "**PO Orchestrator:** Checking if blocker is resolved."`
-2. `task(description="Check if PO blocker is resolved on issue #NUMBER: TITLE", agent_id="product-owner", model_tier="FAST")`
-3. Wait for completion. Read the PO Blocker Resolution Decision.
-4. If decision is **RESOLVED**:
-   - `gh issue label NUMBER --remove po-blocked`
-   - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Blocker resolved. Returning to backlog."`
-5. If decision is **STILL_BLOCKED**:
-   - Post: `gh issue comment NUMBER --body "**PO Orchestrator:** Still blocked. Waiting for resolution."`
-   - Skip this issue.
-6. If decision is **REJECT**:
-   - `gh issue label NUMBER --add po-rejected`
-   - `gh issue close NUMBER --reason "not planned"`
-
----
-
-### Creating Feature Requests
-
-When PO Sequencing returns READY, create `feature-request` issues for each workstream identified by the product-owner agent:
-
-Read the PO Sequencing Decision comment to extract the list of workstreams and their scopes. For each workstream, create a feature-request issue:
-
-```bash
-gh issue create \
-  --title "Feature Request: WORKSTREAM_NAME" \
-  --body "**Parent Opportunity:** #NUMBER\n\n**Scope:**\n[workstream scope from PO decision]\n\n**Acceptance Criteria:**\n[criteria from PO decision]" \
-  --label "feature-request"
-```
-
-After creating all feature-request issues:
-```bash
-gh issue comment NUMBER --body "**PO Orchestrator:** Created [N] feature-request issues for dev team. See linked issues."
-```
 
 ---
 
@@ -187,7 +109,7 @@ gh issue comment NUMBER --body "**PO Orchestrator:** Created [N] feature-request
 --- PO Orchestrator Cycle N ---
 Model: [your active model]
 Issue focused: #NUMBER [TITLE] => [action taken]
-PO Pipeline: [X] in prioritization, [X] in backlog, [X] blocked, [X] feature requests created
+PO Pipeline: [X] converted, [X] deferred, [X] rejected
 `
 
 ---
@@ -207,8 +129,6 @@ gh issue label NUMBER --add orchestrator-timeout
 | Label | Meaning |
 |---|---|
 | `strategic-opportunity` | Entry point -- queued for prioritization |
-| `po-backlog` | Prioritized -- in backlog sequencing |
-| `po-blocked` | Blocked on dependency or capacity |
 | `feature-requests-created` | Feature requests created -- handed to dev loop |
 | `po-deferred` | Deferred -- terminal |
 | `po-rejected` | Rejected -- terminal |

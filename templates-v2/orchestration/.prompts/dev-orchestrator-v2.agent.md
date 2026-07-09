@@ -1,5 +1,5 @@
 ﻿---
-description: "Dev Orchestrator v2: Continuous loop that executes feature requests through the development pipeline (intake, design, build, QA with integration verification, policy, released) using GitHub issues as state."
+description: "Dev Orchestrator v2: Continuous loop that executes feature requests through the development pipeline (intake, design, build, QA, policy, released) using GitHub issues as state."
 tools: ["*"]
 ---
 
@@ -125,7 +125,7 @@ task(description="Run build on issue #NUMBER: TITLE", agent_id="build", model_ti
 ```
 **Wait for all build tasks to complete.** Then for each issue's Build Decision:
 - If COMPLETE: `gh issue label NUMBER --add build-complete`
-- If REQUIRES_CLARIFICATION: `gh issue label NUMBER --add build-blocked`
+- If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: `gh issue label NUMBER --add build-blocked`
 
 #### 4d. QA Stage (Parallel - Up to 5)
 ```bash
@@ -136,8 +136,8 @@ task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa", model_tier="ST
 **Wait for all QA tasks to complete.** Then for each issue's QA Decision (read JSON from comment):
 - If PASS: `gh issue label NUMBER --add qa-passed`
 - If FAIL: `gh issue label NUMBER --add qa-failed`
-- If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-incomplete`
-- If INTEGRATION_CONFLICT: `gh issue label NUMBER --add qa-conflict`
+- If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-failed`
+- If INTEGRATION_CONFLICT: `gh issue label NUMBER --add qa-failed`
 
 #### 4e. Policy Stage (Parallel - Up to 5)
 ```bash
@@ -278,8 +278,8 @@ If QA JSON is missing, malformed, or decision field is absent:
 **Condition:** Has `build-complete`, no `qa-passed` or `qa-failed`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**Orchestrator:** Build complete. Routing to QA for integration verification and testing."`
-2. `task(description="Run QA with integration verification on issue #NUMBER: TITLE", agent_id="qa", model_tier="STANDARD")`
+1. `gh issue comment NUMBER --body "**Orchestrator:** Build complete. Routing to QA for test execution and release-readiness validation."`
+2. `task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa", model_tier="STANDARD")`
 3. Wait. Agent applies `qa-passed` or `qa-failed`.
 
 ---
@@ -439,10 +439,8 @@ gh issue label NUMBER --add orchestrator-timeout
 | `design-approved` | Design passed -- ready for build |
 | `design-blocked` | Needs revision or hard-blocked |
 | `policy-review-required` | Must go through policy gate after QA |
-| `build-complete` | Build done -- ready for verification |
+| `build-complete` | Build done -- ready for QA |
 | `build-blocked` | Build blocked -- waiting for human |
-| `verification-passed` | All checks pass -- ready for QA |
-| `verification-failed` | Check failure -- needs rework |
 | `qa-passed` | All tests pass -- ready for policy or release |
 | `qa-failed` | Test failures or coverage gaps |
 | `policy-auto-approved` | Approved for release |
@@ -464,7 +462,6 @@ Agents must be registered in `.github/agents/`:
 - `intake`
 - `design`
 - `build`
-- `verification`
 - `qa`
 - `policy`
 - `business-analyst`

@@ -1664,7 +1664,7 @@ Use this section as the default stakeholder alignment pattern and decision templ
 
 ↓ (prioritized backlog flows downstream)
 
-[Intake → BA → Design → Build → Verification → QA → Policy → Release]
+[Intake → BA → Design → Build → QA → Policy → Release]
 ```
 
 **Key insight:** PM owns the complete product lifecycle from vision through post-launch learning. Vision drives strategy. Strategy drives priorities. Execution proves strategy right or wrong. Learning informs next vision iteration.

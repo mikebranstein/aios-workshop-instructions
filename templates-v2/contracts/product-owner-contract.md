@@ -122,8 +122,20 @@ Before marking a feature-request as ready for intake, verify:
 - [ ] Issue linked to strategic-opportunity #N
 - [ ] Strategic-opportunity issue closed
 
-## Gate Rule
+## Output Schema (JSON only)
+Return valid JSON only:
 
-**Intake READY** = All 8 fields present and substantive
-**Intake BLOCKED** = One or more fields missing or too vague
-**BA Called** = When intake is blocked; BA refines details before re-intake
+```json
+{
+  "decision": "CREATE_FEATURE_REQUESTS|DEFER|REJECT",
+  "feature_request_ids": ["issue references"],
+  "priority_rationale": "string",
+  "dependencies_noted": ["string"],
+  "next_state": "Feature Requests Created|Deferred|Rejected"
+}
+```
+
+## Gate Rule
+- `CREATE_FEATURE_REQUESTS` maps to `next_state = Feature Requests Created`.
+- `DEFER` maps to `next_state = Deferred`.
+- `REJECT` maps to `next_state = Rejected`.

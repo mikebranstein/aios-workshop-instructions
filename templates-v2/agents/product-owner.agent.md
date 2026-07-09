@@ -58,8 +58,13 @@ The Product Manager creates `strategic-opportunity` GitHub issues after validati
    - Value scores (user, business, complexity) + calculated priority score
 5. Close the strategic-opportunity issue
    - Post a final comment: "Strategic planning complete. Prioritized and created feature-request #N for development backlog."
+   - Apply label: `feature-requests-created`
    - Close with reason: "completed"
    - This signals: Strategic research phase → Development phase (PM can stop tracking this opportunity)
+
+If you decide not to create feature requests:
+- **DEFER**: Apply `po-deferred`, post rationale, and close the strategic-opportunity issue.
+- **REJECT**: Apply `po-rejected`, post rationale, and close the strategic-opportunity issue.
 
 ### Example Workflow:
 
@@ -796,3 +801,8 @@ You're doing product ownership well when:
 ## Your Decision Output
 
 When evaluating a feature, post a concise decision comment that references required fields and handoff expectations from `.github/contracts/product-owner-contract.md`.
+
+Decision values must align to the contract:
+- `CREATE_FEATURE_REQUESTS`
+- `DEFER`
+- `REJECT`
