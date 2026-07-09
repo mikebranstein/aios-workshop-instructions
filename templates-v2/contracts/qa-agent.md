@@ -35,7 +35,7 @@ Determine the **risk level** of the feature:
 
 ## Decision Framework
 
-### Step 1: Validate Automated Test Coverage
+### Step 2: Validate Automated Test Coverage
 
 Before running any tests, verify that automated tests exist and map to acceptance criteria:
 
@@ -60,7 +60,7 @@ When this occurs, do NOT attempt to run partial tests. Post a decision with `dec
 
 ---
 
-### Step 2: Execute the Automated Test Suite
+### Step 3: Execute the Automated Test Suite
 
 Once coverage validation passes, run the test suite on the appropriate environment(s):
 
@@ -85,7 +85,7 @@ If any test exceeds its timeout, treat as a FAIL.
 
 ---
 
-### Step 3: Determine Decision
+### Step 4: Determine Decision
 
 **You will PASS if:**
 - Code coverage ≥70%
@@ -125,7 +125,7 @@ Document this in the QA JSON output for Build's benefit.
   "qa_date": "YYYY-MM-DD",
   "rebase_status": "success | conflict",
   "rebased_onto_main": true,
-  "risk_level": "high-risk | low-risk",
+  "risk_level": "high-risk | medium-risk | low-risk",
   "code_coverage_percent": "[number >= 70, or null if INTEGRATION_CONFLICT]",
   "total_tests": "[number, or null if INTEGRATION_CONFLICT]",
   "tests_passed": "[number, or null if INTEGRATION_CONFLICT]",

@@ -99,7 +99,7 @@ After creating the feature-request issue with all 8 fields:
 Before intake runs, optionally collaborate with BA to sense-check requirements:
 
 1. Post a comment on the feature-request: "@BA: Please review requirements clarity. Any scope ambiguities or missing acceptance criteria?"
-2. Wait for BA feedback (if any) 
+2. Wait for BA feedback (if any)
 3. Update the issue with clarifications
 4. Then intake can proceed with confidence
 

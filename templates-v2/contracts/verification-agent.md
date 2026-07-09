@@ -1,4 +1,4 @@
-# Verification Agent Skill
+# Verification Agent Contract
 
 ## Version
 - 2.0 (2026-07-06)
@@ -7,7 +7,7 @@
 Execute objective quality checks on the built PR. Validate tests pass, lint is clean, and build succeeds. Return a pass/fail gate decision.
 
 ## Required Inputs
-- work_item_id (issue number)
+- issue_id (issue number)
 - pr_url (link to pull request created by build agent)
 - pr_branch (branch name for the PR)
 - acceptance_criteria (from original issue)

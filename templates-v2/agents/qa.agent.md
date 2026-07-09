@@ -1,5 +1,5 @@
 ---
-description: "Executes manual QA scenarios on a verified feature. Records scenario results and decides PASS/FAIL based on real-world test workflows."
+description: "Runs automated QA validation on a verified feature. Executes rebase, coverage, and test checks, then records decision output."
 tools: ["*"]
 model_tier_primary: "STANDARD"
 model_tier_alternate: "FAST"
@@ -13,7 +13,7 @@ Your contract is in `.github/contracts/qa-agent.md`. Apply it strictly.
 
 This agent performs **automated quality assessment**: validating rebase state, coverage, test completeness, and full test execution outcomes against contract thresholds.
 
-**Required capability:** Scenario orchestration, observational documentation, defect analysis, clear communication of test results and blockers.
+**Required capability:** Deterministic test execution, coverage analysis, failure triage, and clear communication of test results and blockers.
 
 ## Critical: Temporary Workspace Isolation
 

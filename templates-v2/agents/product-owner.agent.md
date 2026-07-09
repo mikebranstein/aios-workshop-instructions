@@ -181,7 +181,7 @@ Before Intake runs the feature, collaborate with BA to clarify:
 
 **Post a comment** inviting BA to review the GitHub issue:
 ```
-@[BA-name] I've created this feature idea: [description]. 
+@[BA-name] I've created this feature idea: [description].
 Please review for clarity on requirements. Any questions on scope or user need?
 ```
 
@@ -270,7 +270,7 @@ When creating a backlog item, use this template:
 As a [user persona], I want to [user action], so that [benefit].
 
 Example:
-As a facility manager, I want to be notified when critical equipment has long checkout times, 
+As a facility manager, I want to be notified when critical equipment has long checkout times,
 so that I can intervene and improve asset utilization.
 
 ## Problem Statement

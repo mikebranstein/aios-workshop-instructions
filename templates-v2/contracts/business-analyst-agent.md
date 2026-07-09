@@ -1,4 +1,4 @@
-# Business Analyst Agent Skill
+# Business Analyst Agent Contract
 
 ## Version
 - 2.0 (2026-07-09)
@@ -21,7 +21,7 @@ BA is called in two scenarios:
 In both cases, work from the 8-field framework. Your goal is to make the next intake re-validation likely to pass.
 
 ## Required Inputs
-- work_item_id (issue number)
+- issue_id (issue number)
 - intake_decision_json (from intake comment, identifying what's missing or ambiguous)
 - current_issue_body (what exists in the issue currently)
 - [optional] design_decision_json (if called after design REVISE for requirements feedback)

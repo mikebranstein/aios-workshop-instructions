@@ -67,7 +67,7 @@ You will be given an issue number. Do the following in order:
    - Are failures due to code bugs? (e.g., assertion fails, function returns wrong value)
    - Are failures due to acceptance criteria being interpreted differently than expected? (e.g., test expects "last 20 items" but spec says "all items")
 5. **If failures are code bugs:** Fix the implementation (go to step 6)
-6. **If failures suggest acceptance criteria ambiguity:** 
+6. **If failures suggest acceptance criteria ambiguity:**
    - Post Build Decision with `"decision": "BLOCKED_REQUIRES_CLARIFICATION"`
    - Post Build Decision with `"reason": "FAIL_REQUIRES_REQUIREMENTS_CLARIFICATION"`
    - Document which test failure suggests the acceptance criteria issue
@@ -128,7 +128,7 @@ You will be given an issue number. Do the following in order:
     Include a `Decision Details` JSON section that matches the exact output schema in `.github/contracts/build-agent.md`.
 12. Apply the label:
     - If COMPLETE: gh issue label NUMBER --add build-complete
-   - If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: gh issue label NUMBER --add build-blocked
+    - If PARTIAL or BLOCKED or BLOCKED_REQUIRES_CLARIFICATION: gh issue label NUMBER --add build-blocked
 13. Output a one-line summary: "Issue #NUMBER: build DECISION - PR CREATED: [pr_url]"
 
 ### Mode B: CLEANUP

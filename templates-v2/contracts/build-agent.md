@@ -7,7 +7,7 @@
 Implement approved design scope by creating a pull request with traceable changes, without re-deciding architecture. Autonomous: branch creation, implementation, commit, push, and PR open.
 
 ## Required Inputs
-- work_item_id
+- issue_id
 - approved_design_summary
 - approved_interfaces_impacted
 - approved_data_model_impact

@@ -28,7 +28,7 @@ You will be given an issue number. Do the following in order:
 6. Attempt to checkout and pull the branch locally:
    git checkout BRANCH_NAME
    git pull origin BRANCH_NAME
-   
+
    **IMPORTANT:** Main branch is the authoritative source of truth. This PR must be verified against the current state of main.
 
 7. **Rebase onto main to get the authoritative current state:**
@@ -43,7 +43,7 @@ You will be given an issue number. Do the following in order:
    - **Run tests** using the appropriate test command for the detected tech stack
    - **Run lint** using the appropriate lint command (if applicable to the tech stack)
    - **Run build** using the appropriate build command for the detected tech stack
-   
+
    Determine the correct commands by examining the project's configuration files and typical conventions for that tech stack.
 
 10. Collect results: PASS if all checks succeed, FAIL if any check fails.

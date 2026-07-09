@@ -12,6 +12,8 @@ Each contract file is named after the stage it serves:
 - `verification-agent.md` - Automated quality gates (build, test, lint)
 - `policy-contract.md` - Release readiness and governance criteria
 - `business-analyst-agent.md` - Requirements clarification and authoring criteria
+- `product-manager-contract.md` - Strategic opportunity discovery and validation criteria
+- `research-agent-contract.md` - Research evidence quality and synthesis criteria
 
 **How agents use contracts:**
 ```

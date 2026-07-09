@@ -7,7 +7,7 @@
 Transform an approved work item into an actionable technical design that defines solution shape before build begins.
 
 ## Required Inputs
-- work_item_id
+- issue_id
 - ess_draft
 - acceptance_criteria
 - non_goals

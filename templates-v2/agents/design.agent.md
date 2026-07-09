@@ -43,19 +43,19 @@ You will be given an issue number. Do the following in order:
 
 7. Determine if policy review is needed (governance gate):
    Use the policy trigger rules in `.github/contracts/design-agent.md`.
-   
+
    Label command:
    ```bash
    gh issue label NUMBER --add policy-review-required
    ```
-   
+
    **Note:** This label tells the orchestrator to route through policy gate after QA passes. Low-risk, isolated changes skip policy review and auto-merge.
 
 8. Apply labels based on decision:
-   - If PASS (low/medium risk, no governance triggers): 
+   - If PASS (low/medium risk, no governance triggers):
      - `gh issue label NUMBER --add design-approved`
      - DO NOT apply policy-review-required
-   - If PASS (high risk OR governance triggers present): 
+   - If PASS (high risk OR governance triggers present):
      - `gh issue label NUMBER --add design-approved`
      - `gh issue label NUMBER --add policy-review-required`
    - If REVISE: `gh issue label NUMBER --add design-blocked`
