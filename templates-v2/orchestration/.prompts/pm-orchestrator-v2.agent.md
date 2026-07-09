@@ -23,25 +23,96 @@ git checkout main
 git pull origin main
 ```
 
-### Step 1: Query GitHub
+### Step 1: Query GitHub & Check for Work
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `pm-idea` label.
 
 Log the model you are currently using at the start of each cycle.
 
-### Step 2: Find the First Actionable Issue
+### Step 2: Early Return if No Work (Phase 1)
 
-Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's full labels and comments.
+Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's full labels.
 
-**Skip** an issue if it has any of these:
+**Skip** an issue if it has any of these terminal labels:
 - `pm-opportunity` -- handed off to PO loop, terminal for PM
 - `pm-blocked` -- hard blocked, terminal
 - `pm-escalated` -- waiting for leadership
 - `pm-deferred` -- deferred, terminal
 
-Find the FIRST issue not in a terminal state. Process only that one issue per cycle (depth-first).
+**If NO actionable issues exist at any stage:**
+```
+Output: "PM Orchestrator: No actionable work. Skipping cycle."
+Sleep 30 seconds
+Return to main loop
+```
 
-### Step 3: Route Based on Labels
+**Continue to Step 3 only if actionable issues exist.**
+
+### Step 3: Batch Process All Actionable Issues (Phase 2 - Max 5 Parallel)
+
+**FIND ALL actionable issues per stage:**
+
+#### 3a. Find All Phase 1 Gate Issues (up to 5)
+```bash
+gh issue list --label pm-idea --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("pm-provisional-champion", "pm-blocked", "pm-escalated", "pm-deferred")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Phase 1 Gate
+
+#### 3b. Find All Research Phase Issues (up to 5)
+```bash
+gh issue list --label pm-provisional-champion --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("research-complete", "research-blocked")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Research
+
+#### 3c. Find All Phase 2 Gate - High Priority (up to 5)
+```bash
+gh issue list --label research-priority-high --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("pm-opportunity", "pm-escalated")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Phase 2 (High Priority)
+
+### Step 4: Spawn Parallel Tasks (Phase 2)
+
+**SPAWN PARALLEL TASKS for all issues found (up to 5 per stage):**
+
+#### 4a. Phase 1 Gate (Parallel)
+```bash
+# For each issue from Step 3a
+task(description="Run PM Phase 1 gate on issue #NUMBER: TITLE", agent_id="product-manager")
+# (Allow multiple task() calls to execute concurrently - up to 5)
+```
+**Wait for all Phase 1 tasks to complete.** Then for each issue's Phase 1 Decision:
+- If PASS: `gh issue label NUMBER --add pm-provisional-champion`
+- If BLOCK: `gh issue label NUMBER --add pm-blocked && gh issue close NUMBER --reason "not planned"`
+
+#### 4b. Research Phase (Parallel)
+```bash
+# For each issue from Step 3b
+task(description="Run market research on issue #NUMBER: TITLE", agent_id="research-agent")
+# (Allow up to 5 research tasks concurrently)
+```
+**Wait for all research tasks to complete.** Then for each issue's Research Decision:
+- If HIGH priority: `gh issue label NUMBER --add research-complete --add research-priority-high`
+- If MEDIUM/LOW: `gh issue label NUMBER --add research-complete --add research-priority-medium`
+- If BLOCKED: `gh issue label NUMBER --add research-blocked`
+
+#### 4c. Phase 2 Gate - High Priority (Parallel)
+```bash
+# For each issue from Step 3c
+task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager")
+# (Allow up to 5 Phase 2 tasks concurrently)
+```
+**Wait for all Phase 2 tasks to complete.** Then for each issue's Phase 2 Decision:
+- If PASS: Create strategic-opportunity issue, `gh issue close NUMBER --reason completed`
+- If REVISE: `gh issue label NUMBER --add research-needed && gh issue label NUMBER --remove research-complete`
+- If ESCALATE: `gh issue label NUMBER --add pm-escalated`
+
+### Step 5: Cycle Summary & Sleep
 
 Read the labels on the actionable issue. Apply the routing rules below. After spawning any task, wait for it to complete before continuing.
 

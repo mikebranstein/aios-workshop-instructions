@@ -23,24 +23,77 @@ git checkout main
 git pull origin main
 ```
 
-### Step 1: Query GitHub
+### Step 1: Query GitHub & Check for Work
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `strategic-opportunity` label.
 
 Log the model you are currently using at the start of each cycle.
 
-### Step 2: Find the First Actionable Issue
+### Step 2: Early Return if No Work (Phase 1)
 
-Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's labels and comments.
+Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's labels.
 
-**Skip** an issue if it has any of these:
+**Skip** an issue if it has any of these terminal labels:
 - `po-deferred` -- deferred, terminal
 - `po-rejected` -- rejected, terminal
 - `feature-requests-created` -- handed off to dev loop, terminal for PO
 
-Find the FIRST issue not in a terminal state. Process only that one issue per cycle (depth-first).
+**If NO actionable issues exist at any stage:**
+```
+Output: "PO Orchestrator: No actionable work. Skipping cycle."
+Sleep 30 seconds
+Return to main loop
+```
 
-### Step 3: Route Based on Labels
+**Continue to Step 3 only if actionable issues exist.**
+
+### Step 3: Batch Process All Actionable Issues (Phase 2 - Max 5 Parallel)
+
+**FIND ALL actionable issues per stage:**
+
+#### 3a. Find All Prioritization Gate Issues (up to 5)
+```bash
+gh issue list --label strategic-opportunity --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("po-backlog", "po-deferred", "po-rejected", "feature-requests-created")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Prioritization
+
+#### 3b. Find All Backlog Sequencing Issues (up to 5)
+```bash
+gh issue list --label po-backlog --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("feature-requests-created", "po-blocked")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Sequencing
+
+### Step 4: Spawn Parallel Tasks (Phase 2)
+
+**SPAWN PARALLEL TASKS for all issues found (up to 5 per stage):**
+
+#### 4a. Prioritization Gate (Parallel)
+```bash
+# For each issue from Step 3a
+task(description="Run PO prioritization on issue #NUMBER: TITLE", agent_id="product-owner")
+# (Allow multiple task() calls to execute concurrently - up to 5)
+```
+**Wait for all prioritization tasks to complete.** Then for each issue's Prioritization Decision:
+- If PRIORITIZE: `gh issue label NUMBER --add po-backlog`
+- If DEFER: `gh issue label NUMBER --add po-deferred`
+- If REJECT: `gh issue label NUMBER --add po-rejected && gh issue close NUMBER --reason "not planned"`
+
+#### 4b. Backlog Sequencing (Parallel)
+```bash
+# For each issue from Step 3b
+task(description="Run PO backlog sequencing on issue #NUMBER: TITLE", agent_id="product-owner")
+# (Allow up to 5 sequencing tasks concurrently)
+```
+**Wait for all sequencing tasks to complete.** Then for each issue's Sequencing Decision:
+- If READY: Create feature-request issues, `gh issue label NUMBER --add feature-requests-created`, `gh issue close NUMBER --reason completed`
+- If BLOCKED: `gh issue label NUMBER --add po-blocked`
+- If REJECT: `gh issue label NUMBER --add po-rejected && gh issue close NUMBER --reason "not planned"`
+
+### Step 5: Cycle Summary & Sleep
 
 Read the labels on the actionable issue. Apply the routing rules below. After spawning any task, wait for it to complete before continuing.
 

@@ -23,25 +23,134 @@ git checkout main
 git pull origin main
 ```
 
-### Step 1: Query GitHub
+### Step 1: Query GitHub & Check for Work
 
-Use the `list_issues` GitHub MCP tool to list all open issues with the `feature-request` label. Also read any issues with active pipeline labels (intake-blocked, design-blocked, verification-failed, qa-failed, policy-escalated, policy-blocked).
+Use the `list_issues` GitHub MCP tool to list all open issues with the `feature-request` label. Also read any issues with active pipeline labels (intake-blocked, design-blocked, qa-failed, policy-escalated, policy-blocked).
 
 Log the model you are currently using at the start of each cycle.
 
-### Step 2: Find the First Actionable Issue
+### Step 2: Early Return if No Work (Phase 1)
 
-Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's full labels and comments.
+Iterate through issues in creation order (oldest first). Use `issue_read` GitHub MCP tool to read each issue's labels.
 
-**Skip** an issue if it has:
+**Skip** an issue if it has any of these terminal/waiting labels:
 - `released` -- done, terminal
 - `feature-blocked` -- waiting for human
 - `policy-escalated` -- waiting for leadership
 - `intake-blocked` AND the Intake Decision reason is NOT requirements-related
 
-Find the FIRST issue not in a terminal or waiting state. Process only that one issue this cycle (depth-first).
+**If NO actionable issues exist at any stage:**
+```
+Output: "Dev Orchestrator: No actionable work. Skipping cycle."
+Sleep 30 seconds
+Return to main loop
+```
 
-### Step 3: Route Based on Labels
+**Continue to Step 3 only if actionable issues exist.**
+
+### Step 3: Batch Process All Actionable Issues (Phase 2 - Max 5 Parallel Per Stage)
+
+**FIND ALL actionable issues per stage:**
+
+#### 3a. Find All Intake Stage Issues (up to 5)
+```bash
+gh issue list --label feature-request --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("intake-approved", "released", "feature-blocked", "policy-escalated")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Intake
+
+#### 3b. Find All Design Stage Issues (up to 5)
+```bash
+gh issue list --label intake-approved --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("design-approved", "design-blocked", "released")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Design
+
+#### 3c. Find All Build Stage Issues (up to 5)
+```bash
+gh issue list --label design-approved --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("build-complete", "released")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Build
+
+#### 3d. Find All QA Stage Issues (up to 5)
+```bash
+gh issue list --label build-complete --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("qa-testing", "qa-passed", "qa-failed", "released")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for QA
+
+#### 3e. Find All Policy Stage Issues (up to 5)
+```bash
+gh issue list --label qa-passed --json number,title,labels \
+  --jq '.[] | select((.labels[].name | contains("policy-auto-approved", "policy-escalated", "policy-blocked", "released")) | not) | {number, title}' \
+  | head -5
+```
+Result: Up to 5 issues ready for Policy
+
+### Step 4: Spawn Parallel Tasks Within Each Stage (Phase 2)
+
+**SPAWN PARALLEL TASKS for all issues found per stage (up to 5 concurrent per stage):**
+
+#### 4a. Intake Stage (Parallel - Up to 5)
+```bash
+# For each issue from Step 3a
+task(description="Run intake evaluation on issue #NUMBER: TITLE", agent_id="intake")
+# (Allow multiple task() calls to execute concurrently - up to 5)
+```
+**Wait for all intake tasks to complete.** Then for each issue's Intake Decision:
+- If READY: `gh issue label NUMBER --add intake-approved`
+- If BLOCKED: `gh issue label NUMBER --add intake-blocked`
+
+#### 4b. Design Stage (Parallel - Up to 5)
+```bash
+# For each issue from Step 3b
+task(description="Run design evaluation on issue #NUMBER: TITLE", agent_id="design")
+# (Allow up to 5 design tasks concurrently)
+```
+**Wait for all design tasks to complete.** Then for each issue's Design Decision:
+- If PASS: `gh issue label NUMBER --add design-approved`
+- If REVISE: `gh issue label NUMBER --add design-blocked`
+- If BLOCKED: `gh issue label NUMBER --add design-blocked`
+
+#### 4c. Build Stage (Parallel - Up to 5)
+```bash
+# For each issue from Step 3c
+task(description="Run build on issue #NUMBER: TITLE", agent_id="build")
+# (Allow up to 5 build tasks concurrently)
+```
+**Wait for all build tasks to complete.** Then for each issue's Build Decision:
+- If COMPLETE: `gh issue label NUMBER --add build-complete`
+- If REQUIRES_CLARIFICATION: `gh issue label NUMBER --add build-blocked`
+
+#### 4d. QA Stage (Parallel - Up to 5)
+```bash
+# For each issue from Step 3d
+task(description="Run QA on issue #NUMBER: TITLE", agent_id="qa")
+# (Allow up to 5 QA tasks concurrently)
+```
+**Wait for all QA tasks to complete.** Then for each issue's QA Decision (read JSON from comment):
+- If PASS: `gh issue label NUMBER --add qa-passed`
+- If FAIL: `gh issue label NUMBER --add qa-failed`
+- If TEST_COVERAGE_INCOMPLETE: `gh issue label NUMBER --add qa-incomplete`
+- If INTEGRATION_CONFLICT: `gh issue label NUMBER --add qa-conflict`
+
+#### 4e. Policy Stage (Parallel - Up to 5)
+```bash
+# For each issue from Step 3e
+task(description="Run policy review on issue #NUMBER: TITLE", agent_id="policy")
+# (Allow up to 5 policy tasks concurrently)
+```
+**Wait for all policy tasks to complete.** Then for each issue's Policy Decision (read labels applied by policy agent):
+- If policy-auto-approved: `gh pr merge --merge --admin` → `gh issue label NUMBER --add released`
+- If policy-escalated: `gh issue label NUMBER --add policy-escalated` (wait for leadership)
+- If policy-blocked: `gh issue label NUMBER --add policy-blocked`
+
+### Step 5: Handle Feedback Loops (Requirements Clarification)
 
 Read the labels on the actionable issue. Apply the routing rules below. After spawning any task, wait for it to complete before continuing.
 
