@@ -156,6 +156,157 @@ task(description="...", agent_id="business-analyst", model_tier="STANDARD")
 
 ---
 
+## Part 1b: Metrics & Observability Framework (✅ IMPLEMENTED - WIKI-BASED)
+
+### Metrics Infrastructure (NEW - 2026-07-09)
+
+**File:** `templates-v2/utilities/metrics-reporter.md` (wiki-manager style utility)
+
+Simple utility pattern - agents/orchestrators just call at completion, utility handles everything internally:
+
+```bash
+# Agent at completion
+./utilities/metrics-reporter.md report \
+  --agent-id "intake" \
+  --issue-number "42" \
+  --decision "PASS" \
+  --confidence "0.98"
+
+# Orchestrator at cycle end
+./utilities/metrics-reporter.md report-cycle \
+  --orchestrator "dev" \
+  --cycle-number "42" \
+  --duration-seconds "90" \
+  --issues-processed "5" \
+  --issues-completed "3" \
+  --agents-spawned "6"
+```
+
+### What Gets Tracked
+
+**Per-Agent Metrics:**
+- Agent ID, issue number, decision (PASS/FAIL/BLOCKED/REVISE)
+- Execution time (calculated automatically)
+- Confidence score (0.0-1.0)
+- Timestamp
+
+**Per-Cycle Metrics:**
+- Cycle number, orchestrator name (pm/po/dev)
+- Total cycle duration
+- Issues processed, completed, failed
+- Agents spawned count
+- Success rate (auto-calculated)
+- Timestamp
+
+### GitHub Wiki Pages (Auto-Created)
+
+**Daily Summary:** `Metrics-YYYY-MM-DD`
+- All agent metrics + orchestrator cycles for that day
+- Format: Markdown table (time, agent, issue, decision, duration, confidence)
+
+**Agent Pages:** `<agent-id>` (e.g., `intake`, `design`, `build`)
+- Historical metrics for that agent only
+- Format: Table (time, issue, decision, confidence, duration)
+- Auto-aggregated: avg duration, success rate, min/max
+
+**Orchestrator Pages:** `Cycles-<Orch>` (e.g., `Cycles-Dev`)
+- All cycle metrics for that orchestrator
+- Format: Table (cycle #, duration, processed, completed, success rate, agents)
+- Trend analysis: Is system getting faster?
+
+**Main Dashboard:** `Metrics` (optional)
+- Overview page with links to all pages + summary stats
+
+### How It Works
+
+```
+Agent Startup:
+└─ ./metrics-reporter.md start --agent-id "intake" --issue "42"
+   └─ Records START_TIME in memory
+
+Agent Completion:
+└─ ./metrics-reporter.md report \
+     --agent-id "intake" --issue "42" \
+     --decision "PASS" --confidence "0.98"
+   └─ Utility:
+      ├─ Calculates duration (now - START_TIME)
+      ├─ Formats metric row
+      ├─ Clones GitHub wiki repo (cached in /tmp)
+      ├─ Appends to Metrics-YYYY-MM-DD page
+      ├─ Appends to <agent-id> page
+      ├─ Auto-calculates aggregates (avg, min, max)
+      ├─ Commits & pushes to wiki
+      └─ Returns: "✓ Agent metric reported: intake #42 (PASS, 12s)"
+
+No agent instrumentation needed:
+- No manual timing code in agents
+- No environment variable setup
+- No JSON formatting
+- Just call utility at the end with 4 parameters
+```
+
+### Storage & Querying
+
+**Storage:** GitHub Wiki (markdown tables)
+- One repo-wide wiki auto-managed
+- Pages auto-created on first metric
+- Tables auto-formatted
+- Auto-commits with standard messages
+
+**Querying:** Simple git + grep
+```bash
+# Last 10 metrics for intake agent
+./utilities/metrics-reporter.md query-agent intake
+
+# Slowest agents (last 7 days)
+./utilities/metrics-reporter.md query-slowest
+
+# Recent cycles for dev orchestrator
+./utilities/metrics-reporter.md query-cycles dev 5
+```
+
+**No complex:** No GitHub CLI jq queries, no JSON parsing, no external database
+
+### Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Utility script | ✅ Complete | metrics-reporter.md with all commands |
+| Agent integration | ⏳ Pending | Add 2 calls: start + report at end |
+| Orchestrator integration | ⏳ Pending | Add 1 call: report-cycle at end |
+| Wiki auto-management | ✅ Built-in | Utility clones, commits, pushes |
+
+### Cost of Metrics
+
+- **Storage:** Wiki pages (unlimited, GitHub-native)
+- **Overhead:** +1 second per agent (utility call + wiki commit)
+- **Infrastructure:** Zero (uses GitHub wiki, no external DB)
+
+### Zero-Config Behavior
+
+The utility requires only:
+- `$GITHUB_REPOSITORY` set (auto from GitHub CLI context)
+- Git configured (auto on GitHub Actions/CI)
+- No additional environment variables
+
+Works out-of-the-box with no setup.
+
+### Next Steps
+
+1. **For Each Agent:** 
+   - Add `start` call at initialization
+   - Add `report` call at completion (4 parameters)
+
+2. **For Each Orchestrator:**
+   - Add `report-cycle` call at cycle end (6 parameters)
+
+3. **View Metrics:**
+   - Check GitHub wiki pages (auto-created)
+   - Query: `./metrics-reporter.md query-agent <agent-id>`
+   - Browse: `https://github.com/<owner>/<repo>/wiki`
+
+---
+
 ## Part 2: Temporary Workspace Isolation
 
 ### Architecture (✅ IMPLEMENTED)
@@ -559,8 +710,11 @@ From previous audit:
 | **Policy tiering implemented** | ✅ | TIER 1 (auto), TIER 2 (leadership), TIER 3 (hard block) |
 | **QA integration test** | ✅ | Rebase check, environment matrix, split routing |
 | **GitHub as source of truth** | ✅ | No external state; labels + comments sufficient |
-| **Documentation complete** | ✅ | All files documented; framework explained |
-| **Production monitoring ready** | ⏳ | Ops visibility pending (low priority) |
+| **Metrics reporter utility** | ✅ | metrics-reporter.md (wiki-based, wiki-manager pattern) |
+| **Documentation complete** | ✅ | All files documented; all frameworks explained |
+| **Agent metrics integration** | ⏳ | Add start + report calls to agents |
+| **Orchestrator metrics integration** | ⏳ | Add report-cycle calls to orchestrators |
+| **Production monitoring ready** | ⏳ | Query wiki pages or use query commands |
 | **Error recovery procedures** | ⏳ | Graceful degradation patterns pending (low priority) |
 
 ---
