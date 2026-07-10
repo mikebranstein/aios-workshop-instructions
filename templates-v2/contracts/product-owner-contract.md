@@ -6,6 +6,21 @@
 ## Mission
 Create `feature-request` GitHub issues with complete requirements specifications so that intake evaluation and development planning can proceed without delays. PO bridges PM's strategic research with Development's execution requirements.
 
+## Priority Repair Mode (Contract Addendum)
+
+When invoked to repair an existing `feature-request` blocked by missing/malformed priority metadata:
+
+1. Update the existing issue body (do not create a new feature-request).
+2. Ensure exact parseable line exists: `Priority Score: [NUMBER]`.
+3. Prefer deriving the score from existing value fields:
+  - User Value (1-5)
+  - Business Value (1-5)
+  - Technical Complexity (1-5)
+4. If value fields are missing, add them with explicit assumptions and compute a numeric score.
+5. Post a repair-complete comment indicating the score is now parseable by Dev Orchestrator.
+
+In Priority Repair Mode, do not close or re-route the linked strategic-opportunity issue.
+
 ## Context
 The Product Owner creates feature-request issues by:
 1. Reading strategic-opportunity issues (created by PM with market research)
