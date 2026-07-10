@@ -9,31 +9,11 @@ Unlike contracts (which are read-only reference documents), utilities are execut
 ### wiki-manager.md
 An autonomous expert librarian utility that manages the GitHub wiki repository. Agents call this utility to store and retrieve research artifacts.
 
-### metrics-reporter.md
-Metrics utility for agent and orchestrator telemetry. Supports continuous loops (PM/PO/Dev) and bounded runs (Discovery).
-
 ### fitness-evaluator.md
 Deterministic architecture fitness-function utility. Evaluates predefined checks and emits structured findings (`PASS|WARN|FAIL_CRITICAL`) for architecture-review processing.
 
 ### architecture-debt-manager.md
 Deterministic debt upsert utility. Creates or updates architecture-debt issues from fitness and architecture review findings using dedupe fingerprints.
-
-Common usage:
-```bash
-./utilities/metrics-reporter.md report \
-	--agent-id "idea-scout" \
-	--issue-number "123" \
-	--decision "CREATE_PM_IDEA" \
-	--confidence "0.87"
-
-./utilities/metrics-reporter.md report-cycle \
-	--orchestrator "discovery" \
-	--cycle-number "18" \
-	--duration-seconds "540" \
-	--issues-processed "5" \
-	--issues-completed "3" \
-	--agents-spawned "1"
-```
 
 **How agents use utilities:**
 ```bash

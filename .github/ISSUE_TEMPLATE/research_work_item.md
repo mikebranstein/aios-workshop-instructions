@@ -2,7 +2,7 @@
 name: Research work item
 about: Track a targeted research task linked to a PM idea
 title: "[research]: "
-labels: ''
+labels: 'research'
 assignees: ''
 ---
 
