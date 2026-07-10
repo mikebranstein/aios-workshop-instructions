@@ -1,0 +1,141 @@
+stateDiagram-v2
+  direction LR
+
+  state "Foundation Loop" as Foundation {
+    [*] --> foundation_needed
+    foundation_needed --> foundation_in_progress: start
+    foundation_in_progress --> foundation_review: RECOMMEND
+    foundation_in_progress --> foundation_in_progress: NEEDS_MORE_RESEARCH
+    foundation_in_progress --> foundation_blocked: BLOCKED
+    foundation_review --> foundation_approved: APPROVE_FOUNDATION
+    foundation_review --> foundation_in_progress: REVISE_FOUNDATION
+    foundation_review --> foundation_blocked: BLOCK_FOUNDATION
+    foundation_approved --> [*]
+    foundation_blocked --> [*]
+  }
+
+  state "Discovery Loop (Bounded)" as Discovery {
+    [*] --> signal_scan
+    signal_scan --> discovery_halted_foundation: missing foundation-approved
+    signal_scan --> discovery_halted_focus: missing docs/discovery-focus.md
+    signal_scan --> pm_idea_created: CREATE_PM_IDEA
+    signal_scan --> candidate_deferred: DEFER
+    signal_scan --> dropped: DROP
+    discovery_halted_foundation --> [*]
+    discovery_halted_focus --> [*]
+    pm_idea_created --> [*]
+    candidate_deferred --> [*]
+    dropped --> [*]
+  }
+
+  state "PM Loop" as PM {
+    [*] --> pm_idea
+    pm_idea --> pm_provisional_champion: PROVISIONAL_CHAMPION
+    pm_idea --> pm_deferred: DEFER
+    pm_idea --> pm_blocked: BLOCK
+
+    pm_provisional_champion --> pm_finalizing: research-complete + high
+    pm_provisional_champion --> pm_deferred: research-complete + medium/low
+    pm_provisional_champion --> pm_blocked: research BLOCKED
+
+    pm_finalizing --> pm_opportunity: CHAMPION
+    pm_finalizing --> pm_deferred: DEFER
+    pm_finalizing --> pm_blocked: BLOCK
+    pm_finalizing --> pm_escalated: ESCALATE
+
+    pm_opportunity --> [*]
+    pm_deferred --> [*]
+    pm_blocked --> [*]
+    pm_escalated --> [*]
+  }
+
+  state "PO Loop" as PO {
+    [*] --> strategic_opportunity
+    strategic_opportunity --> feature_requests_created: CREATE_FEATURE_REQUESTS
+    strategic_opportunity --> po_deferred: DEFER
+    strategic_opportunity --> po_rejected: REJECT
+    feature_requests_created --> [*]
+    po_deferred --> [*]
+    po_rejected --> [*]
+  }
+
+  state "Dev Loop" as Dev {
+    [*] --> feature_request
+    feature_request --> design_approved: PASS
+    feature_request --> intake_review: REVISE
+    feature_request --> feature_blocked: BLOCKED
+
+    intake_review --> feature_request: clarified
+    intake_review --> feature_blocked: BLOCKED
+
+    design_approved --> build_phase: PASS
+    design_approved --> feature_request: REVISE
+    design_approved --> feature_blocked: BLOCKED
+
+    build_phase --> qa_testing: COMPLETE
+    build_phase --> build_blocked: PARTIAL
+    build_phase --> design_blocked: BLOCKED_REQUIRES_CLARIFICATION
+    build_phase --> feature_blocked: BLOCKED
+
+    qa_testing --> policy_approval: PASS
+    qa_testing --> qa_failed: FAIL
+    qa_testing --> design_approved: INCOMPLETE
+
+    qa_failed --> build_phase: fix path
+    qa_failed --> design_approved: redesign path
+
+    policy_approval --> released: APPROVE
+    policy_approval --> policy_escalated: ESCALATE
+    policy_approval --> feature_blocked: BLOCK
+
+    policy_escalated --> released: leadership APPROVE
+    policy_escalated --> feature_blocked: leadership BLOCK
+
+    released --> [*]
+    feature_blocked --> [*]
+  }
+
+  state "Architecture Review Loop (Bounded)" as ArchReview {
+    [*] --> arch_review_pending
+    arch_review_pending --> arch_review_in_progress: start
+    arch_review_in_progress --> arch_review_no_action: NO_ACTION
+    arch_review_in_progress --> arch_refactor_planned: CREATE_REFACTOR_PLAN
+    arch_review_in_progress --> arch_review_escalated: ESCALATE
+
+    arch_refactor_planned --> arch_refactor_requests_created: CREATE_REFACTOR_REQUESTS
+    arch_refactor_planned --> debt_deferred: DEFER
+    arch_refactor_planned --> arch_review_escalated: BLOCKED
+
+    arch_review_no_action --> [*]
+    arch_refactor_requests_created --> [*]
+    arch_review_escalated --> [*]
+  }
+
+  state "Architecture Debt Lifecycle" as Debt {
+    [*] --> architecture_debt
+    architecture_debt --> debt_triaged: TRIAGE
+    architecture_debt --> debt_deferred: DEFER
+    debt_triaged --> debt_scheduled: SCHEDULE
+    debt_triaged --> debt_deferred: DEFER
+    debt_scheduled --> arch_refactor_planned: CREATE_REFACTOR_REQUEST
+    debt_scheduled --> debt_resolved: RESOLVE
+    debt_scheduled --> debt_deferred: DEFER
+    debt_resolved --> [*]
+    debt_deferred --> [*]
+  }
+
+  state "Fitness Outcomes" as Fitness {
+    [*] --> fitness_pass
+    [*] --> fitness_warn
+    [*] --> fitness_fail_critical
+    fitness_warn --> architecture_debt: create/update debt
+    fitness_fail_critical --> architecture_debt: create/update debt
+    fitness_fail_critical --> arch_review_escalated: escalate
+    fitness_pass --> [*]
+  }
+
+  foundation_approved --> signal_scan: gate passed
+  pm_idea_created --> pm_idea: handoff
+  pm_opportunity --> strategic_opportunity: handoff
+  feature_requests_created --> feature_request: handoff
+  arch_refactor_requests_created --> feature_request: refactor work enters dev
