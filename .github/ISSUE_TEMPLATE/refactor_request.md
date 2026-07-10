@@ -15,6 +15,9 @@ Duplication, complexity, coupling, test brittleness, performance drag, etc.
 ## Refactor Plan
 Bounded steps and migration strategy.
 
+## Priority Score
+Priority Score: [NUMBER]
+
 ## Acceptance Criteria
 - [ ] Structural change complete
 - [ ] No behavior regression
