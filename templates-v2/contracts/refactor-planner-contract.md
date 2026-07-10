@@ -8,6 +8,9 @@ Convert architecture review recommendations and debt issues into bounded refacto
 - architecture_debt_issues
 - impacted_subsystems
 - release_constraints
+- foundation_decision_pack (`docs/foundation-decision-pack.md`, required)
+- adr_records (`docs/adr/`, required)
+- wiki_context_snapshot (from `wiki-manager` search, required)
 
 ## Output Schema (JSON only)
 Return valid JSON only:
@@ -36,6 +39,8 @@ Return valid JSON only:
 - Create bounded requests; avoid broad rewrites.
 - Include migration and rollback notes for medium/high risk items.
 - Prefer work items that can be delivered independently.
+- Refactor plans must preserve foundation decisions and ADR constraints unless explicit escalation approves divergence.
+- If required foundation/ADR/wiki context is missing or conflicting, return `DEFER` or `BLOCKED` with explicit blockers.
 
 ## Gate Rule
 - CREATE_REFACTOR_REQUESTS -> arch-refactor-requests-created
