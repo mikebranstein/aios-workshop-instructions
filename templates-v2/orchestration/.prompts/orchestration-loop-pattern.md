@@ -393,6 +393,7 @@ fi
 - `debt-scheduled`
 - `debt-resolved`
 - `debt-deferred`
+- `debt-must-address` (override label to force active debt progression)
 
 ### Fitness Outcome States
 
