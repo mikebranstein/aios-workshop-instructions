@@ -80,6 +80,7 @@ When creating a feature-request GitHub issue, populate ALL 8 fields in the issue
 - **Business Value (1-5):** Business impact? (5=high revenue/retention, 1=cosmetic)
 - **Technical Complexity (1-5):** How hard? (5=architectural changes, 1=trivial)
 - Calculate: **Priority Score = (User Value + Business Value) / (Technical Complexity × 1.5)**
+- Include as standalone parseable issue-body line: `Priority Score: [NUMBER]` (required for Dev Orchestrator stage selection).
 
 ## Handoff to Intake
 
@@ -119,6 +120,7 @@ Before marking a feature-request as ready for intake, verify:
 - [ ] Test scenarios identify main happy path + failure modes
 - [ ] Risk level assigned based on technical/business impact
 - [ ] Value scores calculated and priority score derived
+- [ ] Priority score included as exact parseable line: `Priority Score: [NUMBER]`
 - [ ] Issue linked to strategic-opportunity #N
 - [ ] Strategic-opportunity issue closed
 
