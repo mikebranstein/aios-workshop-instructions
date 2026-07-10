@@ -57,11 +57,28 @@ ensure_label "released"
 ensure_label "feature-blocked"
 ensure_label "orchestrator-timeout"
 ensure_label "requirements-needs-human"
+ensure_label "transition-validation-failed"
 ```
 
 If `.github/ISSUE_TEMPLATE/feature_request.md` is missing, create it before processing new intake-bound feature requests. If repository write access is restricted, continue using current issue body format and post a bootstrap note for maintainers.
 
 ### Step 1: Query GitHub & Check for Work
+
+### Transition Validation Gates (Mandatory For Every State Change)
+
+Before applying any dev-pipeline transition label or closing an issue:
+
+- G1 Source-state check: issue is in expected source state for that transition.
+- G2 Decision check: decision is valid for source stage (Intake/Design/Build/QA/Policy).
+- G3 Route check: `(source_state, decision)` exists in `orchestration/routing-registry.md`.
+- G4 Preconditions check: required artifacts and decision payloads exist (QA JSON required for qa-failed routing).
+- G5 Atomic update: remove previous active stage label before applying next active stage label.
+- G6 Terminal-close check: close only when target state is terminal (`released` or `feature-blocked`).
+
+If any gate fails:
+- Post comment: `Transition validation failed: <gate> <reason>`
+- Apply label: `transition-validation-failed`
+- Do not transition that issue this cycle.
 
 Use the `list_issues` GitHub MCP tool to list all open issues with the `feature-request` label. Also read any issues with active pipeline labels (intake-blocked, design-blocked, qa-failed, policy-escalated, policy-blocked).
 

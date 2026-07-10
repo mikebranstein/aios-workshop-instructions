@@ -238,6 +238,27 @@ fi
 echo "Decision: $DECISION - $REASONING"
 ```
 
+### Step 2e.1: Hard Transition Validation Gate (Mandatory)
+
+Before any label update or issue close:
+
+```bash
+# G1: source state label exists
+# G2: decision allowed for source state
+# G3: route exists in routing-registry
+# G4: route-specific preconditions satisfied
+# G5: no conflicting active state labels
+
+if [ "$GATE_FAILED" = "true" ]; then
+  gh issue comment 123 --body "Transition validation failed: $GATE_ID $GATE_REASON"
+  gh issue edit 123 --add-label "transition-validation-failed"
+  # Hard stop for this issue: do not change state labels
+  continue
+fi
+```
+
+Do not close issues unless target state is terminal per routing-registry.
+
 ### Step 2f: Update GitHub Issue
 
 ```bash
@@ -257,6 +278,8 @@ Reasoning: $REASONING
 
 Next Stage: $NEXT_STAGE"
 ```
+
+State updates must be atomic from source to destination stage. Never keep two conflicting active stage labels on one issue.
 
 ---
 

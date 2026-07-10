@@ -54,11 +54,28 @@ ensure_label "research-priority-medium"
 ensure_label "research-blocked"
 ensure_label "strategic-opportunity"
 ensure_label "follow-on-research"
+ensure_label "transition-validation-failed"
 ```
 
 If `.github/ISSUE_TEMPLATE/pm_idea.md`, `.github/ISSUE_TEMPLATE/strategic_opportunity.md`, or `.github/ISSUE_TEMPLATE/research_work_item.md` is missing, create it before creating issues. If write access is restricted, continue with explicit `gh issue create --body` and post a bootstrap note for maintainers.
 
 ### Step 1: Query GitHub & Check for Work
+
+### Transition Validation Gates (Mandatory For Every State Change)
+
+Before applying any new state label or closing an issue:
+
+- G1 Source-state check: issue currently matches expected source state.
+- G2 Decision check: decision is valid for that source state.
+- G3 Route check: `(source_state, decision)` exists in `orchestration/routing-registry.md`.
+- G4 Preconditions check: all route-specific prerequisites pass (including linked research closure for Phase 2).
+- G5 Atomic update: never leave conflicting active PM state labels.
+- G6 Terminal-close check: close only when routing target is terminal.
+
+If any gate fails:
+- Post comment: `Transition validation failed: <gate> <reason>`
+- Apply label: `transition-validation-failed`
+- Do not transition state for that issue in current cycle.
 
 Before processing PM ideas, validate foundational gate:
 - Query for at least one issue labeled `foundation-approved`.
