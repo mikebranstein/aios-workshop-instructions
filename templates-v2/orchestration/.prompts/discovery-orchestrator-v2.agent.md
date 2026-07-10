@@ -69,7 +69,9 @@ You run in a **bounded cycle**, not an infinite loop. End after one run summary.
    - Ensure created ideas include `pm-idea` and `pm-idea-auto` labels.
    - Ensure no run exceeds `creation_cap`.
    - Ensure dedupe comments were posted when matches existed.
-   - Append deferred candidates to the `Discovery-Deferred-Candidates` wiki page via `wiki-manager`.
+   - Append deferred candidates to the `Discovery-Deferred-Candidates` wiki page via `wiki-manager` `write-content` (no direct wiki writes).
+   - Verify wiki-manager response indicates successful commit.
+   - If deferred-candidate wiki persistence fails, post `Transition validation failed: G4 deferred-candidate wiki persistence failed`, apply `transition-validation-failed`, and halt run without final success summary.
 12. Emit final run summary and stop.
 
 ## Run Summary Format
@@ -96,6 +98,7 @@ Duration: [seconds]
 - If foundational gate is not passed: halt before discovery and print the foundational-gate message.
 - If `docs/discovery-focus.md` is missing: halt before discovery and print the required-focus message.
 - If foundation artifact review from temp clone fails: halt and post `Discovery Orchestrator halted: unable to validate foundation orchestrator/agent artifacts from isolated temp clone.`
+- If deferred-candidate wiki write via wiki-manager fails or commit cannot be verified: halt and post `Discovery Orchestrator halted: deferred-candidate wiki persistence failed.`
 
 ## Label Reference
 
