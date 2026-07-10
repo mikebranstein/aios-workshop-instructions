@@ -82,18 +82,18 @@ Iterate through issues in creation order (oldest first). Use `issue_read` GitHub
 - `pm-escalated` -- waiting for leadership
 - `pm-deferred` -- deferred, terminal
 
-Before declaring "no actionable work", run a follow-on research orphan sweep:
+Before declaring "no actionable work", run a research orphan/superseded sweep:
 
 ```bash
-# Open follow-on research issues that should still be tied to a pm-idea
-gh issue list --label research --label follow-on-research --state open --json number,title,labels
+# Open research issues that should still be tied to a pm-idea
+gh issue list --label research --state open --json number,title,labels
 ```
 
-For each open follow-on research issue:
+For each open research issue:
 - Verify it includes a `pm-idea-N` trace label.
 - If trace label is missing, add `research-blocked` and post comment: `PM Orchestrator: Missing pm-idea trace label. Manual cleanup required.`
-- If trace label exists but parent `pm-idea` is closed/terminal (`pm-opportunity|pm-deferred|pm-blocked|pm-escalated`), close the follow-on research issue with reason `not planned` and post comment: `PM Orchestrator: Closing orphaned follow-on research (parent pm-idea already terminal).`
-- If parent `pm-idea` is active (`pm-provisional-champion`), leave follow-on research open for research-agent completion.
+- If trace label exists but parent `pm-idea` is closed/terminal (`pm-opportunity|pm-deferred|pm-blocked|pm-escalated`), close the research issue with reason `not planned` and post comment: `PM Orchestrator: Closing research issue as superseded (parent pm-idea already terminal).`
+- If parent `pm-idea` is active (`pm-provisional-champion`), leave research issue open for research-agent completion.
 
 **If NO actionable issues exist at any stage:**
 ```
@@ -154,6 +154,27 @@ gh issue list --label research-priority-high --json number,title,labels \
 ```
 Result: Up to 5 issues ready for Phase 2 (High Priority)
 
+#### 3c.1 Phase 2 Research Closure Gate (Mandatory)
+
+For each candidate from Step 3c, verify all linked research items are closed before allowing Phase 2:
+
+```bash
+# For each pm-idea NUMBER from Step 3c
+OPEN_RESEARCH=$(gh issue list \
+   --label "research" \
+   --label "pm-idea-NUMBER" \
+   --state open \
+   --json number \
+   --jq '.[].number')
+
+if [ -n "$OPEN_RESEARCH" ]; then
+   gh issue comment NUMBER --body "**PM Orchestrator:** Phase 2 blocked. Linked research still open: $OPEN_RESEARCH. Keeping pm-idea in research stage."
+   # Do not include this issue in Step 4c task spawning.
+fi
+```
+
+Only candidates with zero open linked research items may proceed to Phase 2 task spawning.
+
 ### Step 4: Spawn Parallel Tasks (Phase 2)
 
 **SPAWN PARALLEL TASKS for all issues found (up to 5 per stage):**
@@ -186,6 +207,8 @@ task(description="Run market research on issue #NUMBER: TITLE", agent_id="resear
 task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")
 # (Allow up to 5 Phase 2 tasks concurrently)
 ```
+Run Step 3c.1 first and only spawn Phase 2 tasks for issues that passed the research closure gate.
+
 **Wait for all Phase 2 tasks to complete.** Then for each issue's Phase 2 Decision:
 - If CHAMPION: `gh issue label NUMBER --add pm-opportunity && gh issue close NUMBER --reason completed`
 - If DEFER: `gh issue label NUMBER --add pm-deferred && gh issue close NUMBER --reason "not planned"`
@@ -271,9 +294,15 @@ Only `strategic-opportunity` creation is valid in PM flow.
 **Condition:** Has `pm-provisional-champion` + `research-complete` + `research-priority-high`, no `pm-opportunity` or `pm-escalated`
 
 **Action:**
-1. `gh issue comment NUMBER --body "**PM Orchestrator:** Research complete (high priority). Running Phase 2 full validation."`
-2. `gh issue label NUMBER --add pm-finalizing`
-3. `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
+1. Query open linked research items with labels `research` + `pm-idea-NUMBER`.
+2. If any open linked research exists:
+   - Post: `gh issue comment NUMBER --body "**PM Orchestrator:** Phase 2 blocked. Linked research still open: [list]."`
+   - Do not set `pm-finalizing`.
+   - Skip this issue.
+3. If no open linked research exists:
+   - `gh issue comment NUMBER --body "**PM Orchestrator:** Research complete (high priority). Running Phase 2 full validation."`
+   - `gh issue label NUMBER --add pm-finalizing`
+   - `task(description="Run PM Phase 2 full validation on issue #NUMBER: TITLE", agent_id="product-manager", model_tier="STANDARD")`
 4. Wait for completion. Read the PM Phase 2 Decision comment.
 5. If decision is **CHAMPION**:
    - `gh issue label NUMBER --add pm-opportunity`
