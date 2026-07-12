@@ -1,7 +1,7 @@
 # Production Readiness Verification — FINAL SUMMARY
 
 **Date:** 2026-07-13  
-**Status:** ✅ ADAPTER_SOURCE ENFORCEMENT COMPLETE — 23/23 issues resolved  
+**Status:** ADAPTER_SOURCE ENFORCEMENT COMPLETE — 23/23 adapter_source targets updated  
 
 ---
 
@@ -9,9 +9,9 @@
 
 Three critical production-readiness issues required verification with **real evidence** (code diffs, test output):
 
-1. ✅ **Registry Alignment** — Investigated; found registry is intentionally incomplete (documents decision branches, not all states)
-2. ✅ **Fail-Closed Behavior** — Verified; SDK failures routed per-issue to NEEDS_HUMAN state via circuit breaker
-3. ✅ **adapter_source Enforcement** — Completed; all nodes now explicitly set adapter_source field
+1. **Registry Alignment** — Investigated; found registry is intentionally incomplete (documents decision branches, not all states)
+2. **Fail-Closed Behavior** — Unverified for per-issue recovery path; integration test coverage is still stubbed
+3. **adapter_source Enforcement** — Completed; all nodes now explicitly set adapter_source field
 
 ---
 
@@ -169,7 +169,7 @@ def adapter_source(self):
 | Issue | Finding | Status |
 |-------|---------|--------|
 | Registry Alignment | Incomplete (intentional); 3-4 stages documented per loop, 8-11 states in Python | ✅ Documented in PRODUCTION_READINESS_DETAILED_VERIFICATION.md |
-| Fail-Closed Behavior | SDK failures per-issue routed to NEEDS_HUMAN via circuit breaker | ✅ Verified in code; test infrastructure in place |
+| Fail-Closed Behavior | SDK failures per-issue routed to NEEDS_HUMAN via circuit breaker | Unverified: per-issue integration test still stubbed |
 | adapter_source Enforcement | All 11 node files + 4 test adapters updated; field now required (no default) | ✅ 23/23 targets fixed; test suite confirms 0 adapter_source failures |
 
 ### ✅ Evidence Quality
@@ -201,9 +201,10 @@ These failures existed before this session and are unrelated to adapter_source:
 
 ## Conclusion
 
-✅ **All 3 production-readiness verification tasks completed with real evidence:**
-1. Registry alignment verified (incomplete but acceptable)
-2. Fail-closed behavior confirmed (working per-issue)
-3. adapter_source enforcement completed (23 files fixed, 0 failures remaining)
+Findings summary:
+1. Registry alignment was reviewed and documented.
+2. Fail-closed per-issue recovery remains unverified because `test_circuit_breaker_catches_missing_sdk_per_issue` is a stub.
+3. adapter_source enforcement was implemented across the listed targets.
 
-**adapter_source is now production-ready.**
+Open item:
+- Implement a real integration test for per-issue recovery or remove any remaining claims that this behavior is verified.
