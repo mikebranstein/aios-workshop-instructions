@@ -21,6 +21,7 @@ class PMRunRecord:
     linked_prior_run_id: Optional[str]
     started_at_utc: str
     ended_at_utc: Optional[str] = None
+    current_state: Optional[str] = None
 
 
 @dataclass
@@ -150,4 +151,5 @@ class PMRunOnceOrchestrator:
             self._bridge_exit_notified = True
 
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()
+        run.current_state = final_current_state.value if hasattr(final_current_state, "value") else str(final_current_state)
         return run

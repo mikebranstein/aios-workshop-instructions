@@ -126,7 +126,16 @@ def _run_continuous(gateway, args) -> int:
     print(f"Running Dev orchestrator in CONTINUOUS mode")
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
     log_db = f"{args.log_dir}/dev_continuous.sqlite"
-    adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+    # Startup preflight: validate adapter availability before batch begins.
+    try:
+        adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+    except Exception as e:
+        print(
+            "Startup health check failed: adapter initialization failed before continuous batch start.",
+            file=sys.stderr,
+        )
+        print(f"Detail: {type(e).__name__}: {e}", file=sys.stderr)
+        return 3
     orchestrator = DevContinuousOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),

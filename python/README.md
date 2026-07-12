@@ -44,6 +44,8 @@ python -m pytest tests/registry/test_routing_registry_alignment.py -q
 
 This ensures every decision in `templates-old-v2/orchestration/routing-registry.md` has a corresponding Python transition.
 
+Note: the markdown routing registry is a legacy reference artifact. Python state/transition tables and orchestrator logic are the operational source of truth.
+
 ---
 
 ## Running Orchestrators Against External Repos
@@ -63,6 +65,8 @@ The AIOS orchestration system can be run from this directory against any GitHub 
 
 #### 1. Continuous Mode (Recommended)
 Continuously processes all matching issues until the queue is empty. Best for production orchestration pipelines.
+
+Each continuous runner performs a startup adapter health check before processing the first issue. If adapter initialization fails, the run exits immediately with a non-zero status.
 
 **PM Orchestrator** — Process all strategic opportunities:
 ```powershell

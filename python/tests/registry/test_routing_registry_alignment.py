@@ -178,7 +178,9 @@ class RoutingRegistryAlignmentTests(unittest.TestCase):
         self.assertEqual(issues, [], "\n".join(issues))
 
     def test_debt_transitions_covered(self) -> None:
-        issues = _check(_DEBT_TABLE, _DEBT_STAGE, _DEBT_DECISION, self.by_loop.get("arch_review", []), "Debt")
+        debt_entries = self.by_loop.get("debt", [])
+        self.assertGreater(len(debt_entries), 0, "Debt entries were not parsed into the debt loop bucket")
+        issues = _check(_DEBT_TABLE, _DEBT_STAGE, _DEBT_DECISION, debt_entries, "Debt")
         self.assertEqual(issues, [], "\n".join(issues))
 
     def test_all_python_pm_transitions_are_in_registry_or_documented(self) -> None:

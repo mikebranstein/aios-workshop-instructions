@@ -23,6 +23,7 @@ class PORunRecord:
     source_issue_number: int
     started_at_utc: str
     ended_at_utc: Optional[str] = None
+    current_state: Optional[str] = None
 
 
 @dataclass
@@ -89,6 +90,7 @@ class PORunOnceOrchestrator:
         try:
             if current_state in TERMINAL_PO_STATES:
                 run.ended_at_utc = datetime.now(timezone.utc).isoformat()
+                run.current_state = current_state.value
                 return run
 
             # Prepare initial state for graph
@@ -100,6 +102,7 @@ class PORunOnceOrchestrator:
 
             # Invoke graph
             final_state = self.graph_orchestrator.invoke(initial_state)
+            resulting_state = final_state.get("current_state", current_state)
             
             # Update run record with final state
             run.ended_at_utc = datetime.now(timezone.utc).isoformat()
@@ -130,5 +133,6 @@ class PORunOnceOrchestrator:
                 )
 
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()
+        run.current_state = resulting_state.value if hasattr(resulting_state, "value") else str(resulting_state)
         return run
 

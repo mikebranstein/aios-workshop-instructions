@@ -17,6 +17,8 @@ python dev_runner.py owner/my-repo --continuous
 **PO Continuous** finds all `po:queued` issues and processes them through prioritization.
 **Dev Continuous** finds all `dev:intake` issues and processes them through the full development pipeline.
 
+All continuous runners execute a startup adapter health check before processing issues. If initialization fails, the runner exits immediately with a non-zero status and a clear failure message.
+
 ### 2. **Single-Issue Mode**
 Process one specific issue through its orchestrator loop.
 
@@ -29,6 +31,8 @@ python dev_runner.py owner/my-repo 42
 ---
 
 ## Architecture
+
+The markdown routing registry is maintained as a legacy reference artifact. Python state/transition tables and orchestrator implementations are the operational source of truth.
 
 ### Why Two Modes?
 

@@ -25,6 +25,7 @@ class DevRunRecord:
     started_at_utc: str
     ended_at_utc: Optional[str] = None
     cycle_count: int = 0
+    current_state: Optional[str] = None
 
 
 @dataclass
@@ -93,6 +94,7 @@ class DevRunOnceOrchestrator:
                 "run_id": run.run_id,
                 "source_issue_number": source_issue_number,
             })
+            resulting_state = final_state.get("current_state", self._get_current_state(source_issue_number))
             
             run.cycle_count = 1
             retry_state.attempts = 0
@@ -123,6 +125,7 @@ class DevRunOnceOrchestrator:
                 )
 
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()
+        run.current_state = resulting_state.value if hasattr(resulting_state, "value") else str(resulting_state)
         return run
 
     def _get_current_state(self, issue_number: int) -> DevState:
