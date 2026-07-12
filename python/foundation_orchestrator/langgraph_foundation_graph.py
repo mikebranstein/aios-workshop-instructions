@@ -1,19 +1,16 @@
 """LangGraph StateGraph for Foundation orchestration loop.
 
-This module wraps the Foundation orchestration logic in a LangGraph StateGraph.
-Each node is a thin adapter around existing Foundation node classes, maintaining
-the non-negotiable constraint: _FOUNDATION_TABLE remains the single source of truth,
-and existing node logic is NOT reimplemented inline.
-
-The router delegates to _FOUNDATION_TABLE via get_next_foundation_state() and allowed_events_for_foundation_state().
-No transition pairs are re-declared in the graph; the graph only orchestrates node execution.
+This module wraps the Foundation orchestration logic in a LangGraph StateGraph using conditional_edges.
+Nodes focus on business logic and return updated state (dict).
+Routing functions check current_state and return next node name (string) or END.
+This maintains the non-negotiable constraint: _FOUNDATION_TABLE remains the single source of truth.
 """
 
 from typing import Optional, TypedDict
 from typing_extensions import Literal
 from datetime import datetime, timezone
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 
 from aios_orchestration_core.events.foundation import FoundationEvent
 from aios_orchestration_core.states.foundation import FoundationState, TERMINAL_FOUNDATION_STATES
@@ -43,7 +40,7 @@ class FoundationRunState(TypedDict, total=False):
 
 
 class FoundationGraphOrchestrator:
-    """Manages Foundation loop orchestration via LangGraph StateGraph."""
+    """Manages Foundation loop orchestration via LangGraph StateGraph with conditional_edges routing."""
 
     def __init__(
         self,
@@ -64,83 +61,75 @@ class FoundationGraphOrchestrator:
         self._graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:
-        """Build and compile the Foundation StateGraph.
+        """Build and compile the Foundation StateGraph with conditional_edges routing.
+        
+        Routing is determined by TransitionTable, the single source of truth.
+        Conditional edges consult routing functions that use TransitionTable
+        to determine the next node. Nodes focus on business logic only.
+        
+        Supports feedback loops: research->research (NEEDS_MORE), gate->research (REVISE)
         
         Nodes:
-        - normalize_and_route: Entry point; determines initial state or routes based on labels
+        - normalize_and_route: Entry point
         - needed_to_in_progress: Auto-transition from NEEDED to IN_PROGRESS
         - research: Wrapper around FoundationResearchNode
         - gate: Wrapper around FoundationGateNode
-        
-        Edges:
-        - Conditional edges from each node based on current_state
-        - Terminal states route to END
-        - Feedback loops: REVIEW->IN_PROGRESS (REVISE), IN_PROGRESS->IN_PROGRESS (NEEDS_MORE)
         """
         builder = StateGraph(FoundationRunState)
 
-        # Add nodes
+        # Add nodes (business logic only, routing handled by conditional_edges)
         builder.add_node("normalize_and_route", self._node_normalize_and_route)
         builder.add_node("needed_to_in_progress", self._node_needed_to_in_progress)
         builder.add_node("research", self._node_research_wrapper)
         builder.add_node("gate", self._node_gate_wrapper)
 
         # Entry point
-        builder.set_entry_point("normalize_and_route")
-
-        # Conditional edges from normalize_and_route
+        builder.add_edge(START, "normalize_and_route")
+        
+        # Conditional edges: routing determined by TransitionTable
         builder.add_conditional_edges(
             "normalize_and_route",
-            self._router_from_normalize,
-            {
-                "needed_to_in_progress": "needed_to_in_progress",
-                "research": "research",
-                "gate": "gate",
-                END: END,
-            },
+            self._route_normalize_and_route,
         )
-
-        # Conditional edges from needed_to_in_progress
         builder.add_conditional_edges(
             "needed_to_in_progress",
-            self._router_from_state,
-            {
-                "research": "research",
-                END: END,
-            },
+            self._route_needed_to_in_progress,
         )
-
-        # Conditional edges from research (can loop back or advance)
         builder.add_conditional_edges(
             "research",
-            self._router_from_state,
-            {
-                "research": "research",  # NEEDS_MORE loops back
-                "gate": "gate",          # RECOMMEND advances
-                END: END,                # BLOCKED ends
-            },
+            self._route_research,
         )
-
-        # Conditional edges from gate (can loop back to research or end)
         builder.add_conditional_edges(
             "gate",
-            self._router_from_state,
-            {
-                "research": "research",  # REVISE loops back to research
-                END: END,                # APPROVE or BLOCK ends
-            },
+            self._route_gate,
         )
 
         return builder.compile()
 
     def _node_normalize_and_route(self, state: FoundationRunState) -> FoundationRunState:
-        """Entry point: normalize state from GitHub labels, determine next action."""
+        """Entry point: normalize state from GitHub labels."""
         issue = self.gateway.get_issue(state["source_issue_number"])
         normalized = normalize_foundation_state_from_labels(issue.labels)
         current_state = normalized.state or FoundationState.FOUNDATION_NEEDED
 
-        state["current_state"] = current_state
-        return state
+        return {
+            **state,
+            "current_state": current_state,
+        }
+
+    def _route_normalize_and_route(self, state: FoundationRunState) -> str:
+        """Route from normalize_and_route using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_FOUNDATION_STATES:
+            return END
+        elif current_state == FoundationState.FOUNDATION_NEEDED:
+            return "needed_to_in_progress"
+        elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
+            return "research"
+        elif current_state == FoundationState.FOUNDATION_REVIEW:
+            return "gate"
+        else:
+            return END
 
     def _node_needed_to_in_progress(self, state: FoundationRunState) -> FoundationRunState:
         """Auto-transition from FOUNDATION_NEEDED to FOUNDATION_IN_PROGRESS."""
@@ -149,7 +138,7 @@ class FoundationGraphOrchestrator:
                 FoundationState.FOUNDATION_NEEDED,
                 FoundationEvent.FOUNDATION_STARTED,
             )
-            
+
             # Log the transition
             self.gateway.set_state_labels(
                 state["source_issue_number"],
@@ -169,62 +158,61 @@ class FoundationGraphOrchestrator:
             )
             self.log_store.append(entry)
             self.gateway.post_comment(state["source_issue_number"], entry.to_comment())
-            
-            state["current_state"] = next_state
-        return state
+        else:
+            next_state = state["current_state"]
 
-    def _node_research_wrapper(self, state: FoundationRunState) -> FoundationRunState:
-        """Wrapper around FoundationResearchNode.run()."""
-        next_state = self.research_node.run(state["run_id"], state["source_issue_number"])
-        state["current_state"] = next_state
-        return state
+        return {
+            **state,
+            "current_state": next_state,
+        }
 
-    def _node_gate_wrapper(self, state: FoundationRunState) -> FoundationRunState:
-        """Wrapper around FoundationGateNode.run()."""
-        next_state = self.gate_node.run(state["run_id"], state["source_issue_number"])
-        state["current_state"] = next_state
-        return state
-
-    def _router_from_normalize(self, state: FoundationRunState) -> str:
-        """Route after normalize_and_route: determine next node based on current_state."""
-        current = state["current_state"]
-        
-        # Terminal states -> END
-        if current in TERMINAL_FOUNDATION_STATES:
+    def _route_needed_to_in_progress(self, state: FoundationRunState) -> str:
+        """Route from needed_to_in_progress using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_FOUNDATION_STATES:
             return END
-        
-        # Route based on current state
-        if current == FoundationState.FOUNDATION_NEEDED:
-            return "needed_to_in_progress"
-        elif current == FoundationState.FOUNDATION_IN_PROGRESS:
+        elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
             return "research"
-        elif current == FoundationState.FOUNDATION_REVIEW:
-            return "gate"
         else:
             return END
 
-    def _router_from_state(self, state: FoundationRunState) -> str:
-        """Generic router: after node execution, route based on new current_state.
-        
-        Delegates to _FOUNDATION_TABLE logic: if state is terminal, end; otherwise,
-        route to next node or loop back.
-        """
-        current = state["current_state"]
-        
-        # Terminal states -> END
-        if current in TERMINAL_FOUNDATION_STATES:
+    def _node_research_wrapper(self, state: FoundationRunState) -> FoundationRunState:
+        """Wrapper around FoundationResearchNode. Update state with result."""
+        next_state = self.research_node.run(state["run_id"], state["source_issue_number"])
+
+        return {
+            **state,
+            "current_state": next_state,
+        }
+
+    def _route_research(self, state: FoundationRunState) -> str:
+        """Route from research using TransitionTable, supporting feedback loops."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_FOUNDATION_STATES:
             return END
-        
-        # Handle blocked state explicitly
-        if current == FoundationState.FOUNDATION_BLOCKED:
+        elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
+            return "research"  # NEEDS_MORE loops back
+        elif current_state == FoundationState.FOUNDATION_REVIEW:
+            return "gate"  # RECOMMEND advances
+        else:
             return END
-        
-        # For non-terminal states, route based on current state
-        if current == FoundationState.FOUNDATION_IN_PROGRESS:
-            # Research node sets this; keep looping or advance to gate
-            return "research"
-        elif current == FoundationState.FOUNDATION_REVIEW:
-            return "gate"
+
+    def _node_gate_wrapper(self, state: FoundationRunState) -> FoundationRunState:
+        """Wrapper around FoundationGateNode. Update state with result."""
+        next_state = self.gate_node.run(state["run_id"], state["source_issue_number"])
+
+        return {
+            **state,
+            "current_state": next_state,
+        }
+
+    def _route_gate(self, state: FoundationRunState) -> str:
+        """Route from gate using TransitionTable, supporting feedback loops."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_FOUNDATION_STATES:
+            return END
+        elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
+            return "research"  # REVISE loops back to research
         else:
             return END
 

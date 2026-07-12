@@ -1,18 +1,16 @@
 """LangGraph StateGraph for ArchReview orchestration loop.
 
-This module wraps the ArchReview orchestration logic in a LangGraph StateGraph.
-Each node is a thin adapter around existing ArchReview node classes, maintaining
-the non-negotiable constraint: _ARCH_REVIEW_TABLE remains the single source of truth.
-
-The router delegates to _ARCH_REVIEW_TABLE via get_next_arch_review_state().
-No transition pairs are re-declared in the graph; the graph only orchestrates
-node execution and state transitions.
+This module wraps the ArchReview orchestration logic in a LangGraph StateGraph using conditional_edges.
+Nodes focus on business logic and return updated state (dict).
+Routing functions check current_state and return next node name (string) or END.
+This maintains the non-negotiable constraint: _ARCH_REVIEW_TABLE remains the single source of truth.
 """
 
 from typing import Optional, TypedDict
 from datetime import datetime, timezone
+from typing_extensions import Literal
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 
 from aios_orchestration_core.events.arch_review import ArchReviewEvent
 from aios_orchestration_core.states.arch_review import (
@@ -47,7 +45,7 @@ class ArchReviewRunState(TypedDict, total=False):
 
 
 class ArchReviewGraphOrchestrator:
-    """Manages ArchReview loop orchestration via LangGraph StateGraph."""
+    """Manages ArchReview loop orchestration via LangGraph StateGraph with conditional_edges routing."""
 
     def __init__(
         self,
@@ -68,22 +66,22 @@ class ArchReviewGraphOrchestrator:
         self._graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:
-        """Build and compile the ArchReview StateGraph.
-
+        """Build and compile the ArchReview StateGraph with conditional_edges routing.
+        
+        Routing is determined by TransitionTable, the single source of truth.
+        Conditional edges consult routing functions that use TransitionTable
+        to determine the next node. Nodes focus on business logic only.
+        
         Nodes:
-        - normalize_and_route: Entry point; determine initial state from labels
+        - normalize_and_route: Entry point
         - pending_to_in_progress: Auto-transition from PENDING to IN_PROGRESS
         - review: Wrapper around ArchReviewNode
         - planner: Wrapper around ArchRefactorPlannerNode
         - close_issue: Terminal handler to close the issue
-
-        Edges:
-        - Conditional edges based on state machine
-        - Terminal states route to close_issue then END
         """
         builder = StateGraph(ArchReviewRunState)
 
-        # Add nodes
+        # Add nodes (business logic only, routing handled by conditional_edges)
         builder.add_node("normalize_and_route", self._node_normalize_and_route)
         builder.add_node("pending_to_in_progress", self._node_pending_to_in_progress)
         builder.add_node("review", self._node_review_wrapper)
@@ -91,54 +89,25 @@ class ArchReviewGraphOrchestrator:
         builder.add_node("close_issue", self._node_close_issue)
 
         # Entry point
-        builder.set_entry_point("normalize_and_route")
-
-        # Conditional edges from normalize_and_route
+        builder.add_edge(START, "normalize_and_route")
+        
+        # Conditional edges: routing determined by TransitionTable
         builder.add_conditional_edges(
             "normalize_and_route",
-            self._router_from_normalize,
-            {
-                "pending_to_in_progress": "pending_to_in_progress",
-                "review": "review",
-                "planner": "planner",
-                "close_issue": "close_issue",
-                END: END,
-            },
+            self._route_normalize_and_route,
         )
-
-        # Conditional edges from pending_to_in_progress
         builder.add_conditional_edges(
             "pending_to_in_progress",
-            self._router_from_state,
-            {
-                "review": "review",
-                "close_issue": "close_issue",
-                END: END,
-            },
+            self._route_pending_to_in_progress,
         )
-
-        # Conditional edges from review
         builder.add_conditional_edges(
             "review",
-            self._router_from_state,
-            {
-                "planner": "planner",
-                "close_issue": "close_issue",
-                END: END,
-            },
+            self._route_review,
         )
-
-        # Conditional edges from planner
         builder.add_conditional_edges(
             "planner",
-            self._router_from_state,
-            {
-                "close_issue": "close_issue",
-                END: END,
-            },
+            self._route_planner,
         )
-
-        # Edge from close_issue to END
         builder.add_edge("close_issue", END)
 
         return builder.compile()
@@ -150,13 +119,29 @@ class ArchReviewGraphOrchestrator:
         current_state = (
             normalized.state or ArchReviewState.ARCH_REVIEW_PENDING
         )
-
-        state["current_state"] = current_state
         state["created_refactor_request_numbers"] = []
-        return state
+
+        return {
+            **state,
+            "current_state": current_state,
+        }
+
+    def _route_normalize_and_route(self, state: ArchReviewRunState) -> str:
+        """Route from normalize_and_route using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_ARCH_REVIEW_STATES:
+            return "close_issue"
+        elif current_state == ArchReviewState.ARCH_REVIEW_PENDING:
+            return "pending_to_in_progress"
+        elif current_state == ArchReviewState.ARCH_REVIEW_IN_PROGRESS:
+            return "review"
+        elif current_state == ArchReviewState.ARCH_REFACTOR_PLANNED:
+            return "planner"
+        else:
+            return "close_issue"
 
     def _node_pending_to_in_progress(self, state: ArchReviewRunState) -> ArchReviewRunState:
-        """Auto-transition from PENDING to IN_PROGRESS."""
+        """Auto-transition from PENDING to IN_PROGRESS. Update state."""
         if state["current_state"] == ArchReviewState.ARCH_REVIEW_PENDING:
             next_state = get_next_arch_review_state(
                 ArchReviewState.ARCH_REVIEW_PENDING, ArchReviewEvent.EVALUATION_STARTED
@@ -183,73 +168,70 @@ class ArchReviewGraphOrchestrator:
             )
             self.log_store.append(entry)
             self.gateway.post_comment(state["source_issue_number"], entry.to_comment())
+        else:
+            next_state = state["current_state"]
 
-            state["current_state"] = next_state
+        return {
+            **state,
+            "current_state": next_state,
+        }
 
-        return state
+    def _route_pending_to_in_progress(self, state: ArchReviewRunState) -> str:
+        """Route from pending_to_in_progress using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_ARCH_REVIEW_STATES:
+            return "close_issue"
+        elif current_state == ArchReviewState.ARCH_REVIEW_IN_PROGRESS:
+            return "review"
+        else:
+            return "close_issue"
 
     def _node_review_wrapper(self, state: ArchReviewRunState) -> ArchReviewRunState:
-        """Wrapper around ArchReviewNode.run()."""
+        """Wrapper around ArchReviewNode. Update state with result."""
         next_state = self.review_node.run(
             state["run_id"], state["source_issue_number"]
         )
-        state["current_state"] = next_state
-        return state
+
+        return {
+            **state,
+            "current_state": next_state,
+        }
+
+    def _route_review(self, state: ArchReviewRunState) -> str:
+        """Route from review using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_ARCH_REVIEW_STATES:
+            return "close_issue"
+        elif current_state == ArchReviewState.ARCH_REFACTOR_PLANNED:
+            return "planner"
+        else:
+            return "close_issue"
 
     def _node_planner_wrapper(self, state: ArchReviewRunState) -> ArchReviewRunState:
-        """Wrapper around ArchRefactorPlannerNode.run()."""
+        """Wrapper around ArchRefactorPlannerNode. Update state with result."""
         next_state, created_numbers = self.planner_node.run(
             state["run_id"], state["source_issue_number"]
         )
-        state["current_state"] = next_state
-        state["created_refactor_request_numbers"] = created_numbers
-        return state
+
+        return {
+            **state,
+            "current_state": next_state,
+            "created_refactor_request_numbers": created_numbers,
+        }
+
+    def _route_planner(self, state: ArchReviewRunState) -> str:
+        """Route from planner using TransitionTable."""
+        # Always go to close_issue after planner
+        return "close_issue"
 
     def _node_close_issue(self, state: ArchReviewRunState) -> ArchReviewRunState:
-        """Close the issue if in terminal state."""
+        """Close the issue if in terminal state. Update state."""
         if state["current_state"] in TERMINAL_ARCH_REVIEW_STATES:
             self.gateway.close_issue(
                 state["source_issue_number"], "arch review complete"
             )
+
         return state
-
-    def _router_from_normalize(self, state: ArchReviewRunState) -> str:
-        """Route after normalize: determine initial entry point."""
-        current = state["current_state"]
-
-        # Terminal states -> close and end
-        if current in TERMINAL_ARCH_REVIEW_STATES:
-            return "close_issue"
-
-        # Route based on current state
-        if current == ArchReviewState.ARCH_REVIEW_PENDING:
-            return "pending_to_in_progress"
-        elif current == ArchReviewState.ARCH_REVIEW_IN_PROGRESS:
-            return "review"
-        elif current == ArchReviewState.ARCH_REFACTOR_PLANNED:
-            return "planner"
-        else:
-            return "close_issue"
-
-    def _router_from_state(self, state: ArchReviewRunState) -> str:
-        """Generic router: route based on current_state after node execution.
-
-        Delegates to _ARCH_REVIEW_TABLE logic: if state is terminal, close;
-        otherwise, route to next node.
-        """
-        current = state["current_state"]
-
-        # Terminal states -> close and end
-        if current in TERMINAL_ARCH_REVIEW_STATES:
-            return "close_issue"
-
-        # Route based on current state
-        if current == ArchReviewState.ARCH_REVIEW_IN_PROGRESS:
-            return "review"
-        elif current == ArchReviewState.ARCH_REFACTOR_PLANNED:
-            return "planner"
-        else:
-            return "close_issue"
 
     def invoke(self, initial_state: ArchReviewRunState) -> ArchReviewRunState:
         """Invoke the graph with an initial state.

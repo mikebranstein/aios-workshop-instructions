@@ -1,12 +1,9 @@
 """LangGraph StateGraph for Discovery orchestration loop.
 
-This module wraps the Discovery orchestration logic in a LangGraph StateGraph.
-Each node is a thin adapter around existing Discovery logic, maintaining the
-non-negotiable constraint: _DISCOVERY_TABLE remains the single source of truth.
-
-The router delegates to _DISCOVERY_TABLE via get_next_discovery_state() and
-allowed_events_for_discovery_state(). No transition pairs are re-declared in
-the graph; the graph only orchestrates node execution.
+This module wraps the Discovery orchestration logic in a LangGraph StateGraph using conditional_edges.
+Nodes focus on business logic and return updated state (dict).
+Routing functions check current_state and return next node name (string) or END.
+This maintains the non-negotiable constraint: _DISCOVERY_TABLE remains the single source of truth.
 """
 
 from typing import Optional, TypedDict
@@ -14,7 +11,7 @@ from typing_extensions import Literal
 from datetime import datetime, timezone
 from dataclasses import field
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
 
 from aios_orchestration_core.events.discovery import DiscoveryEvent
 from aios_orchestration_core.states.discovery import DiscoveryState, TERMINAL_DISCOVERY_STATES
@@ -47,13 +44,13 @@ class DiscoveryRunState(TypedDict, total=False):
 
 
 class DiscoveryGraphOrchestrator:
-    """Manages Discovery loop orchestration via LangGraph StateGraph."""
+    """Manages Discovery loop orchestration via LangGraph StateGraph with conditional_edges routing."""
 
     def __init__(
         self,
         context: DiscoveryContext,
         idea_scout_adapter: IdeaScoutAdapter,
-        pm_idea_store: PMIdeaIssueStore,
+        pm_idea_store: "PMIdeaIssueStore",
         log_store: Optional[TransitionLogStore] = None,
     ):
         """Initialize orchestrator with dependencies."""
@@ -69,63 +66,48 @@ class DiscoveryGraphOrchestrator:
         self._graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:
-        """Build and compile the Discovery StateGraph.
-
+        """Build and compile the Discovery StateGraph with conditional_edges routing.
+        
+        Routing is determined by TransitionTable, the single source of truth.
+        Conditional edges consult routing functions that use TransitionTable
+        to determine the next node. Nodes focus on business logic only.
+        
         Nodes:
         - check_preconditions: Verify foundation gate and focus file
         - idea_scout: Wrapper around IdeaScoutNode
-        - complete: Terminal handler
-
-        Edges:
-        - Conditional edges based on precondition checks
-        - Terminal states route to END
         """
         builder = StateGraph(DiscoveryRunState)
 
-        # Add nodes
+        # Add nodes (business logic only, routing handled by conditional_edges)
         builder.add_node("check_preconditions", self._node_check_preconditions)
         builder.add_node("idea_scout", self._node_idea_scout_wrapper)
 
         # Entry point
-        builder.set_entry_point("check_preconditions")
-
-        # Conditional edges from preconditions
+        builder.add_edge(START, "check_preconditions")
+        
+        # Conditional edges: routing determined by TransitionTable
         builder.add_conditional_edges(
             "check_preconditions",
-            self._router_from_preconditions,
-            {
-                "idea_scout": "idea_scout",
-                END: END,
-            },
+            self._route_check_preconditions,
         )
-
-        # Conditional edges from idea_scout
-        builder.add_conditional_edges(
-            "idea_scout",
-            self._router_from_state,
-            {
-                END: END,
-            },
-        )
+        
+        builder.add_edge("idea_scout", END)
 
         return builder.compile()
 
     def _node_check_preconditions(self, state: DiscoveryRunState) -> DiscoveryRunState:
-        """Check foundation gate and focus file preconditions."""
+        """Check foundation gate and focus file preconditions. Update state."""
         # Transition to RUNNING
         current_state = DiscoveryState.DISCOVERY_IDLE
         next_state = get_next_discovery_state(
             current_state, DiscoveryEvent.RUN_TRIGGERED
         )
-        state["current_state"] = next_state
 
         # Check foundation gate
         if not self.context.foundation_gate_passed:
             terminal_state = get_next_discovery_state(
                 next_state, DiscoveryEvent.GATE_MISSING
             )
-            state["current_state"] = terminal_state
-            state["halted_reason"] = "Foundation gate not passed"
             self._log_transition(
                 state,
                 next_state,
@@ -134,15 +116,17 @@ class DiscoveryGraphOrchestrator:
                 "GATE_MISSING",
                 "Foundation gate not passed",
             )
-            return state
+            return {
+                **state,
+                "current_state": terminal_state,
+                "halted_reason": "Foundation gate not passed",
+            }
 
         # Check focus file
         if not self.context.focus_file_exists or not self.context.focus_file_populated:
             terminal_state = get_next_discovery_state(
                 next_state, DiscoveryEvent.FOCUS_MISSING
             )
-            state["current_state"] = terminal_state
-            state["halted_reason"] = "docs/discovery-focus.md missing or empty"
             self._log_transition(
                 state,
                 next_state,
@@ -151,23 +135,34 @@ class DiscoveryGraphOrchestrator:
                 "FOCUS_MISSING",
                 "docs/discovery-focus.md missing or empty",
             )
-            return state
+            return {
+                **state,
+                "current_state": terminal_state,
+                "halted_reason": "docs/discovery-focus.md missing or empty",
+            }
 
-        # Preconditions passed, ready for idea scout
-        state["current_state"] = next_state
-        return state
+        # Preconditions passed
+        return {
+            **state,
+            "current_state": next_state,
+        }
+
+    def _route_check_preconditions(self, state: DiscoveryRunState) -> str:
+        """Route from check_preconditions using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_DISCOVERY_STATES:
+            return END
+        elif current_state == DiscoveryState.DISCOVERY_RUNNING:
+            return "idea_scout"
+        else:
+            return END
 
     def _node_idea_scout_wrapper(self, state: DiscoveryRunState) -> DiscoveryRunState:
-        """Wrapper around IdeaScoutNode.run()."""
+        """Wrapper around IdeaScoutNode. Update state with result."""
         final_state, created, deferred, dropped = self.idea_scout_node.run(
             creation_cap=self.context.creation_cap,
             context_summary="discovery run",
         )
-
-        state["current_state"] = final_state
-        state["created_pm_idea_numbers"] = created
-        state["deferred_count"] = deferred
-        state["dropped_count"] = dropped
 
         # Log transition
         self._log_transition(
@@ -179,34 +174,13 @@ class DiscoveryGraphOrchestrator:
             f"Created {len(created)} PM-ideas, deferred {deferred}, dropped {dropped}",
         )
 
-        return state
-
-    def _router_from_preconditions(self, state: DiscoveryRunState) -> str:
-        """Route after precondition check: either proceed to idea_scout or end."""
-        current = state["current_state"]
-
-        # Terminal states (halted) -> END
-        if current in TERMINAL_DISCOVERY_STATES:
-            return END
-
-        # DISCOVERY_RUNNING -> idea_scout
-        if current == DiscoveryState.DISCOVERY_RUNNING:
-            return "idea_scout"
-
-        return END
-
-    def _router_from_state(self, state: DiscoveryRunState) -> str:
-        """Generic router: route based on current_state.
-
-        Terminal states route to END; otherwise, route to next node.
-        """
-        current = state["current_state"]
-
-        # Terminal states -> END
-        if current in TERMINAL_DISCOVERY_STATES:
-            return END
-
-        return END
+        return {
+            **state,
+            "current_state": final_state,
+            "created_pm_idea_numbers": created,
+            "deferred_count": deferred,
+            "dropped_count": dropped,
+        }
 
     def _log_transition(
         self,

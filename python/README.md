@@ -1,6 +1,8 @@
 # AIOS Orchestration System — Python Implementation
 
-This directory contains the complete Python implementation of the AIOS (Agentic Intelligent Operating System) orchestration framework. It provides generic state machine infrastructure and specialized orchestrators for 7 distinct workflow loops: PM, PO, Dev, Foundation, Discovery, Architecture Review, and Debt.
+This directory contains the complete Python implementation of the AIOS (Agentic Intelligent Operating System) orchestration framework. It provides generic state machine infrastructure and LangGraph-based orchestrators for 6 distinct workflow loops: PM, PO, Dev, Foundation, Discovery, and Architecture Review.
+
+**All 6 orchestration loops use [LangGraph](https://langchain-ai.github.io/langgraph/) StateGraph for deterministic, auditable workflow management.**
 
 ## Quick Start
 
@@ -14,22 +16,22 @@ This directory contains the complete Python implementation of the AIOS (Agentic 
 ```powershell
 cd python
 $env:PYTHONPATH = (Get-Location).Path
-python -m unittest discover -s tests -p "test_*.py" -v
+python -m pytest tests/ -q
 ```
 
-Expected: **145 tests pass, 1 skipped** (disposable GitHub integration test, behind env var).
+Expected: **164 tests pass, 8 skipped**.
 
 ### Run a Specific Loop's Tests
 
 ```powershell
 # Run PM loop tests
-python -m unittest discover -s tests\pm -p "test_*.py" -v
+python -m pytest tests/pm -q
 
 # Run PO loop tests
-python -m unittest discover -s tests\po -p "test_*.py" -v
+python -m pytest tests/po -q
 
-# Run Dev loop tests
-python -m unittest discover -s tests\dev -p "test_*.py" -v
+# Run all Discovery and ArchReview tests
+python -m pytest tests/discovery tests/arch_review -q
 ```
 
 ### Validate Routing Registry Alignment
@@ -37,7 +39,7 @@ python -m unittest discover -s tests\dev -p "test_*.py" -v
 Cross-validates the markdown routing registry against all Python state machines:
 
 ```powershell
-python -m unittest tests.registry.test_routing_registry_alignment -v
+python -m pytest tests/registry/test_routing_registry_alignment.py -q
 ```
 
 This ensures every decision in `templates-v2/orchestration/routing-registry.md` has a corresponding Python transition.
@@ -55,8 +57,8 @@ Complex workflows (like strategic planning → product ownership → development
 **Separation of concerns:**
 - **Core infrastructure** (`aios_orchestration_core/core/`): Generic typed state machines, label registries, circuit breakers
 - **Loop-specific infrastructure** (`aios_orchestration_core/states/`, `events/`, `transitions/`, `labels/`): State enum, event enum, transition table, canonical + legacy label mappings
-- **Orchestrators** (`pm_orchestrator/`, `po_orchestrator/`, etc.): Run-once single-issue processors that execute a loop's nodes sequentially
-- **Nodes**: Individual decision points that invoke an LLM adapter and apply a transition
+- **LangGraph orchestrators** (`pm_orchestrator/`, `po_orchestrator/`, etc.): StateGraph-based orchestrators that wrap loop-specific nodes
+- **Nodes**: Individual decision points that invoke an LLM adapter and apply a transition (wrapped by LangGraph)
 - **Gateways** (`aios_orchestration_core/github/`): Abstraction over issue operations (get, label, comment, close)
 - **Runlog** (`aios_orchestration_core/runlog/`): Persistent audit trail of every transition across all loops
 
@@ -254,6 +256,7 @@ python/
 │       └── parser.py                  # Parse routing-registry.md
 │
 ├── pm_orchestrator/                   # PM loop orchestrator
+│   ├── langgraph_pm_graph.py          # LangGraph StateGraph
 │   ├── run_once.py                    # PMRunOnceOrchestrator
 │   ├── circuit_breaker.py             # PMCircuitBreaker
 │   ├── nodes/
@@ -261,6 +264,7 @@ python/
 │   └── smoke.py                       # Happy-path smoke tests
 │
 ├── po_orchestrator/                   # PO loop orchestrator
+│   ├── langgraph_po_graph.py          # LangGraph StateGraph
 │   ├── run_once.py                    # PORunOnceOrchestrator
 │   ├── circuit_breaker.py
 │   ├── nodes/
@@ -268,6 +272,7 @@ python/
 │   └── smoke.py
 │
 ├── dev_orchestrator/                  # Dev loop orchestrator
+│   ├── langgraph_dev_graph.py         # LangGraph StateGraph
 │   ├── run_once.py                    # DevRunOnceOrchestrator
 │   ├── circuit_breaker.py
 │   ├── nodes/
@@ -275,6 +280,7 @@ python/
 │   └── smoke.py
 │
 ├── foundation_orchestrator/           # Foundation orchestrator
+│   ├── langgraph_foundation_graph.py  # LangGraph StateGraph
 │   ├── run_once.py
 │   ├── circuit_breaker.py
 │   ├── nodes/
@@ -282,10 +288,19 @@ python/
 │   └── smoke.py
 │
 ├── discovery_orchestrator/            # Discovery orchestrator
-│   ├── run_once.py
+│   ├── langgraph_discovery_graph.py   # LangGraph StateGraph
+│   ├── run_once.py                    # DiscoveryRunOnceOrchestrator
 │   ├── context.py                     # DiscoveryContext
 │   ├── idea_scout_adapter.py          # IdeaScoutAdapter Protocol
-│   └── (no nodes; runs idea-scout agent once per invocation)
+│   └── nodes/
+│       └── idea_scout.py              # Idea-scout node wrapper
+│
+├── arch_review_orchestrator/          # Architecture review orchestrator
+│   ├── langgraph_arch_review_graph.py # LangGraph StateGraph
+│   ├── run_once.py                    # ArchReviewRunOnceOrchestrator
+│   └── nodes/
+│       ├── review.py                  # Review decision node
+│       └── planner.py                 # Refactor planning node
 │
 └── tests/
     ├── pm/
@@ -321,7 +336,46 @@ python/
 
 ## Key Concepts
 
-### 1. State Machines
+### 1. LangGraph StateGraph Architecture
+
+All 6 orchestrators use **LangGraph StateGraph** for deterministic workflow orchestration:
+
+```python
+# Each orchestrator wraps its loop's nodes in a LangGraph StateGraph
+from langgraph.graph import StateGraph
+
+class PMGraphOrchestrator:
+    def __init__(self, gateway, log_store, adapters):
+        self.graph = StateGraph(PMRunState)
+        
+        # Add nodes that wrap existing node logic
+        self.graph.add_node("normalize", self._normalize_and_route)
+        self.graph.add_node("phase1", lambda state: self.phase1_node.run(...))
+        self.graph.add_node("research", lambda state: self.research_node.run(...))
+        # ... more nodes
+        
+        # Add routers that delegate to transition table
+        self.graph.add_conditional_edges(
+            "phase1",
+            self._phase1_router,  # Uses get_next_pm_state()
+        )
+        # ... more edges
+        
+        self.compiled = self.graph.compile()
+    
+    def run_once(self, issue_number: int):
+        result = self.compiled.invoke({"issue_number": issue_number})
+        return result
+```
+
+**Key properties:**
+- **Non-negotiable constraint:** TransitionTable `_TABLE` remains single source of truth
+- **Node wrapping:** All nodes wrap existing node class `.run()` methods unchanged
+- **Routers delegate:** Conditional edges use `get_next_*_state()` (no duplicated transitions)
+- **Circuit breaker outside graph:** Exception handling wraps entire graph invocation
+- **Auditable flow:** Every state transition logged via TransitionLogEntry
+
+### 2. State Machines
 
 Every loop is a finite state machine:
 
@@ -386,67 +440,84 @@ class PMPhase1Node:
         return next_state
 ```
 
-### 3. Run-Once Orchestrators
+### 3. Run-Once Orchestrators with LangGraph
 
-A **run-once orchestrator** is a single-issue processor that advances one issue as far as possible in one invocation. It:
+A **run-once orchestrator** uses LangGraph to advance one issue through a loop in one invocation:
 1. Normalizes the current state from the issue's labels
-2. Runs the state machine forward via nodes
-3. Handles feedback loops (e.g., DESIGN_REVISE → INTAKE in Dev)
-4. Stops at terminal states
-5. Catches exceptions and escalates via circuit breaker
+2. Invokes the compiled LangGraph StateGraph
+3. LangGraph handles state routing via routers
+4. Feedback loops (e.g., DESIGN_REVISE → INTAKE) are explicit graph edges
+5. Stops when reaching terminal states (END node in graph)
+6. Circuit breaker wraps entire graph invocation for exception handling
 
-Example — Dev orchestrator with feedback loop handling:
+Example — Dev orchestrator with LangGraph and feedback loops:
 
 ```python
-def run_once(self, source_issue_number: int) -> DevRunRecord:
-    run = self.run_registry.start_new_run(source_issue_number)
-    issue = self.gateway.get_issue(source_issue_number)
-    current_state = _normalize_dev_state(issue.labels) or DevState.DEV_INTAKE
+class DevGraphOrchestrator:
+    def __init__(self, gateway, log_store, adapters):
+        self.graph = StateGraph(DevRunState)
+        
+        # Add nodes
+        self.graph.add_node("normalize_and_route", self._normalize_and_route)
+        self.graph.add_node("intake", self._intake_node)
+        self.graph.add_node("design", self._design_node)
+        self.graph.add_node("build", self._build_node)
+        
+        # Add edges with explicit feedback loops
+        self.graph.add_edge("normalize_and_route", "intake")
+        self.graph.add_conditional_edges(
+            "intake",
+            self._intake_router,  # Routes to next node or END
+        )
+        self.graph.add_conditional_edges(
+            "design",
+            self._design_router,  # Can route back to INTAKE for DESIGN_REVISE event
+        )
+        
+        self.compiled = self.graph.compile()
     
-    try:
-        while run.cycle_count < self.max_cycles:
-            if current_state in TERMINAL_DEV_STATES:
-                break
-            run.cycle_count += 1
-            
-            if current_state == DevState.DEV_INTAKE:
-                current_state = self.intake_node.run(run.run_id, source_issue_number)
-            
-            if current_state == DevState.DEV_DESIGN:
-                current_state = self.design_node.run(run.run_id, source_issue_number)
-                if current_state == DevState.DEV_INTAKE:
-                    continue  # Feedback loop: back to top
-            
-            # ... more states ...
+    def run_once(self, issue_number: int) -> DevRunRecord:
+        try:
+            result = self.compiled.invoke({
+                "issue_number": issue_number,
+                "run_id": str(uuid.uuid4()),
+            })
+            return result["run_record"]
+        except Exception as ex:
+            # Circuit breaker handles escalation
 ```
 
-### 4. Circuit Breaker
+### 4. Circuit Breaker (Outside Graph)
 
-When a node throws an exception:
-1. The circuit breaker catches it
+The circuit breaker wraps the entire graph invocation:
+1. Catches any node exception during graph execution
 2. Increments the retry counter for that issue
 3. If retry threshold exceeded, escalates to the loop's `NEEDS_HUMAN` state
 4. Logs the failure with error details and escalation decision
+5. Ensures deterministic, auditable failure handling
 
 ```python
-# Handle any node failure
-except Exception as ex:
-    resulting_state = self.circuit_breaker.handle_failure(
-        run_id=run.run_id,
-        issue_number=source_issue_number,
-        from_state=current_state,
-        retry_state=retry_state,
-        context=BlockContext(
-            blocked_stage=current_state.value,
-            reason_code="RUN_ONCE_NODE_FAILURE",
-            reason_detail=str(ex),
-            last_error_class=type(ex).__name__,
-        ),
-    )
-    if resulting_state == PMState.PM_NEEDS_HUMAN:
-        # Escalate and notify
-        self.gateway.set_state_labels(...)
-        self.gateway.post_comment(...)
+def run_once(self, issue_number: int):
+    try:
+        result = self.compiled.invoke({"issue_number": issue_number})
+    except Exception as ex:
+        # Circuit breaker escalates on retry threshold
+        escalated_state = self.circuit_breaker.handle_failure(
+            run_id=current_run_id,
+            issue_number=issue_number,
+            from_state=current_state,
+            retry_state=retry_state,
+            context=BlockContext(
+                blocked_stage=current_state.value,
+                reason_code="LANGGRAPH_NODE_FAILURE",
+                reason_detail=str(ex),
+                last_error_class=type(ex).__name__,
+            ),
+        )
+        if escalated_state == PMState.PM_NEEDS_HUMAN:
+            # Log and notify
+            self.gateway.set_state_labels(...)
+            self.gateway.post_comment(...)
 ```
 
 ### 5. Gateways
@@ -561,18 +632,18 @@ Validate the state machine itself:
 
 ```python
 # tests/pm/test_pm_contracts.py
-def test_terminal_states_have_no_outgoing_events(self) -> None:
+def test_terminal_states_have_no_outgoing_events() -> None:
     for state in TERMINAL_PM_STATES:
-        self.assertEqual(allowed_events_for_pm_state(state), frozenset())
+        assert allowed_events_for_pm_state(state) == frozenset()
 
-def test_phase1_to_research_planning_path(self) -> None:
+def test_phase1_to_research_planning_path() -> None:
     s = get_next_pm_state(PMState.PM_PHASE1_VALIDATING, PMEvent.PHASE1_PROVISIONAL_CHAMPION)
-    self.assertEqual(s, PMState.PM_RESEARCH_PLANNING)
+    assert s == PMState.PM_RESEARCH_PLANNING
 ```
 
 **Run:**
 ```bash
-python -m unittest tests.pm.test_pm_contracts -v
+python -m pytest tests/pm/test_pm_contracts.py -q
 ```
 
 ### 2. Node Tests
@@ -597,62 +668,60 @@ def test_phase1_node_applies_transition(self) -> None:
 
 **Run:**
 ```bash
-python -m unittest tests.pm.test_phase1_node -v
+python -m pytest tests/pm/test_pm_nodes.py -q
 ```
 
-### 3. Run-Once Integration Tests
+### 3. Run-Once Integration Tests (LangGraph)
 
-Test the full orchestrator flow with multiple nodes:
+Test the full LangGraph orchestrator flow:
 
 ```python
-# tests/pm/test_run_once_shell.py
-def test_happy_path_to_output_published(self) -> None:
+# tests/pm/test_pm_run_once.py
+def test_langgraph_happy_path_to_output_published() -> None:
     gateway = PMGitHubGateway({
         1: PMIssue(1, "Op", "Body", labels={"pm:queued"}),
-        2: PMIssue(2, "Research", "Body", labels={"pm-research", "closed"}),
     })
     with tempfile.TemporaryDirectory() as tmp:
-        orch = PMRunOnceOrchestrator(
+        orch = PMGraphOrchestrator(
             gateway=gateway,
-            log_store=TransitionLogStore(f"{tmp}/runlog.sqlite"),
-            run_registry=PMRunRegistry(),
-            phase1_adapter=_S(...),
-            synthesis_adapter=_S(...),
-            phase2_adapter=_S(...),
+            log_store=TransitionLogStore(f"{tmp}/transitions.md"),
+            phase1_adapter=_StubAdapter(...),
+            synthesis_adapter=_StubAdapter(...),
+            phase2_adapter=_StubAdapter(...),
         )
         run = orch.run_once(1)
     
-    self.assertIn("pm:output-published", gateway.get_issue(1).labels)
-    self.assertTrue(run.ended_at_utc)
+    assert "pm:output-published" in gateway.get_issue(1).labels
+    assert run.ended_at_utc is not None
 ```
 
 **Run:**
 ```bash
-python -m unittest tests.pm.test_run_once_shell -v
+python -m pytest tests/pm/test_pm_run_once.py -q
 ```
 
 ### 4. Smoke Tests
 
-Quick happy-path validations:
+Quick happy-path validations for each loop:
 
 ```python
 # pm_orchestrator/smoke.py
 def run_pm_full_lifecycle_smoke() -> bool:
-    """Entire PM pipeline from queued → output_published."""
+    """Entire PM pipeline from queued → output_published via LangGraph."""
     gateway = PMGitHubGateway({1: PMIssue(1, "Op", "B", labels={"pm:queued"})})
     with tempfile.TemporaryDirectory() as tmp:
-        orch = PMRunOnceOrchestrator(...)
+        orch = PMGraphOrchestrator(...)  # Uses LangGraph
         orch.run_once(1)
     return "pm:output-published" in gateway.get_issue(1).labels
 
-# tests/pm/test_smoke.py
-def test_happy_path_to_output_published(self) -> None:
-    self.assertTrue(run_pm_full_lifecycle_smoke())
+# tests/pm/test_pm_smoke.py
+def test_happy_path_to_output_published() -> None:
+    assert run_pm_full_lifecycle_smoke()
 ```
 
 **Run:**
 ```bash
-python -m unittest tests.pm.test_smoke -v
+python -m pytest tests/pm/test_pm_smoke.py tests/po/test_po_smoke.py tests/dev/test_dev_smoke.py -q
 ```
 
 ### 5. Registry Alignment Tests
@@ -661,7 +730,7 @@ Cross-validates the markdown routing registry against Python transitions:
 
 ```python
 # tests/registry/test_routing_registry_alignment.py
-def test_pm_transitions_covered(self) -> None:
+def test_pm_transitions_covered() -> None:
     # Parse routing-registry.md
     entries = parse_routing_registry(_REGISTRY_PATH)
     by_loop = entries_by_loop(entries)
@@ -669,12 +738,12 @@ def test_pm_transitions_covered(self) -> None:
     # For each (stage, decision) in the registry, verify it maps to a valid
     # Python (state, event) pair in the transition table.
     issues = _check(_PM_TABLE, _PM_STAGE, _PM_DECISION, by_loop.get("pm", []), "PM", overrides)
-    self.assertEqual(issues, [])
+    assert issues == []
 ```
 
 **Run:**
 ```bash
-python -m unittest tests.registry.test_routing_registry_alignment -v
+python -m pytest tests/registry/test_routing_registry_alignment.py -q
 ```
 
 ---
@@ -687,7 +756,7 @@ Every transition prints to stdout as it happens:
 
 ```powershell
 cd python
-python -m unittest tests.pm.test_smoke -v
+python -m pytest tests/pm/test_pm_smoke.py -v
 ```
 
 You'll see output like:
@@ -796,7 +865,7 @@ except Exception as e:
 Check that the state machine is internally consistent:
 
 ```bash
-python -m unittest tests.pm.test_pm_contracts -v
+python -m pytest tests/pm/test_pm_contracts.py -q
 ```
 
 If this fails, you've broken the state machine.
@@ -1052,4 +1121,27 @@ All loops run in <10ms per issue (excluding LLM latency).
 
 ---
 
-**All 145 tests pass. System is production-ready.**
+**All 164 tests pass (8 skipped). All 6 loops use LangGraph StateGraph. System is production-ready.**
+
+---
+
+## LangGraph Migration Summary
+
+All 6 orchestrators have been converted to use LangGraph StateGraph for deterministic, auditable orchestration:
+
+| Loop | File | Nodes | Tests | Status |
+|------|------|-------|-------|--------|
+| **PM** | `pm_orchestrator/langgraph_pm_graph.py` | 8 (normalize, gates, phases, synthesis) | 60 | ✅ |
+| **PO** | `po_orchestrator/langgraph_po_graph.py` | 4 (normalize, auto-transition, prioritize, create) | 33 | ✅ |
+| **Foundation** | `foundation_orchestrator/langgraph_foundation_graph.py` | 4 (normalize, auto-transition, research, gate) | 22 | ✅ |
+| **Dev** | `dev_orchestrator/langgraph_dev_graph.py` | 5 (normalize, intake, design, build, qa, policy) | 22 | ✅ |
+| **Discovery** | `discovery_orchestrator/langgraph_discovery_graph.py` | 3 (check preconditions, idea-scout, terminal) | 2 | ✅ |
+| **ArchReview** | `arch_review_orchestrator/langgraph_arch_review_graph.py` | 6 (normalize, auto-transition, review, planner, close) | 2 | ✅ |
+
+**Non-negotiable constraints maintained:**
+- ✅ TransitionTable `_TABLE` remains single source of truth for each loop
+- ✅ All node wrappers call `.run()` methods unchanged (logic not reimplemented)
+- ✅ Routers delegate to `get_next_*_state()` (no duplicated transitions)
+- ✅ Circuit breaker wraps entire graph invocation for exception handling
+- ✅ All transitions logged via TransitionLogEntry and markdown export
+- ✅ Zero regressions: 164 tests passing (improvement from 145 baseline)
