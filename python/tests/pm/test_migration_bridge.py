@@ -43,9 +43,11 @@ class Phase9BridgeTests(unittest.TestCase):
         )
         controller.record_run(had_conflict=False)
         self.assertTrue(controller.dual_write_legacy_labels)
-        controller.record_run(had_conflict=False)
+        with self.assertLogs("pm_orchestrator.migration.bridge", level="WARNING") as logs:
+            controller.record_run(had_conflict=False)
         self.assertFalse(controller.dual_write_legacy_labels)
         self.assertTrue(triggered["value"])
+        self.assertTrue(any("auto-cutover" in line for line in logs.output))
 
 
 if __name__ == "__main__":

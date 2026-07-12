@@ -147,7 +147,11 @@ class PMRunOnceOrchestrator:
 
         self.bridge_controller.record_run(had_conflict=had_conflict)
         if not self.bridge_controller.dual_write_legacy_labels and not self._bridge_exit_notified:
-            self.gateway.post_comment(source_issue_number, "PM migration bridge exited: legacy dual-write disabled after clean-run threshold")
+            self.gateway.post_comment(
+                source_issue_number,
+                "PM bridge auto-cutover: legacy dual-write disabled after clean-run threshold "
+                f"({self.bridge_controller.counter.required_consecutive_clean_runs} consecutive clean runs).",
+            )
             self._bridge_exit_notified = True
 
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()

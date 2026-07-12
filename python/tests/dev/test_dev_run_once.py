@@ -19,6 +19,21 @@ class _A:
         return type("R", (), {"payload": self.payload, "model": "t"})()
 
 
+class _CountingDevGateway(DevGitHubGateway):
+    def __init__(self, issues):
+        super().__init__(issues)
+        self.set_state_labels_calls = 0
+        self.post_comment_calls = 0
+
+    def set_state_labels(self, issue_number, labels_to_remove, labels_to_add):
+        self.set_state_labels_calls += 1
+        return super().set_state_labels(issue_number, labels_to_remove, labels_to_add)
+
+    def post_comment(self, issue_number, body):
+        self.post_comment_calls += 1
+        return super().post_comment(issue_number, body)
+
+
 def _orch(gateway, tmp, *, intake, design, build, qa, policy, **kw):
     return DevRunOnceOrchestrator(
         gateway=gateway,
@@ -123,6 +138,20 @@ class DevRunOnceTests(unittest.TestCase):
             orch.run_once(1)
             comment_count_2 = len(gw.get_issue(1).comments)
         self.assertEqual(comment_count_1, comment_count_2)
+
+    def test_mid_state_qa_rerun_is_idempotent_after_terminal(self) -> None:
+        gw = _CountingDevGateway({1: DevIssue(1, "F", "b", labels={"dev:qa"})})
+        with tempfile.TemporaryDirectory() as tmp:
+            orch = _orch(gw, tmp, intake=_OK, design=_OK, build=_COMPLETE, qa=_PASSED, policy=_OK)
+            orch.run_once(1)
+            first_comment_calls = gw.post_comment_calls
+            first_label_calls = gw.set_state_labels_calls
+
+            orch.run_once(1)
+
+        self.assertIn("dev:released", gw.get_issue(1).labels)
+        self.assertEqual(gw.post_comment_calls, first_comment_calls)
+        self.assertEqual(gw.set_state_labels_calls, first_label_calls)
 
 
 if __name__ == "__main__":

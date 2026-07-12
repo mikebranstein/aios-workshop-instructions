@@ -1,8 +1,12 @@
+import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional
 
 from aios_orchestration_core.github.pm_gateway import PMGitHubGateway
 from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE, PM_LEGACY_LABEL_BY_STATE, normalize_pm_state_from_labels
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -34,6 +38,10 @@ class BridgeModeController:
 
         if self.dual_write_legacy_labels and (not was_ready) and is_ready:
             self.dual_write_legacy_labels = False
+            logger.warning(
+                "PM bridge auto-cutover triggered: disabled legacy dual-write after %s clean runs",
+                self.counter.required_consecutive_clean_runs,
+            )
             if self.on_bridge_exit is not None:
                 self.on_bridge_exit()
 

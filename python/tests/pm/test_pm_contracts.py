@@ -13,6 +13,19 @@ from aios_orchestration_core.transitions.pm import PMTransitionError, allowed_ev
 
 
 class PMContractsPhase1Tests(unittest.TestCase):
+    def test_strategic_opportunity_schema_has_required_audit_and_handoff_fields(self) -> None:
+        required_fields = {
+            "trace",
+            "handoff_contract_version",
+            "decision_rationale",
+            "evidence_refs",
+            "research_item_ids",
+        }
+        self.assertTrue(required_fields.issubset(set(StrategicOpportunityArtifact.__annotations__.keys())))
+
+        trace_required_fields = {"run_id", "model", "prompt_version"}
+        self.assertTrue(trace_required_fields.issubset(set(TraceMetadata.__annotations__.keys())))
+
     def test_legacy_label_normalizes_to_typed_state(self) -> None:
         normalized = normalize_pm_state_from_labels(["pm-opportunity"])
         self.assertEqual(normalized.state, PMState.PM_OUTPUT_PUBLISHED)
