@@ -27,6 +27,7 @@ class FoundationGateway(BaseGateway, Protocol):
     def get_issue(self, issue_number: int) -> FoundationIssue: ...
     def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[FoundationIssue]: ...
     def get_artifact_state(self) -> FoundationArtifactState: ...
+    def create_foundation_issue(self, title: str, body: str) -> int: ...
 
 
 class FoundationGitHubGateway:
@@ -36,6 +37,7 @@ class FoundationGitHubGateway:
         artifact_state: Optional[FoundationArtifactState] = None,
     ) -> None:
         self.issues: Dict[int, FoundationIssue] = issues or {}
+        self._next = max(self.issues.keys(), default=0) + 100
         self._artifact_state = artifact_state or FoundationArtifactState()
 
     def get_issue(self, issue_number: int) -> FoundationIssue:
@@ -66,3 +68,13 @@ class FoundationGitHubGateway:
 
     def get_artifact_state(self) -> FoundationArtifactState:
         return self._artifact_state
+
+    def create_foundation_issue(self, title: str, body: str) -> int:
+        self._next += 1
+        self.issues[self._next] = FoundationIssue(
+            number=self._next,
+            title=title,
+            body=body,
+            labels={"foundation:needed"},
+        )
+        return self._next

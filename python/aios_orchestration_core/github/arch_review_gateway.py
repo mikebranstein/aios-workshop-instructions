@@ -17,6 +17,7 @@ class ArchReviewIssue:
 class ArchReviewGateway(BaseGateway, Protocol):
     def get_issue(self, issue_number: int) -> ArchReviewIssue: ...
     def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[ArchReviewIssue]: ...
+    def create_arch_review_issue(self, title: str, body: str) -> int: ...
     def create_refactor_request(self, title: str, body: str, source_review_number: int) -> int: ...
     def upsert_debt_issue(self, title: str, body: str) -> int: ...
 
@@ -64,4 +65,14 @@ class ArchReviewGitHubGateway:
                 return issue.number
         self._next += 1
         self.issues[self._next] = ArchReviewIssue(self._next, title, body, labels={"architecture-debt", "debt:new"})
+        return self._next
+
+    def create_arch_review_issue(self, title: str, body: str) -> int:
+        self._next += 1
+        self.issues[self._next] = ArchReviewIssue(
+            number=self._next,
+            title=title,
+            body=body,
+            labels={"arch:review-pending"},
+        )
         return self._next

@@ -19,7 +19,8 @@ $env:PYTHONPATH = (Get-Location).Path
 python -m pytest tests/ -q
 ```
 
-Expected: **163 passed, 10 skipped**.
+Expected (default run): **200 passed, 3 skipped, 16 subtests passed**.  
+Optional live disposable integration run (`RUN_GITHUB_DISPOSABLE_TESTS=1`): adds **1 passing test** (to **201 passed**).
 
 ### Run a Specific Loop's Tests
 
@@ -485,117 +486,227 @@ gateway.set_state_labels(
 
 ```
 python/
-├── README.md (you are here)
-├── .gitignore
-│
-├── aios_orchestration_core/          # Shared infrastructure
-│   ├── core/
-│   │   ├── transition_table.py        # Generic TransitionTable[S, E]
-│   │   ├── label_registry.py          # Label normalization (canonical + legacy)
-│   │   ├── gateway.py                 # BaseGateway Protocol
-│   │   └── circuit_breaker.py         # Generic retry→escalation
-│   ├── states/                        # State enums
-│   │   ├── pm.py, po.py, dev.py, foundation.py, discovery.py, arch_review.py
-│   ├── events/                        # Event enums
-│   │   ├── pm.py, po.py, dev.py, foundation.py, discovery.py, arch_review.py
-│   ├── transitions/                   # Transition tables + accessors
-│   │   ├── pm.py, po.py, dev.py, foundation.py, discovery.py, arch_review.py
-│   ├── labels/                        # Canonical + legacy label mappings
-│   │   ├── pm_labels.py, po_labels.py, dev_labels.py, etc.
-│   ├── github/                        # Gateway implementations
-│   │   ├── pm_gateway.py, po_gateway.py, dev_gateway.py, etc.
-│   ├── artifacts/                     # Typed artifact models
-│   │   ├── feature_request.py, pm_opportunity.py, etc.
-│   ├── llm/
-│   │   ├── base.py                    # JudgmentLLMAdapter Protocol
-│   │   ├── copilot_sdk_adapter.py     # CopilotSDKAdapter (forced tool calls)
-│   │   ├── adapter_factory.py         # Factory for adapter selection + fallback
-│   │   ├── task_tools.py              # Tool specs for all loops
-│   │   ├── schema_validation.py       # JSON schema validation
-│   │   └── exceptions.py              # LLM-specific exceptions
-│   ├── policies/
-│   │   └── retry.py                   # RetryPolicy + RetryState
-│   ├── runlog/
-│   │   ├── models.py                  # TransitionLogEntry
-│   │   └── in_memory_store.py         # In-memory audit trail + markdown export
-│   └── registry/
-│       └── parser.py                  # Parse routing-registry.md
-│
-├── pm_orchestrator/                   # PM loop orchestrator
-│   ├── langgraph_pm_graph.py          # LangGraph StateGraph
-│   ├── run_once.py                    # PMRunOnceOrchestrator
-│   ├── circuit_breaker.py             # PMCircuitBreaker
-│   ├── nodes/
-│   │   ├── phase1.py, synthesis.py, phase2.py, etc.
-│   └── smoke.py                       # Happy-path smoke tests
-│
-├── po_orchestrator/                   # PO loop orchestrator
-│   ├── langgraph_po_graph.py          # LangGraph StateGraph
-│   ├── run_once.py                    # PORunOnceOrchestrator
-│   ├── circuit_breaker.py
-│   ├── nodes/
-│   │   ├── prioritize.py, create_features.py
-│   └── smoke.py
-│
-├── dev_orchestrator/                  # Dev loop orchestrator
-│   ├── langgraph_dev_graph.py         # LangGraph StateGraph
-│   ├── run_once.py                    # DevRunOnceOrchestrator
-│   ├── circuit_breaker.py
-│   ├── nodes/
-│   │   ├── _stage_helper.py, intake.py, design.py, build.py, qa.py, policy.py
-│   └── smoke.py
-│
-├── foundation_orchestrator/           # Foundation orchestrator
-│   ├── langgraph_foundation_graph.py  # LangGraph StateGraph
-│   ├── run_once.py
-│   ├── circuit_breaker.py
-│   ├── nodes/
-│   │   ├── research.py, gate.py
-│   └── smoke.py
-│
-├── discovery_orchestrator/            # Discovery orchestrator
-│   ├── langgraph_discovery_graph.py   # LangGraph StateGraph
-│   ├── run_once.py                    # DiscoveryRunOnceOrchestrator
-│   ├── context.py                     # DiscoveryContext
-│   ├── idea_scout_adapter.py          # IdeaScoutAdapter Protocol
-│   └── nodes/
-│       └── idea_scout.py              # Idea-scout node wrapper
-│
-├── arch_review_orchestrator/          # Architecture review orchestrator
-│   ├── langgraph_arch_review_graph.py # LangGraph StateGraph
-│   ├── run_once.py                    # ArchReviewRunOnceOrchestrator
-│   └── nodes/
-│       ├── review.py                  # Review decision node
-│       └── planner.py                 # Refactor planning node
-│
-└── tests/
-    ├── pm/
-    │   ├── test_pm_contracts.py       # State machine validation
-    │   ├── test_phase1_node.py, test_phase2_publish.py, etc.
-    │   ├── test_run_once_shell.py     # Integration: run_once flow
-    │   ├── test_gateway_and_runlog.py # Runlog persistence
-    │   └── test_smoke.py              # Happy-path smoke tests
-    ├── po/
-    │   ├── test_po_contracts.py
-    │   ├── test_po_nodes.py
-    │   ├── test_po_run_once.py
-    │   └── test_po_smoke.py
-    ├── dev/
-    │   ├── test_dev_contracts.py
-    │   ├── test_dev_nodes.py
-    │   ├── test_dev_run_once.py
-    │   └── test_dev_smoke.py
-    ├── foundation/
-    │   ├── test_foundation_contracts.py
-    │   ├── test_foundation_run_once.py
-    │   └── test_foundation_smoke.py
-    ├── discovery/
-    │   └── test_discovery_run_once.py
-    ├── arch_review/
-    │   ├── test_arch_review_contracts.py
-    │   └── test_arch_review_run_once.py
-    └── registry/
-        └── test_routing_registry_alignment.py
++-- aios_orchestration_core/
+|   +-- artifacts/
+|   |   +-- __init__.py
+|   |   +-- feature_request.py
+|   |   +-- pm_decisions.py
+|   |   \-- strategic_opportunity.py
+|   +-- core/
+|   |   +-- __init__.py
+|   |   +-- circuit_breaker.py
+|   |   +-- gateway.py
+|   |   +-- label_registry.py
+|   |   \-- transition_table.py
+|   +-- events/
+|   |   +-- __init__.py
+|   |   +-- arch_review.py
+|   |   +-- dev.py
+|   |   +-- discovery.py
+|   |   +-- foundation.py
+|   |   +-- pm.py
+|   |   \-- po.py
+|   +-- github/
+|   |   +-- __init__.py
+|   |   +-- arch_review_gateway.py
+|   |   +-- arch_review_gateway_api.py
+|   |   +-- dev_gateway.py
+|   |   +-- dev_gateway_api.py
+|   |   +-- discovery_gateway_api.py
+|   |   +-- foundation_gateway.py
+|   |   +-- foundation_gateway_api.py
+|   |   +-- pm_gateway.py
+|   |   +-- pm_gateway_api.py
+|   |   +-- po_gateway.py
+|   |   \-- po_gateway_api.py
+|   +-- labels/
+|   |   +-- __init__.py
+|   |   +-- arch_review_labels.py
+|   |   +-- dev_labels.py
+|   |   +-- discovery_labels.py
+|   |   +-- foundation_labels.py
+|   |   +-- pm_labels.py
+|   |   \-- po_labels.py
+|   +-- llm/
+|   |   +-- __init__.py
+|   |   +-- adapter_factory.py
+|   |   +-- base.py
+|   |   +-- copilot_runtime_client.py
+|   |   +-- copilot_sdk_adapter.py
+|   |   +-- exceptions.py
+|   |   +-- schema_validation.py
+|   |   \-- task_tools.py
+|   +-- policies/
+|   |   +-- __init__.py
+|   |   \-- retry.py
+|   +-- registry/
+|   |   +-- __init__.py
+|   |   \-- parser.py
+|   +-- runlog/
+|   |   +-- __init__.py
+|   |   +-- in_memory_store.py
+|   |   \-- models.py
+|   +-- states/
+|   |   +-- __init__.py
+|   |   +-- arch_review.py
+|   |   +-- dev.py
+|   |   +-- discovery.py
+|   |   +-- foundation.py
+|   |   +-- pm.py
+|   |   \-- po.py
+|   +-- transitions/
+|   |   +-- __init__.py
+|   |   +-- arch_review.py
+|   |   +-- dev.py
+|   |   +-- discovery.py
+|   |   +-- foundation.py
+|   |   +-- pm.py
+|   |   \-- po.py
+|   +-- __init__.py
+|   \-- repo_context.py
++-- arch_review_orchestrator/
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   +-- planner.py
+|   |   \-- review.py
+|   +-- __init__.py
+|   +-- circuit_breaker.py
+|   +-- langgraph_arch_review_graph.py
+|   \-- run_once.py
++-- dev_orchestrator/
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   +-- _stage_helper.py
+|   |   +-- build.py
+|   |   +-- design.py
+|   |   +-- intake.py
+|   |   +-- policy.py
+|   |   \-- qa.py
+|   +-- __init__.py
+|   +-- circuit_breaker.py
+|   +-- continuous.py
+|   +-- langgraph_dev_graph.py
+|   +-- run_once.py
+|   \-- smoke.py
++-- discovery_orchestrator/
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   \-- idea_scout.py
+|   +-- __init__.py
+|   +-- context.py
+|   +-- idea_scout_adapter.py
+|   +-- langgraph_discovery_graph.py
+|   \-- run_once.py
++-- foundation_orchestrator/
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   +-- gate.py
+|   |   \-- research.py
+|   +-- __init__.py
+|   +-- circuit_breaker.py
+|   +-- langgraph_foundation_graph.py
+|   +-- run_once.py
+|   \-- smoke.py
++-- pm_orchestrator/
+|   +-- migration/
+|   |   +-- __init__.py
+|   |   \-- bridge.py
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   +-- phase1.py
+|   |   +-- phase2_decision.py
+|   |   +-- research_closure_gate.py
+|   |   +-- research_planning.py
+|   |   \-- synthesis.py
+|   +-- PHASE11_RUNBOOK.md
+|   +-- __init__.py
+|   +-- circuit_breaker.py
+|   +-- continuous.py
+|   +-- langgraph_pm_graph.py
+|   +-- run_once.py
+|   \-- smoke.py
++-- po_orchestrator/
+|   +-- nodes/
+|   |   +-- __init__.py
+|   |   +-- create_features.py
+|   |   \-- prioritize.py
+|   +-- __init__.py
+|   +-- circuit_breaker.py
+|   +-- continuous.py
+|   +-- langgraph_po_graph.py
+|   +-- run_once.py
+|   \-- smoke.py
++-- scripts/
+|   +-- copilot_task_conformance.py
+|   \-- live_copilot_sdk_tool_probe.py
++-- tests/
+|   +-- arch_review/
+|   |   +-- __init__.py
+|   |   +-- test_arch_review_contracts.py
+|   |   \-- test_arch_review_run_once.py
+|   +-- dev/
+|   |   +-- __init__.py
+|   |   +-- test_dev_contracts.py
+|   |   +-- test_dev_nodes.py
+|   |   +-- test_dev_run_once.py
+|   |   \-- test_dev_smoke.py
+|   +-- discovery/
+|   |   +-- __init__.py
+|   |   \-- test_discovery_run_once.py
+|   +-- foundation/
+|   |   +-- __init__.py
+|   |   +-- test_foundation_contracts.py
+|   |   +-- test_foundation_run_once.py
+|   |   \-- test_foundation_smoke.py
+|   +-- llm/
+|   |   \-- test_copilot_sdk_adapter_cross_task.py
+|   +-- pm/
+|   |   +-- __init__.py
+|   |   +-- test_circuit_breaker.py
+|   |   +-- test_forced_tool_adapter.py
+|   |   +-- test_gateway_and_runlog.py
+|   |   +-- test_github_api_gateway_disposable.py
+|   |   +-- test_langgraph_conditional_edges.py
+|   |   +-- test_langgraph_full_graph_invoke.py
+|   |   +-- test_langgraph_node_wrappers.py
+|   |   +-- test_langgraph_state_schema.py
+|   |   +-- test_migration_bridge.py
+|   |   +-- test_phase1_node.py
+|   |   +-- test_phase2_publish.py
+|   |   +-- test_pm_contracts.py
+|   |   +-- test_research_floor_gate.py
+|   |   +-- test_run_once_shell.py
+|   |   +-- test_smoke.py
+|   |   \-- test_synthesis_gate.py
+|   +-- po/
+|   |   +-- __init__.py
+|   |   +-- test_po_contracts.py
+|   |   +-- test_po_gateway.py
+|   |   +-- test_po_nodes.py
+|   |   +-- test_po_run_once.py
+|   |   \-- test_po_smoke.py
+|   +-- registry/
+|   |   +-- __init__.py
+|   |   \-- test_routing_registry_alignment.py
+|   +-- __init__.py
+|   +-- test_adapter_factory_fail_closed.py
+|   +-- test_adapter_source_contract.py
+|   +-- test_github_api_foundation_arch_discovery_gateways.py
+|   +-- test_github_api_po_dev_gateways.py
+|   +-- test_loop_exception_escalation.py
+|   \-- test_repo_context_gateways.py
++-- .gitignore
++-- README.md
++-- RUNNER_GUIDE.md
++-- arch_review_runner.py
++-- dev_runner.py
++-- discovery_runner.py
++-- extract_discovery_archreview.py
++-- extract_files.py
++-- foundation_runner.py
++-- pm_runner.py
++-- po_runner.py
+\-- verify_registry_alignment.py
 ```
 
 ---
@@ -1360,7 +1471,7 @@ All loops run in <10ms per issue (excluding LLM latency).
 
 ---
 
-**All 170 tests pass, 3 skipped. All 6 loops use LangGraph StateGraph.**
+**Default suite baseline: 200 passed, 3 skipped, 16 subtests passed. All 6 loops use LangGraph StateGraph.**
 
 ---
 
@@ -1383,4 +1494,4 @@ All 6 orchestrators have been converted to use LangGraph StateGraph for determin
 - ✅ Routers delegate to `get_next_*_state()` (no duplicated transitions)
 - ✅ Circuit breaker wraps entire graph invocation for exception handling
 - ✅ All transitions logged via TransitionLogEntry and markdown export
-- ✅ Test suite: 170 passed, 3 skipped (all loops validated)
+- ✅ Test suite: 200 passed, 3 skipped, 16 subtests passed (default run)

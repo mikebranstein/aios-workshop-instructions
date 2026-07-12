@@ -16,8 +16,11 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+from aios_orchestration_core.github.arch_review_gateway_api import GitHubApiArchReviewGateway
 from aios_orchestration_core.github.dev_gateway import DevGateway
 from aios_orchestration_core.github.dev_gateway_api import GitHubApiDevGateway
+from aios_orchestration_core.github.discovery_gateway_api import GitHubApiDiscoveryGateway
+from aios_orchestration_core.github.foundation_gateway_api import GitHubApiFoundationGateway
 from aios_orchestration_core.github.pm_gateway import PMGateway
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig, GitHubApiPMGateway
 from aios_orchestration_core.github.po_gateway import POGateway
@@ -77,13 +80,27 @@ class RepoContext:
         )
 
     def create_foundation_gateway(self):
+        if self.is_github:
+            return GitHubApiFoundationGateway(GitHubApiConfig(repo=self.repo_ref))
         raise NotImplementedError(
-            "Foundation GitHub API gateway is not implemented in RepoContext yet."
+            f"Local repo support not yet implemented for Foundation gateway. "
+            f"Please use GitHub format 'owner/repo' for now."
         )
 
     def create_arch_review_gateway(self):
+        if self.is_github:
+            return GitHubApiArchReviewGateway(GitHubApiConfig(repo=self.repo_ref))
         raise NotImplementedError(
-            "ArchReview GitHub API gateway is not implemented in RepoContext yet."
+            f"Local repo support not yet implemented for ArchReview gateway. "
+            f"Please use GitHub format 'owner/repo' for now."
+        )
+
+    def create_discovery_gateway(self):
+        if self.is_github:
+            return GitHubApiDiscoveryGateway(GitHubApiConfig(repo=self.repo_ref))
+        raise NotImplementedError(
+            f"Local repo support not yet implemented for Discovery gateway. "
+            f"Please use GitHub format 'owner/repo' for now."
         )
     
     def __str__(self) -> str:

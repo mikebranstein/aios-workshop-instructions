@@ -2,7 +2,7 @@
 """
 Discovery Orchestrator Runner — Generate strategic opportunities from focus areas.
 
-Reads focus.md from repo, invokes idea-scout to identify market opportunities,
+Reads docs/discovery-focus.md from repo, invokes idea-scout to identify market opportunities,
 and creates pm-idea issues for strategic evaluation. Pure generator—no input issues.
 
 Usage:
@@ -20,7 +20,7 @@ Environment Variables:
 
 Exit Codes:
     0   Success
-    1   Invalid arguments or focus.md not found
+    1   Invalid arguments or docs/discovery-focus.md not found
     2   GitHub authentication failed
     3   Orchestration failed
 """
@@ -31,32 +31,91 @@ import os
 import sys
 from pathlib import Path
 
-from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.adapter_factory import create_adapter
+from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from discovery_orchestrator.idea_scout_adapter import (
+    IdeaCandidate,
+    IdeaScoutAdapter,
+    IdeaScoutResult,
+)
 from discovery_orchestrator.run_once import DiscoveryRunOnceOrchestrator, DiscoveryRunRegistry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-class StubIdeaScoutAdapter(JudgmentLLMAdapter):
-    """Stub idea-scout adapter for demonstration."""
+class StubLLMAdapter(JudgmentLLMAdapter):
+    """Stub LLM adapter for discovery decisions."""
 
     def __init__(self, model: str = "gpt-4"):
         self.model = model
 
+    @property
+    def adapter_source(self) -> str:
+        return "stub"
+
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
-        stubs = {
-            "DISCOVERY_IDEA_SCOUT": {
-                "opportunities": [
-                    {"title": "Stub opportunity 1", "description": "generated opportunity"}
-                ]
-            }
-        }
-        return type("Result", (), {"payload": stubs.get(task_type, {}), "model": self.model})()
+        return type(
+            "Result",
+            (),
+            {
+                "payload": {
+                    "candidates": [
+                        {
+                            "title": "Stub opportunity 1",
+                            "body": "generated opportunity",
+                            "decision": "CREATE_PM_IDEA",
+                        }
+                    ]
+                },
+                "model": self.model,
+            },
+        )()
+
+
+class DiscoveryIdeaScoutAdapter(IdeaScoutAdapter):
+    """Adapter bridge from JudgmentLLMAdapter to Discovery IdeaScoutAdapter."""
+
+    def __init__(self, llm_adapter: JudgmentLLMAdapter):
+        self._llm_adapter = llm_adapter
+
+    @property
+    def adapter_source(self) -> str:
+        return self._llm_adapter.adapter_source
+
+    def run(self, context_summary: str, creation_cap: int) -> IdeaScoutResult:
+        result = self._llm_adapter.invoke_json(
+            "discovery_idea_scout",
+            {"context_summary": context_summary, "creation_cap": creation_cap},
+        )
+        payload = result.payload or {}
+        raw_candidates = payload.get("candidates")
+        if raw_candidates is None:
+            raw_candidates = [
+                {
+                    "title": item.get("title", "Untitled opportunity"),
+                    "body": item.get("description", ""),
+                    "decision": "CREATE_PM_IDEA",
+                }
+                for item in payload.get("opportunities", [])
+            ]
+
+        candidates = []
+        for item in raw_candidates[:creation_cap]:
+            decision = str(item.get("decision", "CREATE_PM_IDEA")).upper()
+            if decision not in {"CREATE_PM_IDEA", "DEFER", "DROP"}:
+                decision = "DROP"
+            candidates.append(
+                IdeaCandidate(
+                    title=str(item.get("title", "Untitled opportunity")),
+                    body=str(item.get("body", item.get("description", ""))),
+                    decision=decision,
+                )
+            )
+        return IdeaScoutResult(candidates=candidates)
 
 
 def main():
@@ -118,53 +177,48 @@ def main():
         print(f"  Repo: {context}")
         print(f"  Mode: {'restart (--force)' if args.force else 'normal run'}")
         print(f"  Log directory: {args.log_dir}")
-        print(f"  Note: Reads focus.md from repo root to guide opportunity generation")
+        print(f"  Note: Reads docs/discovery-focus.md from repo root to guide opportunity generation")
         return 0
 
     Path(args.log_dir).mkdir(parents=True, exist_ok=True)
 
     try:
-        # Note: Discovery doesn't have a specific gateway in RepoContext yet
-        # For now, we'd use a generic gateway or extend RepoContext
-        # Using GitHub API gateway as placeholder
-        gateway = context.create_pm_gateway()  # Placeholder—should be discovery-specific
+        gateway = context.create_discovery_gateway()
     except Exception as e:
         print(f"Error creating gateway: {e}", file=sys.stderr)
         return 2
 
     try:
         logger.info(f"Discovery Orchestrator: {context}")
-        logger.info("Checking for focus.md at repo root...")
-        # In a real implementation, validate focus.md exists
+        logger.info("Loading discovery context from target repository...")
+        discovery_context = gateway.get_context()
 
         # Check if there's a prior discovery run to skip (unless --force)
         run_registry = DiscoveryRunRegistry()
-        
-        if not args.force:
-            logger.info("Checking for prior discovery run in this session...")
-            # In a real implementation, check if discovery has already run
-            # For now, always run
-        else:
+        if args.force:
             logger.info("--force specified. Re-running discovery from scratch.")
 
         # Create orchestrator
         log_db = f"{args.log_dir}/discovery_run.sqlite"
-        adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubIdeaScoutAdapter)
+        adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+        idea_scout_adapter = DiscoveryIdeaScoutAdapter(adapter)
         orchestrator = DiscoveryRunOnceOrchestrator(
-            gateway=gateway,
+            context=discovery_context,
+            idea_scout=idea_scout_adapter,
+            pm_idea_store=gateway,
             log_store=TransitionLogStore(log_db),
             run_registry=run_registry,
-            idea_scout_adapter=adapter,
             retry_policy=RetryPolicy(max_attempts=3),
         )
 
         logger.info("Generating strategic opportunities from focus areas...")
-        result = orchestrator.run_once()
+        result = orchestrator.run()
 
-        opportunities_created = len(result.created_pm_idea_numbers) if hasattr(result, 'created_pm_idea_numbers') else 0
-        logger.info(f"✓ Discovery complete. Created {opportunities_created} pm-idea issue(s)")
+        opportunities_created = len(result.created_pm_idea_numbers)
+        logger.info(f"✓ Discovery complete. Final state: {result.state}")
+        logger.info(f"  Created {opportunities_created} pm-idea issue(s)")
         logger.info(f"  Runlog: {log_db}")
-        if hasattr(result, 'created_pm_idea_numbers') and result.created_pm_idea_numbers:
+        if result.created_pm_idea_numbers:
             logger.info(f"  Issues: {', '.join(f'#{n}' for n in result.created_pm_idea_numbers)}")
         return 0
 

@@ -135,7 +135,7 @@ def main():
             # Try to find an open arch-review:* issue to resume from
             logger.info("Checking for interrupted architecture reviews...")
             open_arch_issues = gateway.list_open_issues_with_any_label(
-                ["arch-review:pending", "arch-review:in-progress"]
+                ["arch:review-pending", "arch:review-in-progress", "arch:refactor-planned"]
             )
             if open_arch_issues:
                 logger.info(
@@ -162,16 +162,18 @@ def main():
             retry_policy=RetryPolicy(max_attempts=3),
         )
 
-        # In a real implementation, this would handle the no-issue case better
-        # For now, use a synthetic starting issue
         if issue_number:
             logger.info(f"Resuming from issue #{issue_number}")
-            result = orchestrator.run_once(issue_number)
         else:
-            logger.info("Starting new architecture audit")
-            result = orchestrator.run_once(1)  # Placeholder
+            logger.info("No resumable architecture review issue found. Creating a new review issue.")
+            issue_number = gateway.create_arch_review_issue(
+                title="Architecture Review",
+                body="Run architecture review loop and capture findings and refactor planning.",
+            )
+            logger.info(f"Created new architecture review issue #{issue_number}")
 
-        logger.info(f"✓ Architecture audit complete. Final state: {result.current_state}")
+        result = orchestrator.run_once(issue_number)
+        logger.info(f"✓ Architecture audit complete for issue #{result.source_issue_number}")
         logger.info(f"  Runlog: {log_db}")
         return 0
 

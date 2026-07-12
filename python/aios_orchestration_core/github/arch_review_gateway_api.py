@@ -1,24 +1,17 @@
 import json
 import re
 import subprocess
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Sequence
 
-from aios_orchestration_core.github.pm_gateway import PMIssue
-
-
-@dataclass
-class GitHubApiConfig:
-    repo: str
+from aios_orchestration_core.github.arch_review_gateway import ArchReviewIssue
+from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
 
 
-class GitHubApiPMGateway:
-    """GitHub CLI-backed PM gateway for disposable-repo and staging validation."""
+class GitHubApiArchReviewGateway:
+    """GitHub CLI-backed Architecture Review gateway."""
 
     def __init__(self, config: GitHubApiConfig):
         self.config = config
-        self.published_artifacts: Dict[int, Dict[str, object]] = {}
-        self._research_issue_cache: Dict[Tuple[int, str], int] = {}
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
@@ -45,7 +38,7 @@ class GitHubApiPMGateway:
                 text=True,
             )
 
-    def get_issue(self, issue_number: int) -> PMIssue:
+    def get_issue(self, issue_number: int) -> ArchReviewIssue:
         raw = self._gh(
             [
                 "issue",
@@ -56,26 +49,24 @@ class GitHubApiPMGateway:
             ]
         )
         obj = json.loads(raw)
-        linked = self._list_linked_research_issue_numbers(issue_number)
-        return PMIssue(
+        return ArchReviewIssue(
             number=obj["number"],
             title=obj.get("title", ""),
             body=obj.get("body", ""),
             labels={l["name"] for l in obj.get("labels", [])},
             open=obj.get("state", "OPEN").upper() == "OPEN",
-            linked_research_issue_numbers=linked,
         )
 
-    def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[PMIssue]:
+    def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[ArchReviewIssue]:
         raw = self._gh(["issue", "list", "--state", "open", "--limit", "200", "--json", "number,title,body,state,labels"])
         all_issues = json.loads(raw)
         label_set = set(labels)
-        result = []
+        result: List[ArchReviewIssue] = []
         for item in all_issues:
             issue_labels = {l["name"] for l in item.get("labels", [])}
             if issue_labels.intersection(label_set):
                 result.append(
-                    PMIssue(
+                    ArchReviewIssue(
                         number=item["number"],
                         title=item.get("title", ""),
                         body=item.get("body", ""),
@@ -106,78 +97,40 @@ class GitHubApiPMGateway:
     def close_issue(self, issue_number: int, reason: str) -> None:
         self._gh(["issue", "close", str(issue_number), "--reason", reason])
 
-    def are_linked_research_issues_closed(self, issue_number: int) -> bool:
-        return len(self._list_open_linked_research_issue_numbers(issue_number)) == 0
-
-    def count_closed_linked_research_issues(self, issue_number: int) -> int:
-        linked = self._list_linked_research_issue_numbers(issue_number)
-        open_linked = set(self._list_open_linked_research_issue_numbers(issue_number))
-        return len([n for n in linked if n not in open_linked])
-
-    def publish_strategic_opportunity_artifact(self, issue_number: int, artifact: Dict[str, object]) -> None:
-        self.published_artifacts[issue_number] = artifact
-        self.post_comment(issue_number, f"Strategic Opportunity Artifact Published: {artifact.get('artifact_id', 'unknown')}")
-
-    def ensure_research_issue(self, pm_issue_number: int, title: str, body: str, labels: Sequence[str]) -> int:
-        cache_key = (pm_issue_number, title)
-        if cache_key in self._research_issue_cache:
-            return self._research_issue_cache[cache_key]
-
-        trace_label = f"pm-idea-{pm_issue_number}"
-        raw = self._gh(
-            [
-                "issue",
-                "list",
-                "--state",
-                "open",
-                "--label",
-                "research",
-                "--label",
-                trace_label,
-                "--limit",
-                "200",
-                "--json",
-                "number,title,labels",
-            ]
-        )
-        for item in json.loads(raw):
-            if item.get("title") == title:
-                number = int(item["number"])
-                self._research_issue_cache[cache_key] = number
-                return number
-
-        create_cmd = ["issue", "create", "--title", title, "--body", body]
+    def create_refactor_request(self, title: str, body: str, source_review_number: int) -> int:
+        source_label = f"source-arch-review-{source_review_number}"
+        labels = ["feature-request", "refactor-request", source_label]
         self._ensure_labels(labels)
+        create_cmd = ["issue", "create", "--title", title, "--body", body]
         for label in labels:
             create_cmd += ["--label", label]
         output = self._gh(create_cmd)
         match = re.search(r"/issues/(\d+)", output)
         if not match:
             raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
-        number = int(match.group(1))
-        self._research_issue_cache[cache_key] = number
-        return number
+        return int(match.group(1))
 
-    def _list_linked_research_issue_numbers(self, issue_number: int) -> List[int]:
-        trace_label = f"pm-idea-{issue_number}"
-        raw = self._gh(
+    def create_arch_review_issue(self, title: str, body: str) -> int:
+        self._ensure_labels(["arch:review-pending"])
+        output = self._gh(
             [
                 "issue",
-                "list",
+                "create",
+                "--title",
+                title,
+                "--body",
+                body,
                 "--label",
-                "research",
-                "--label",
-                trace_label,
-                "--limit",
-                "200",
-                "--json",
-                "number",
+                "arch:review-pending",
             ]
         )
-        return [int(i["number"]) for i in json.loads(raw)]
+        match = re.search(r"/issues/(\d+)", output)
+        if not match:
+            raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
+        return int(match.group(1))
 
-    def _list_open_linked_research_issue_numbers(self, issue_number: int) -> List[int]:
-        trace_label = f"pm-idea-{issue_number}"
+    def upsert_debt_issue(self, title: str, body: str) -> int:
+        self._ensure_labels(["architecture-debt", "debt:new"])
         raw = self._gh(
             [
                 "issue",
@@ -185,13 +138,34 @@ class GitHubApiPMGateway:
                 "--state",
                 "open",
                 "--label",
-                "research",
-                "--label",
-                trace_label,
+                "architecture-debt",
                 "--limit",
                 "200",
                 "--json",
-                "number",
+                "number,title",
             ]
         )
-        return [int(i["number"]) for i in json.loads(raw)]
+        for item in json.loads(raw):
+            if item.get("title") == title:
+                issue_number = int(item["number"])
+                self._gh(["issue", "edit", str(issue_number), "--body", body])
+                return issue_number
+
+        output = self._gh(
+            [
+                "issue",
+                "create",
+                "--title",
+                title,
+                "--body",
+                body,
+                "--label",
+                "architecture-debt",
+                "--label",
+                "debt:new",
+            ]
+        )
+        match = re.search(r"/issues/(\d+)", output)
+        if not match:
+            raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
+        return int(match.group(1))

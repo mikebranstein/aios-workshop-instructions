@@ -141,7 +141,7 @@ def main():
             # Try to find an open foundation:* issue to resume from
             logger.info("Checking for interrupted foundation runs...")
             open_foundation_issues = gateway.list_open_issues_with_any_label(
-                ["foundation:research", "foundation:gate"]
+                ["foundation:needed", "foundation:in-progress", "foundation:review"]
             )
             if open_foundation_issues:
                 logger.info(
@@ -169,20 +169,18 @@ def main():
             retry_policy=RetryPolicy(max_attempts=3),
         )
 
-        # If we have an issue to resume, use it; otherwise start fresh
-        # (In real implementation, this would handle the recovery case)
         if issue_number:
             logger.info(f"Resuming from issue #{issue_number}")
-            result = orchestrator.run_once(issue_number)
         else:
-            logger.info("Starting new foundation run")
-            # In the real implementation, foundation doesn't take an issue number
-            # but the current run_once signature requires one. This would need
-            # to be adapted in the orchestrator code itself.
-            # For now, we create a synthetic starting issue.
-            result = orchestrator.run_once(1)  # Placeholder
+            logger.info("No resumable foundation issue found. Creating a new foundation issue.")
+            issue_number = gateway.create_foundation_issue(
+                title="Foundation Setup",
+                body="Bootstrap foundational norms and standards for this repository.",
+            )
+            logger.info(f"Created new foundation issue #{issue_number}")
 
-        logger.info(f"✓ Foundation run complete. Final state: {result.current_state}")
+        result = orchestrator.run_once(issue_number)
+        logger.info(f"✓ Foundation run complete for issue #{result.source_issue_number}")
         logger.info(f"  Runlog: {log_db}")
         return 0
 
