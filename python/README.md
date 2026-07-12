@@ -421,6 +421,60 @@ events = allowed_events_for_pm_state(PMState.PM_DEFERRED)
 - Easy to visualize, audit, and test the entire state space
 - Label registry provides bidirectional canonical ↔ legacy label mapping
 
+### State Persistence Model
+
+The AIOS system uses **GitHub issue labels as the persistent source of truth** for orchestrator state. This design choice is deliberate and differs from typical LangGraph patterns:
+
+#### Label-Based Persistence (Not Checkpointer-Based)
+
+Each orchestrator's state is persisted by modifying GitHub issue labels:
+
+1. **State Recovery**: When an orchestrator restarts, it reads the current issue labels via `gateway.get_issue()`
+2. **State Transitions**: When a node transitions to a new state, it calls `gateway.set_state_labels()` to update labels
+3. **Atomicity**: Labels are added/removed atomically in a single GitHub API call
+4. **No LangGraph Checkpointer**: `compile()` is called with no explicit checkpointer argument
+
+#### Example State Transition
+
+```python
+# Before: issue labeled with pm:queued
+issue = gateway.get_issue(42)
+# labels: {'pm:queued', 'priority:high'}
+
+# Node processes and decides to move to phase 1
+# Calls transition handler:
+gateway.set_state_labels(
+    issue_number=42,
+    remove=['pm:queued'],
+    add=['pm:phase1-validating']
+)
+
+# After: issue now labeled with pm:phase1-validating
+# (Labels are the single source of truth; no hidden state in LangGraph)
+```
+
+#### Why This Design?
+
+- **Transparency**: State is human-readable in GitHub UI (visible in issue labels)
+- **Durability**: Survives process crashes, network interruptions, container recycling
+- **Auditability**: Complete audit trail via GitHub issue history
+- **Simple recovery**: No need for checkpointer databases; labels are queryable via GitHub CLI/API
+- **Multi-orchestrator safety**: All 6 orchestrators can safely read/write labels without coordination
+
+#### Between Runs
+
+1. Runner starts: `orchestrator.run_once(issue_number)`
+2. Calls `gateway.get_issue(issue_number)` to read current labels
+3. Matches labels against state enum to determine current state
+4. Continues from that state (recovery semantics)
+5. On state change, updates labels and continues
+
+#### Within a Run
+
+- LangGraph's internal memory is sufficient for retry/backoff logic
+- Labels are updated only at final state transitions (not on every retry)
+- Circuit breaker escalates to humans if retry threshold exceeded
+
 ---
 
 ## Directory Structure
@@ -450,7 +504,11 @@ python/
 │   │   ├── feature_request.py, pm_opportunity.py, etc.
 │   ├── llm/
 │   │   ├── base.py                    # JudgmentLLMAdapter Protocol
-│   │   └── task_tools.py              # Tool specs for all loops
+│   │   ├── copilot_sdk_adapter.py     # CopilotSDKAdapter (forced tool calls)
+│   │   ├── adapter_factory.py         # Factory for adapter selection + fallback
+│   │   ├── task_tools.py              # Tool specs for all loops
+│   │   ├── schema_validation.py       # JSON schema validation
+│   │   └── exceptions.py              # LLM-specific exceptions
 │   ├── policies/
 │   │   └── retry.py                   # RetryPolicy + RetryState
 │   ├── runlog/
@@ -1242,42 +1300,15 @@ with tempfile.TemporaryDirectory() as tmp:
     # Markdown file is auto-written with formatted table
 ```
 
-### Against a Real GitHub Repo (Future)
+### Real GitHub Integration (PM Loop)
 
-To integrate with actual GitHub issues:
+The PM loop currently supports real GitHub interaction via `GitHubApiPMGateway`:
+- Reads issue labels from actual GitHub repositories
+- Updates state by modifying issue labels in real-time
+- Uses GitHub CLI (`gh` command) for authentication and API calls
+- Tested against real GitHub repositories (see `tests/pm/test_github_api_gateway_disposable.py`)
 
-1. Implement a `GitHubGateway` that wraps the GitHub API client
-2. Override the in-memory gateway methods to call GitHub API
-3. Pass it to the orchestrator
-4. Schedule the orchestrator to run on a timer or webhook trigger
-
-Example structure:
-
-```python
-class PMGitHubAPIGateway(PMGateway):
-    def __init__(self, repo, token):
-        self.repo = repo  # e.g., PyGithub Repo object
-        self.token = token
-    
-    def get_issue(self, issue_number: int) -> PMIssue:
-        gh_issue = self.repo.get_issue(issue_number)
-        return PMIssue(
-            number=gh_issue.number,
-            title=gh_issue.title,
-            body=gh_issue.body,
-            labels=set(label.name for label in gh_issue.labels),
-            open=gh_issue.state == "open",
-        )
-    
-    def set_state_labels(self, issue_number: int, remove, add):
-        gh_issue = self.repo.get_issue(issue_number)
-        current = {l.name for l in gh_issue.labels}
-        current -= set(remove)
-        current |= set(add)
-        gh_issue.set_labels(*current)
-    
-    # ... etc ...
-```
+**Limitations:** Only PM loop has a real GitHub gateway. PO, Dev, Foundation, Discovery, and ArchReview loops currently use in-memory gateways (suitable for simulation/testing).
 
 ---
 
@@ -1319,13 +1350,13 @@ All loops run in <10ms per issue (excluding LLM latency).
 ## References
 
 - **State Machine Design:** See `aios_orchestration_core/core/transition_table.py` for the generic pattern
-- **Routing Registry:** See `templates-v2/orchestration/routing-registry.md` for the business logic
+- **Routing Registry:** See `templates-old-v2/orchestration/routing-registry.md` for the business logic
 - **Examples:** Each loop (pm_orchestrator, po_orchestrator, etc.) follows the same pattern
 - **Tests:** See `tests/` for comprehensive examples of how to test nodes and orchestrators
 
 ---
 
-**All 164 tests pass (8 skipped). All 6 loops use LangGraph StateGraph. System is production-ready.**
+**All 170 tests pass, 3 skipped. All 6 loops use LangGraph StateGraph.**
 
 ---
 
@@ -1348,4 +1379,4 @@ All 6 orchestrators have been converted to use LangGraph StateGraph for determin
 - ✅ Routers delegate to `get_next_*_state()` (no duplicated transitions)
 - ✅ Circuit breaker wraps entire graph invocation for exception handling
 - ✅ All transitions logged via TransitionLogEntry and markdown export
-- ✅ Zero regressions: 164 tests passing (improvement from 145 baseline)
+- ✅ Test suite: 170 passed, 3 skipped (all loops validated)

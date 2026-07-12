@@ -31,7 +31,7 @@ from aios_orchestration_core.events.arch_review import ArchReviewEvent, DebtEven
 
 _REGISTRY_PATH = (
     Path(__file__).parent.parent.parent.parent  # repo root
-    / "templates-v2"
+    / "templates-old-v2"
     / "orchestration"
     / "routing-registry.md"
 )
