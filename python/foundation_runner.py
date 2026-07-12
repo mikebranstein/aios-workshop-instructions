@@ -32,6 +32,7 @@ import sys
 from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
+from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
@@ -81,6 +82,11 @@ def main():
         "--model",
         default="gpt-4",
         help="LLM model hint",
+    )
+    parser.add_argument(
+        "--stub",
+        action="store_true",
+        help="Use stub adapter instead of GitHub Copilot",
     )
     parser.add_argument(
         "--dry-run",
@@ -153,12 +159,13 @@ def main():
 
         # Create orchestrator
         log_db = f"{args.log_dir}/foundation_run.sqlite"
+        adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
         orchestrator = FoundationRunOnceOrchestrator(
             gateway=gateway,
             log_store=TransitionLogStore(log_db),
             run_registry=run_registry,
-            research_adapter=StubLLMAdapter(args.model),
-            gate_adapter=StubLLMAdapter(args.model),
+            research_adapter=adapter,
+            gate_adapter=adapter,
             retry_policy=RetryPolicy(max_attempts=3),
         )
 

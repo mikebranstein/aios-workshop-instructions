@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
+from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from dev_orchestrator.run_once import DevRunOnceOrchestrator, DevRunRegistry
@@ -39,6 +40,7 @@ def main():
     parser.add_argument("--continuous", action="store_true")
     parser.add_argument("--log-dir", default="./dev_runs")
     parser.add_argument("--model", default="gpt-4")
+    parser.add_argument("--stub", action="store_true", help="Use stub adapter instead of GitHub Copilot")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -102,17 +104,18 @@ def main():
 
 def _run_single(gateway, args, issue_number: int) -> int:
     print(f"Running Dev orchestrator on issue {issue_number}")
+    print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
     log_db = f"{args.log_dir}/dev_issue_{issue_number}.sqlite"
-    stub = StubLLMAdapter(args.model)
+    adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
     orchestrator = DevRunOnceOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),
         run_registry=DevRunRegistry(),
-        intake_adapter=stub,
-        design_adapter=stub,
-        build_adapter=stub,
-        qa_adapter=stub,
-        policy_adapter=stub,
+        intake_adapter=adapter,
+        design_adapter=adapter,
+        build_adapter=adapter,
+        qa_adapter=adapter,
+        policy_adapter=adapter,
     )
     result = orchestrator.run_once(issue_number)
     print(f"✓ Completed. Final state: {result.current_state}")
@@ -121,16 +124,17 @@ def _run_single(gateway, args, issue_number: int) -> int:
 
 def _run_continuous(gateway, args) -> int:
     print(f"Running Dev orchestrator in CONTINUOUS mode")
+    print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
     log_db = f"{args.log_dir}/dev_continuous.sqlite"
-    stub = StubLLMAdapter(args.model)
+    adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
     orchestrator = DevContinuousOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),
-        intake_adapter=stub,
-        design_adapter=stub,
-        build_adapter=stub,
-        qa_adapter=stub,
-        policy_adapter=stub,
+        intake_adapter=adapter,
+        design_adapter=adapter,
+        build_adapter=adapter,
+        qa_adapter=adapter,
+        policy_adapter=adapter,
     )
     result = orchestrator.run_continuous()
     print(f"✓ Continuous run complete: {result['issues_processed']} issues processed")

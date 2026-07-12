@@ -50,6 +50,7 @@ import sys
 from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
+from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
@@ -113,6 +114,7 @@ def main():
     parser.add_argument("--max-retries", type=int, default=3, help="Circuit breaker max retries")
     parser.add_argument("--min-research", type=int, default=1, help="Minimum research count required")
     parser.add_argument("--min-synthesis-conf", type=float, default=0.75, help="Minimum synthesis confidence")
+    parser.add_argument("--stub", action="store_true", help="Use stub adapter instead of GitHub Copilot")
     parser.add_argument("--dry-run", action="store_true", help="Show what would run without executing")
 
     args = parser.parse_args()
@@ -202,16 +204,21 @@ def _run_single_issue(gateway, args, issue_number: int) -> int:
     """Run orchestrator on a single issue."""
     print(f"Running PM orchestrator on single issue...")
     print(f"  Issue: {issue_number}")
+    print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
 
     log_db = f"{args.log_dir}/pm_issue_{issue_number}.sqlite"
+    
+    # Create adapter using factory
+    adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+    
     orchestrator = PMRunOnceOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),
         run_registry=PMRunRegistry(),
-        phase1_adapter=StubLLMAdapter(args.model),
-        research_planning_adapter=StubLLMAdapter(args.model),
-        synthesis_adapter=StubLLMAdapter(args.model),
-        phase2_adapter=StubLLMAdapter(args.model),
+        phase1_adapter=adapter,
+        research_planning_adapter=adapter,
+        synthesis_adapter=adapter,
+        phase2_adapter=adapter,
         retry_policy=RetryPolicy(max_attempts=args.max_retries),
         min_research_count=args.min_research,
         min_synthesis_confidence=args.min_synthesis_conf,
@@ -227,15 +234,20 @@ def _run_continuous(gateway, args) -> int:
     """Run orchestrator in continuous mode."""
     print(f"Running PM orchestrator in CONTINUOUS mode...")
     print(f"  Processing all pm:queued issues until none remain")
+    print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
 
     log_db = f"{args.log_dir}/pm_continuous.sqlite"
+    
+    # Create adapter using factory
+    adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+    
     orchestrator = PMContinuousOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),
-        phase1_adapter=StubLLMAdapter(args.model),
-        research_planning_adapter=StubLLMAdapter(args.model),
-        synthesis_adapter=StubLLMAdapter(args.model),
-        phase2_adapter=StubLLMAdapter(args.model),
+        phase1_adapter=adapter,
+        research_planning_adapter=adapter,
+        synthesis_adapter=adapter,
+        phase2_adapter=adapter,
         retry_policy=RetryPolicy(max_attempts=args.max_retries),
         min_research_count=args.min_research,
         min_synthesis_confidence=args.min_synthesis_conf,
