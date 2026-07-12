@@ -16,6 +16,7 @@ class TransitionLogStore:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS transition_log (
+                    loop_id TEXT NOT NULL DEFAULT 'pm',
                     run_id TEXT NOT NULL,
                     issue_number INTEGER NOT NULL,
                     from_state TEXT NOT NULL,
@@ -29,6 +30,13 @@ class TransitionLogStore:
                 )
                 """
             )
+            # Migration: add loop_id to databases created before this column existed.
+            try:
+                conn.execute(
+                    "ALTER TABLE transition_log ADD COLUMN loop_id TEXT NOT NULL DEFAULT 'pm'"
+                )
+            except sqlite3.OperationalError:
+                pass  # Column already present; nothing to do.
             conn.commit()
         finally:
             conn.close()
@@ -39,11 +47,12 @@ class TransitionLogStore:
             conn.execute(
                 """
                 INSERT INTO transition_log (
-                    run_id, issue_number, from_state, to_state, trigger_event,
+                    loop_id, run_id, issue_number, from_state, to_state, trigger_event,
                     reason_code, reason_detail, blocked_stage, actor, timestamp_utc
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
+                    entry.loop_id,
                     entry.run_id,
                     entry.issue_number,
                     entry.from_state,

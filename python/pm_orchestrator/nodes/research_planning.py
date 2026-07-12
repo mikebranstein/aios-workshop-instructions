@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from aios_orchestration_core.github.pm_gateway import PMGitHubGateway, PMIssue
+from aios_orchestration_core.github.pm_gateway import PMGateway
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 
 
@@ -12,7 +12,7 @@ class ResearchTask:
 
 
 class PMResearchPlanningNode:
-    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGitHubGateway):
+    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGateway):
         self.adapter = adapter
         self.gateway = gateway
 
@@ -25,15 +25,11 @@ class PMResearchPlanningNode:
         tasks = [ResearchTask(topic=t["topic"], persona=t["persona"]) for t in result.payload["tasks"]]
 
         for task in tasks:
-            new_number = max(self.gateway.issues.keys()) + 1 if self.gateway.issues else 1
-            research_issue = PMIssue(
-                number=new_number,
+            self.gateway.ensure_research_issue(
+                pm_issue_number=issue_number,
                 title=f"[research]: {task.persona} - {task.topic}",
                 body=f"Research topic: {task.topic}",
-                labels={"research", f"pm-idea-{issue_number}"},
-                open=True,
+                labels=["research", f"pm-idea-{issue_number}"],
             )
-            self.gateway.issues[new_number] = research_issue
-            issue.linked_research_issue_numbers.append(new_number)
 
         return tasks

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import FrozenSet, Iterable, List, Optional, Set
 
+from aios_orchestration_core.core.label_registry import LabelRegistry
 from aios_orchestration_core.states.pm import PMState
 
 
@@ -18,6 +19,8 @@ PM_CANONICAL_LABEL_BY_STATE = {
     PMState.PM_NEEDS_HUMAN: "pm:needs-human",
 }
 
+PM_CANONICAL_STATE_LABELS = frozenset(PM_CANONICAL_LABEL_BY_STATE.values())
+
 PM_LEGACY_LABEL_BY_STATE = {
     PMState.PM_QUEUED: "pm-idea",
     PMState.PM_PHASE1_VALIDATING: "pm-validating",
@@ -30,6 +33,11 @@ PM_LEGACY_LABEL_BY_STATE = {
     PMState.PM_NEEDS_HUMAN: "needs_human",
 }
 
+# Canonical LabelRegistry instance for PM — used by new multi-loop code.
+PM_LABEL_REGISTRY: LabelRegistry[PMState] = LabelRegistry(
+    canonical=PM_CANONICAL_LABEL_BY_STATE,
+    legacy=PM_LEGACY_LABEL_BY_STATE,
+)
 
 _STATE_BY_KNOWN_LABEL = {
     **{label: state for state, label in PM_CANONICAL_LABEL_BY_STATE.items()},

@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Set
+from typing import Dict, List, Optional, Protocol, Sequence, Set
+
+from aios_orchestration_core.core.gateway import BaseGateway
 
 
 @dataclass
@@ -13,8 +15,45 @@ class PMIssue:
     linked_research_issue_numbers: List[int] = field(default_factory=list)
 
 
+class PMGateway(BaseGateway, Protocol):
+    """PM-loop gateway: extends BaseGateway with PM-specific operations."""
+
+    def get_issue(self, issue_number: int) -> PMIssue:
+        ...
+
+    def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[PMIssue]:
+        ...
+
+    def add_labels(self, issue_number: int, labels: Sequence[str]) -> None:
+        ...
+
+    def remove_labels(self, issue_number: int, labels: Sequence[str]) -> None:
+        ...
+
+    def set_state_labels(self, issue_number: int, labels_to_remove: Sequence[str], labels_to_add: Sequence[str]) -> None:
+        ...
+
+    def post_comment(self, issue_number: int, body: str) -> None:
+        ...
+
+    def close_issue(self, issue_number: int, reason: str) -> None:
+        ...
+
+    def are_linked_research_issues_closed(self, issue_number: int) -> bool:
+        ...
+
+    def count_closed_linked_research_issues(self, issue_number: int) -> int:
+        ...
+
+    def publish_strategic_opportunity_artifact(self, issue_number: int, artifact: Dict[str, object]) -> None:
+        ...
+
+    def ensure_research_issue(self, pm_issue_number: int, title: str, body: str, labels: Sequence[str]) -> int:
+        ...
+
+
 class PMGitHubGateway:
-    """Deterministic PM issue operations used by orchestrator nodes."""
+    """In-memory deterministic PM issue operations used by orchestrator nodes."""
 
     def __init__(self, issues: Optional[Dict[int, PMIssue]] = None):
         self.issues: Dict[int, PMIssue] = issues or {}
@@ -68,3 +107,23 @@ class PMGitHubGateway:
     def publish_strategic_opportunity_artifact(self, issue_number: int, artifact: Dict[str, object]) -> None:
         self.published_artifacts[issue_number] = artifact
         self.post_comment(issue_number, f"Strategic Opportunity Artifact Published: {artifact.get('artifact_id', 'unknown')}")
+
+    def ensure_research_issue(self, pm_issue_number: int, title: str, body: str, labels: Sequence[str]) -> int:
+        label_set = set(labels)
+        for number, issue in self.issues.items():
+            if title == issue.title and label_set.issubset(issue.labels):
+                if number not in self.issues[pm_issue_number].linked_research_issue_numbers:
+                    self.issues[pm_issue_number].linked_research_issue_numbers.append(number)
+                return number
+
+        new_number = max(self.issues.keys()) + 1 if self.issues else 1
+        self.issues[new_number] = PMIssue(
+            number=new_number,
+            title=title,
+            body=body,
+            labels=set(labels),
+            open=True,
+        )
+        if new_number not in self.issues[pm_issue_number].linked_research_issue_numbers:
+            self.issues[pm_issue_number].linked_research_issue_numbers.append(new_number)
+        return new_number

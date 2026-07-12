@@ -12,13 +12,14 @@ class TransitionLogEntry:
     reason_code: str
     reason_detail: str
     timestamp_utc: str
+    loop_id: str = "pm"
     actor: str = "orchestrator"
     blocked_stage: Optional[str] = None
 
     def to_comment(self) -> str:
         blocked = f" blocked_stage={self.blocked_stage}" if self.blocked_stage else ""
         return (
-            "[PM Transition] "
+            f"[{self.loop_id.upper()} Transition] "
             f"run_id={self.run_id} "
             f"from={self.from_state} to={self.to_state} "
             f"event={self.trigger_event} "

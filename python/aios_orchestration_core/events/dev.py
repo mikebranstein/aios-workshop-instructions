@@ -1,0 +1,18 @@
+from enum import Enum
+
+
+class DevEvent(str, Enum):
+    """Typed events for dev pipeline transitions."""
+
+    INTAKE_APPROVED = "INTAKE_APPROVED"
+    INTAKE_BLOCKED = "INTAKE_BLOCKED"
+    DESIGN_APPROVED = "DESIGN_APPROVED"
+    DESIGN_REVISE = "DESIGN_REVISE"             # loops back to intake
+    DESIGN_BLOCKED = "DESIGN_BLOCKED"
+    BUILD_COMPLETE = "BUILD_COMPLETE"
+    BUILD_BLOCKED = "BUILD_BLOCKED"
+    QA_PASSED = "QA_PASSED"
+    QA_FAILED = "QA_FAILED"                     # loops back to design
+    POLICY_APPROVED = "POLICY_APPROVED"
+    POLICY_REVIEW_REQUIRED = "POLICY_REVIEW_REQUIRED"
+    RETRY_THRESHOLD_EXCEEDED = "RETRY_THRESHOLD_EXCEEDED"

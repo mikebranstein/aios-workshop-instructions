@@ -2,21 +2,33 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from aios_orchestration_core.artifacts.strategic_opportunity import MarketSizeEstimate, StrategicOpportunityArtifact
+from aios_orchestration_core.artifacts.strategic_opportunity import (
+    MarketSizeEstimate,
+    StrategicOpportunityArtifact,
+    TraceMetadata,
+)
 from aios_orchestration_core.events.pm import PMEvent
-from aios_orchestration_core.github.pm_gateway import PMGitHubGateway
-from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE
+from aios_orchestration_core.github.pm_gateway import PMGateway
+from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE, PM_CANONICAL_STATE_LABELS
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.states.pm import PMState
 from aios_orchestration_core.transitions.pm import get_next_pm_state
 
 
 class PMPhase2DecisionNode:
-    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGitHubGateway):
+    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGateway):
         self.adapter = adapter
         self.gateway = gateway
 
-    def run(self, issue_number: int, synthesis_summary: str, synthesis_confidence: float) -> PMState:
+    def run(
+        self,
+        run_id: str,
+        issue_number: int,
+        synthesis_summary: str,
+        synthesis_confidence: float,
+        prompt_version: str,
+        handoff_contract_version: str,
+    ) -> PMState:
         issue = self.gateway.get_issue(issue_number)
         result = self.adapter.invoke_json(
             "pm_phase2",
@@ -54,13 +66,26 @@ class PMPhase2DecisionNode:
                     unit=None,
                 ),
                 decision=decision,
+                decision_rationale=result.payload["reason"],
+                evidence_refs=[f"pm-idea:{issue_number}", synthesis_summary],
+                research_item_ids=list(issue.linked_research_issue_numbers),
+                handoff_contract_version=handoff_contract_version,
+                trace=TraceMetadata(
+                    run_id=run_id,
+                    model=result.model,
+                    prompt_version=prompt_version,
+                ),
                 confidence_score=float(result.payload["confidence_score"]),
                 produced_at=datetime.now(timezone.utc).isoformat(),
             )
             artifact.validate()
             self.gateway.publish_strategic_opportunity_artifact(issue_number, asdict(artifact))
 
-        self.gateway.add_labels(issue_number, [PM_CANONICAL_LABEL_BY_STATE[next_state]])
+        self.gateway.set_state_labels(
+            issue_number,
+            list(PM_CANONICAL_STATE_LABELS),
+            [PM_CANONICAL_LABEL_BY_STATE[next_state]],
+        )
 
         if next_state in {
             PMState.PM_OUTPUT_PUBLISHED,

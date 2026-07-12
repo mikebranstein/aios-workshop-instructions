@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Callable, Dict, Iterable, List, Optional
 
 from aios_orchestration_core.github.pm_gateway import PMGitHubGateway
 from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE, PM_LEGACY_LABEL_BY_STATE, normalize_pm_state_from_labels
@@ -19,6 +19,23 @@ class CleanRunCounter:
     @property
     def bridge_exit_ready(self) -> bool:
         return self.current_streak >= self.required_consecutive_clean_runs
+
+
+@dataclass
+class BridgeModeController:
+    counter: CleanRunCounter
+    dual_write_legacy_labels: bool = True
+    on_bridge_exit: Optional[Callable[[], None]] = None
+
+    def record_run(self, had_conflict: bool) -> None:
+        was_ready = self.counter.bridge_exit_ready
+        self.counter.record_run(had_conflict)
+        is_ready = self.counter.bridge_exit_ready
+
+        if self.dual_write_legacy_labels and (not was_ready) and is_ready:
+            self.dual_write_legacy_labels = False
+            if self.on_bridge_exit is not None:
+                self.on_bridge_exit()
 
 
 def backfill_pm_canonical_labels_for_open_issues(gateway: PMGitHubGateway, issue_numbers: Iterable[int]) -> Dict[int, List[str]]:

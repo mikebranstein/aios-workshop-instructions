@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from aios_orchestration_core.events.pm import PMEvent
-from aios_orchestration_core.github.pm_gateway import PMGitHubGateway
-from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE, PM_LEGACY_LABEL_BY_STATE
+from aios_orchestration_core.github.pm_gateway import PMGateway
+from aios_orchestration_core.labels.pm_labels import PM_CANONICAL_LABEL_BY_STATE, PM_CANONICAL_STATE_LABELS, PM_LEGACY_LABEL_BY_STATE
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.runlog.models import TransitionLogEntry
 from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
@@ -17,7 +17,7 @@ class Phase1Config:
 
 
 class PMPhase1Node:
-    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGitHubGateway, log_store: TransitionLogStore, config: Phase1Config):
+    def __init__(self, adapter: JudgmentLLMAdapter, gateway: PMGateway, log_store: TransitionLogStore, config: Phase1Config):
         self.adapter = adapter
         self.gateway = gateway
         self.log_store = log_store
@@ -43,7 +43,7 @@ class PMPhase1Node:
         if self.config.dual_write_legacy_labels and next_state in PM_LEGACY_LABEL_BY_STATE:
             labels_to_add.append(PM_LEGACY_LABEL_BY_STATE[next_state])
 
-        self.gateway.add_labels(issue_number, labels_to_add)
+        self.gateway.set_state_labels(issue_number, list(PM_CANONICAL_STATE_LABELS), labels_to_add)
 
         if next_state in {PMState.PM_DEFERRED, PMState.PM_BLOCKED}:
             self.gateway.close_issue(issue_number, "not planned")

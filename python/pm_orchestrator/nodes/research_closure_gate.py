@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from aios_orchestration_core.github.pm_gateway import PMGitHubGateway
+from aios_orchestration_core.github.pm_gateway import PMGateway
 
 
 @dataclass(frozen=True)
@@ -11,7 +11,7 @@ class ResearchClosureGateResult:
 
 
 def evaluate_research_closure_gate(
-    gateway: PMGitHubGateway,
+    gateway: PMGateway,
     issue_number: int,
     min_closed_linked_research_items: int,
 ) -> ResearchClosureGateResult:

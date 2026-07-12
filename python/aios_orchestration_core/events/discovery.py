@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class DiscoveryEvent(str, Enum):
+    RUN_TRIGGERED = "RUN_TRIGGERED"
+    GATE_MISSING = "GATE_MISSING"
+    FOCUS_MISSING = "FOCUS_MISSING"
+    IDEA_SCOUT_COMPLETED = "IDEA_SCOUT_COMPLETED"
