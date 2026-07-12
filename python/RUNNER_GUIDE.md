@@ -1,370 +1,280 @@
-# Running Orchestrators Against External Repositories
+# Running All Orchestrators Against a Real GitHub Repository
 
-The AIOS orchestration system can be run from this location (`python/`) against any GitHub repository in **two modes**:
+This is the current operational guide for running every orchestrator from `python/`:
 
-## Execution Modes
+- `pm_runner.py`
+- `po_runner.py`
+- `dev_runner.py`
+- `foundation_runner.py`
+- `discovery_runner.py`
+- `arch_review_runner.py`
 
-### 1. **Continuous Mode** (Default)
-Continuously processes all matching issues until the queue is empty.
+---
+
+## Prerequisites
+
+1. GitHub CLI authenticated:
 
 ```powershell
-python pm_runner.py owner/my-repo --continuous
-python po_runner.py owner/my-repo --continuous
-python dev_runner.py owner/my-repo --continuous
+gh auth status
 ```
 
-**PM Continuous** finds all `pm:queued` issues and processes them one by one until none remain.
-**PO Continuous** finds all `po:queued` issues and processes them through prioritization.
-**Dev Continuous** finds all `dev:intake` issues and processes them through the full development pipeline.
-
-All continuous runners execute a startup adapter health check before processing issues. If initialization fails, the runner exits immediately with a non-zero status and a clear failure message.
-
-### 2. **Single-Issue Mode**
-Process one specific issue through its orchestrator loop.
+2. Run from `python/`:
 
 ```powershell
-python pm_runner.py owner/my-repo 42
-python po_runner.py owner/my-repo 42
-python dev_runner.py owner/my-repo 42
+cd python
+$env:PYTHONPATH = (Get-Location).Path
+```
+
+3. Use a target repo in `owner/repo` format.
+
+Optional convenience variable:
+
+```powershell
+$env:AIOS_TARGET_REPO = "owner/my-repo"
 ```
 
 ---
 
-## Architecture
+## Modes by Orchestrator
 
-The markdown routing registry is maintained as a legacy reference artifact. Python state/transition tables and orchestrator implementations are the operational source of truth.
+| Loop | Runner | Modes |
+|---|---|---|
+| PM | `pm_runner.py` | Continuous + single-issue |
+| PO | `po_runner.py` | Continuous + single-issue |
+| Dev | `dev_runner.py` | Continuous + single-issue |
+| Foundation | `foundation_runner.py` | Run-once (resume/create) |
+| Discovery | `discovery_runner.py` | Run-once generator |
+| ArchReview | `arch_review_runner.py` | Run-once (resume/create) |
 
-### Why Two Modes?
+Continuous loops include startup adapter preflight and fail early if adapter initialization fails.
 
-Per the Module 13 design, orchestrators run **continuously** until no more work exists:
+---
 
-- **PM Orchestrator (continuous)**: Finds all `pm:queued` strategic opportunities, validates them, conducts research, makes CHAMPION/DEFER/BLOCK decisions, then moves to next opportunity
-- **PO Orchestrator (continuous)**: Finds all `po:queued` opportunities, prioritizes them, creates feature-request issues for development
-- **Dev Orchestrator (continuous)**: Finds all `dev:intake` feature requests, executes the full 8-stage pipeline, ships to production
-- **Exceptions**: Foundation and Discovery orchestrators run once (single-issue only) per design
+## Command Reference
 
-### Continuous Execution Flow
-
-```
-PM Continuous Loop
-├─ Find pm:queued issues
-├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
-└─ Exit when no pm:queued remain
-
-        ↓ (async handoff)
-
-PO Continuous Loop  
-├─ Find po:queued issues
-├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
-└─ Exit when no po:queued remain
-
-        ↓ (async handoff)
-
-Dev Continuous Loop
-├─ Find dev:intake issues
-├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
-└─ Exit when no dev:intake remain
-```
-
-## Quick Start
-
-### Prerequisites
-
-1. **GitHub CLI** (`gh`) installed and authenticated:
-   ```powershell
-   gh auth login
-   ```
-
-2. **Python 3.9+** with orchestrator code available (this directory)
-
-### Continuous Mode (Recommended)
-
-Process **all** pm:queued issues until the queue is empty:
+### PM
 
 ```powershell
-# PM orchestrator - process all strategic opportunities
+# Continuous (default when no issue number supplied)
 python pm_runner.py owner/my-repo --continuous
 
-# After PM completes, PO processes all opportunities
-python po_runner.py owner/my-repo --continuous
-
-# After PO completes, Dev processes all features
-python dev_runner.py owner/my-repo --continuous
-```
-
-### Single-Issue Mode
-
-Process **one specific** issue:
-
-```powershell
+# Single issue
 python pm_runner.py owner/my-repo 42
-python po_runner.py owner/my-repo 42
-python dev_runner.py owner/my-repo 42
-```
 
-### Environment Variables
-
-```powershell
-$env:AIOS_TARGET_REPO = "owner/my-repo"
-
-# Now you can omit the repo:
-python pm_runner.py --continuous
+# Single issue with repo from env var
 python pm_runner.py 42
 ```
 
-## Architecture
+Queue label for continuous mode: `pm:queued`
 
-### Repository Context Detection
-
-The `RepoContext` class automatically detects the target repository type:
-
-```python
-from aios_orchestration_core.repo_context import RepoContext
-
-# GitHub: detected by "owner/repo" format
-context = RepoContext.from_string("owner/my-repo")
-context.is_github  # True
-
-# Local: detected by path format (coming soon)
-context = RepoContext.from_string("./local/repo")
-context.is_github  # False
-```
-
-### Gateway Factory
-
-Once context is established, create the appropriate gateway:
-
-```python
-context = RepoContext.from_env(default="owner/my-repo")
-gateway = context.create_pm_gateway()
-# Now returns GitHubApiPMGateway (uses gh CLI for real GitHub interaction)
-```
-
-### Continuous Orchestrator Architecture
-
-Each continuous orchestrator (`PMContinuousOrchestrator`, `POContinuousOrchestrator`, `DevContinuousOrchestrator`) wraps the single-issue orchestrator in a loop:
-
-```python
-while True:
-    # Find next matching issue (pm:queued, po:queued, or dev:intake)
-    issues = gateway.list_open_issues_with_any_label([matching_label])
-    
-    if not issues:
-        break  # Exit loop when no more work
-    
-    # Process first issue (FIFO)
-    issue = issues[0]
-    orchestrator = RunOnceOrchestrator(...)
-    result = orchestrator.run_once(issue.number)
-    
-    # Log result and continue to next issue
-```
-
-**Key properties:**
-- **FIFO ordering**: Issues processed in order (by number)
-- **Fault tolerance**: Errors in one issue don't stop the loop (logged and skipped)
-- **Atomic transitions**: Each issue completes fully before moving to next
-- **Separate runlogs**: Each continuous run gets its own SQLite database (`pm_continuous.sqlite`, etc.)
-
-## Examples
-
-### Example 1: Continuous PM Validation Loop
-
-Process all strategic opportunities in order:
+PM-specific tuning flags:
 
 ```powershell
-python pm_runner.py acme-corp/product-ideas --continuous
+--max-retries <int>
+--min-research <int>
+--min-synthesis-conf <float>
 ```
 
-Output:
-```
-Running PM orchestrator in CONTINUOUS mode...
-  Processing all pm:queued issues until none remain
-2026-07-13 14:22:15 [INFO] Processing pm:queued issue #15: "Implement dark mode"
-✓ Issue #15 completed with state: PM_OUTPUT_PUBLISHED
-2026-07-13 14:22:45 [INFO] Processing pm:queued issue #23: "Add API rate limiting"
-✓ Issue #23 completed with state: PM_OUTPUT_PUBLISHED
-2026-07-13 14:23:00 [INFO] No more pm:queued issues. Continuous loop complete.
-
-============================================================
-Continuous run complete:
-  Issues processed: 2
-  Runlog: ./pm_runs/pm_continuous.sqlite
-============================================================
-```
-
-### Example 2: Process Entire PM-PO-Dev Pipeline
+### PO
 
 ```powershell
-# Phase 1: PM validates all strategic opportunities
-python pm_runner.py acme-corp/repo --continuous
-
-# Phase 2: PO prioritizes all validated opportunities
-python po_runner.py acme-corp/repo --continuous
-
-# Phase 3: Dev builds all prioritized features
-python dev_runner.py acme-corp/repo --continuous
-```
-
-Each phase processes all matching issues until completion, then hands off to the next phase.
-
-### Example 3: Single-Issue for Testing
-
-Process one specific issue to validate behavior:
-
-```powershell
-python pm_runner.py acme-corp/product-ideas 123
-```
-
-Executes the PM loop on issue #123 only. After completion:
-- Issue labels updated with PM state
-- Comments posted with decisions
-- Runlog saved to `./pm_runs/pm_issue_123.sqlite`
-
-### Example 4: Dry-Run to Preview
-
-```powershell
-# Continuous mode
-python pm_runner.py acme-corp/repo --continuous --dry-run
-
-# Output:
-# [DRY RUN] Would run PM orchestrator:
-#   Repo: GitHub: acme-corp/repo
-#   Mode: continuous
-#   Log directory: ./pm_runs
+# Continuous (default when no issue number supplied)
+python po_runner.py owner/my-repo --continuous
 
 # Single issue
-python pm_runner.py acme-corp/repo 42 --dry-run
+python po_runner.py owner/my-repo 42
 
-# Output:
-# [DRY RUN] Would run PM orchestrator:
-#   Repo: GitHub: acme-corp/repo
-#   Mode: single
-#   Issue: 42
-#   Log directory: ./pm_runs
+# Single issue with repo from env var
+python po_runner.py 42
 ```
 
-### Example 5: Custom LLM and Retry Settings
+Queue label for continuous mode: `po:queued`
+
+### Dev
 
 ```powershell
-python pm_runner.py acme-corp/repo --continuous \
-  --model gpt-4-turbo \
-  --max-retries 5 \
-  --log-dir ./production_logs
+# Continuous (default when no issue number supplied)
+python dev_runner.py owner/my-repo --continuous
+
+# Single issue
+python dev_runner.py owner/my-repo 42
+
+# Single issue with repo from env var
+python dev_runner.py 42
 ```
 
-## Adapters & LLM Integration
+Queue label for continuous mode: `dev:intake`
 
-The `pm_runner.py` script uses `StubLLMAdapter` by default, which returns hardcoded responses without invoking a real LLM. This is suitable for:
-
-- **Testing** — Validate orchestration logic without LLM calls
-- **Dry runs** — Understand orchestrator behavior
-- **Debugging** — Trace execution without API costs
-
-### Replace with Real Adapter
-
-Use the factory helper so the runtime can fail closed when SDK setup is missing:
-
-```python
-from aios_orchestration_core.llm.adapter_factory import create_adapter
-
-adapter = create_adapter(model=args.model, use_stub=False)
-```
-
-If you need stub behavior for local-only testing, enable it explicitly:
-
-```python
-adapter = create_adapter(model=args.model, use_stub=True, stub_class=StubLLMAdapter)
-```
-
-### Live Tool-Call Conformance Check
-
-Validate schema-conformant tool payloads across all task types with the real Copilot SDK path:
+### Foundation
 
 ```powershell
-cd python
-$env:PYTHONPATH='.'
-python scripts/copilot_task_conformance.py --trials 1
+# Resume open foundation issue, or create a new one if none exist
+python foundation_runner.py owner/my-repo
+
+# Force fresh run (ignore resumable open issues)
+python foundation_runner.py owner/my-repo --force
 ```
 
-Target a single task during triage:
+Resume label set:
+
+- `foundation:needed`
+- `foundation:in-progress`
+- `foundation:review`
+
+If nothing resumable exists, runner creates a new issue labeled `foundation:needed`.
+
+### Discovery
 
 ```powershell
-python scripts/copilot_task_conformance.py --trials 3 --task pm_phase1
+# Run discovery generator
+python discovery_runner.py owner/my-repo
+
+# Force rerun
+python discovery_runner.py owner/my-repo --force
 ```
 
-## Environment Variables
+Discovery reads repository context from:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AIOS_TARGET_REPO` | (required) | Target GitHub repo in `owner/repo` format |
-| `AIOS_PM_LOG_DIR` | `./pm_runs` | Directory for runlog SQLite databases |
-| `AIOS_LLM_MODEL` | `gpt-4` | LLM model hint passed to adapters |
+- foundation gate status (`foundation:approved` present)
+- `docs/discovery-focus.md` (exists and populated)
+
+When candidates are approved, discovery creates `pm-idea` issues.
+
+### ArchReview
+
+```powershell
+# Resume open architecture-review issue, or create a new one if none exist
+python arch_review_runner.py owner/my-repo
+
+# Force fresh run
+python arch_review_runner.py owner/my-repo --force
+```
+
+Resume label set:
+
+- `arch:review-pending`
+- `arch:review-in-progress`
+- `arch:refactor-planned`
+
+If nothing resumable exists, runner creates a new issue labeled `arch:review-pending`.
+
+---
+
+## Common Flags
+
+All runners support:
+
+```powershell
+--model <model_name>   # default: gpt-4
+--stub                 # use stub adapter explicitly
+--dry-run              # preview only, no execution
+--log-dir <path>       # per-runner default directory
+```
+
+Default log directories:
+
+- PM: `./pm_runs`
+- PO: `./po_runs`
+- Dev: `./dev_runs`
+- Foundation: `./foundation_runs`
+- Discovery: `./discovery_runs`
+- ArchReview: `./arch_review_runs`
+
+---
+
+## Dry-Run Examples
+
+```powershell
+python pm_runner.py owner/my-repo --continuous --dry-run
+python po_runner.py owner/my-repo 42 --dry-run
+python dev_runner.py owner/my-repo --continuous --dry-run
+python foundation_runner.py owner/my-repo --dry-run
+python discovery_runner.py owner/my-repo --dry-run
+python arch_review_runner.py owner/my-repo --dry-run
+```
+
+---
+
+## Suggested Rollout Order (Live Testing)
+
+1. Foundation
+2. Discovery
+3. PM
+4. PO
+5. Dev
+6. ArchReview
+
+For each loop:
+
+1. `--dry-run`
+2. `--stub` in non-critical repo
+3. real adapter mode in staging repo
+4. production repo rollout
+
+---
+
+## First Live Foundation Run Checklist
+
+Use this before running Foundation against a real repository:
+
+1. **Confirm auth and repo access**
+   ```powershell
+   gh auth status
+   gh repo view owner/my-repo
+   ```
+2. **Preview execution**
+   ```powershell
+   python foundation_runner.py owner/my-repo --dry-run
+   ```
+3. **Optional stub safety pass**
+   ```powershell
+   python foundation_runner.py owner/my-repo --stub
+   ```
+4. **Run with real adapter**
+   ```powershell
+   python foundation_runner.py owner/my-repo
+   ```
+5. **Verify expected effects in GitHub**
+   - a foundation issue is resumed or created
+   - labels move through foundation states
+   - comments are posted with transition details
+6. **Verify local runlog artifact**
+   - default: `./foundation_runs/foundation_run.sqlite`
+7. **Recovery check**
+   - rerun command once and confirm it resumes correctly (or cleanly finishes)
+
+---
 
 ## Troubleshooting
 
-### "gh" command not found
-
-Install GitHub CLI: https://cli.github.com/
-
-### "Repository not found" or authentication error
-
-Verify:
-1. You're authenticated: `gh auth status`
-2. Repo exists: `gh repo view owner/repo`
-3. You have access to the repo
-
-### Issue not found
+### Repo/auth failures
 
 ```powershell
-# List open issues in target repo
-gh -R owner/repo issue list --state open
+gh auth status
+gh repo view owner/my-repo
 ```
 
-### Permission denied when writing labels/comments
-
-Ensure your GitHub token has `issues:write` and `pull_requests:write` scopes:
+### Continuous loops pick up no work
 
 ```powershell
-gh auth refresh --scopes issues:write,pull_requests:write,repo
+gh -R owner/my-repo issue list --state open --label pm:queued
+gh -R owner/my-repo issue list --state open --label po:queued
+gh -R owner/my-repo issue list --state open --label dev:intake
 ```
 
-## Future: Local Repository Support
+### Discovery halts immediately
 
-Currently, only GitHub repositories are supported. Future enhancements will add:
+Verify both:
 
-- **Local git repos** — Run against locally cloned repos without GitHub interaction
-- **Gitea/Forgejo** — Support for self-hosted Git platforms
-- **GitLab** — GitLab issue integration
+- at least one issue labeled `foundation:approved`
+- `docs/discovery-focus.md` exists and is non-empty
 
-These will follow the same pattern:
+### Exit codes
 
-```python
-# Coming soon:
-context = RepoContext.from_string("./path/to/local/repo")
-gateway = context.create_pm_gateway()  # LocalFileGateway or similar
-```
+All runners use:
 
-## Testing
-
-### Run All Tests
-
-```powershell
-cd python
-python -m pytest tests/ -q
-```
-
-### Run Integration Tests Against Real GitHub
-
-```powershell
-$env:RUN_GITHUB_DISPOSABLE_TESTS = 1
-python -m pytest tests/pm/test_github_api_gateway_disposable.py -v
-```
-
-## Architecture Decision: Why This Approach?
-
-1. **Centralized code** — Single source of truth for orchestrator logic
-2. **No duplication** — Don't copy/paste code into target repos
-3. **Protocol-based gateways** — Gateway interface is identical whether in-memory or GitHub-backed
-4. **Reproducibility** — Run same logic against different repos to validate behavior
-5. **Audit trail** — Runlog stored locally, separate from GitHub history
+- `0` success
+- `1` argument/config error
+- `2` gateway/repo/auth setup error
+- `3` orchestration runtime failure
