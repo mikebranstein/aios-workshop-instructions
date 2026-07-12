@@ -27,6 +27,7 @@ class FoundationGateway(BaseGateway, Protocol):
     def get_issue(self, issue_number: int) -> FoundationIssue: ...
     def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[FoundationIssue]: ...
     def get_artifact_state(self) -> FoundationArtifactState: ...
+    def foundation_markdown_exists(self) -> bool: ...
     def create_foundation_issue(self, title: str, body: str) -> int: ...
 
 
@@ -68,6 +69,9 @@ class FoundationGitHubGateway:
 
     def get_artifact_state(self) -> FoundationArtifactState:
         return self._artifact_state
+
+    def foundation_markdown_exists(self) -> bool:
+        return True
 
     def create_foundation_issue(self, title: str, body: str) -> int:
         self._next += 1

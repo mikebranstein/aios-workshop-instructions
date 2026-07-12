@@ -131,8 +131,13 @@ def main():
 
         # Check for FOUNDATION.md
         logger.info("Checking for FOUNDATION.md at repo root...")
-        # Note: gateway would need a method to read files; for now assume it exists
-        # In a real implementation, we'd validate the file exists
+        if not gateway.foundation_markdown_exists():
+            print(
+                "Error: FOUNDATION.md not found at repository root. "
+                "Create FOUNDATION.md before running the foundation orchestrator.",
+                file=sys.stderr,
+            )
+            return 1
 
         # Check if there's an existing open foundation issue to resume from
         run_registry = FoundationRunRegistry()

@@ -125,6 +125,9 @@ class GitHubApiFoundationGateway:
             discovery_focus_populated=self._file_is_populated(focus_path),
         )
 
+    def foundation_markdown_exists(self) -> bool:
+        return self._file_exists("FOUNDATION.md")
+
     def create_foundation_issue(self, title: str, body: str) -> int:
         self._ensure_labels(["foundation:needed"])
         output = self._gh(

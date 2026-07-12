@@ -14,6 +14,24 @@ def _cp(stdout: str, returncode: int = 0) -> subprocess.CompletedProcess:
 
 
 class GitHubApiFoundationGatewayTests(unittest.TestCase):
+    def test_foundation_markdown_exists_checks_repo_root_file(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+
+        def fake_run(cmd, check, capture_output, text):
+            if cmd[:2] == ["gh", "api"]:
+                path = cmd[2]
+                jq = cmd[4] if len(cmd) >= 5 and cmd[3] == "--jq" else ""
+                if path.endswith("/FOUNDATION.md") and jq == ".type":
+                    return _cp("file")
+                return _cp("", returncode=1)
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            exists = gateway.foundation_markdown_exists()
+
+        self.assertTrue(exists)
+
     def test_get_artifact_state_reads_expected_files(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
