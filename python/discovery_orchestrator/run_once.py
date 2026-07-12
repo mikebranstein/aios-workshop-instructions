@@ -10,6 +10,9 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from aios_orchestration_core.events.discovery import DiscoveryEvent
+from aios_orchestration_core.runlog.models import TransitionLogEntry
+from aios_orchestration_core.states.discovery import DiscoveryState
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from discovery_orchestrator.context import DiscoveryContext, DiscoveryRunResult
@@ -145,6 +148,26 @@ class DiscoveryRunOnceOrchestrator:
         except Exception as ex:
             # Mark run as ended with error
             run_record.ended_at_utc = datetime.now(timezone.utc).isoformat()
+
+            if self.log_store is not None:
+                self.log_store.append(
+                    TransitionLogEntry(
+                        loop_id="discovery",
+                        run_id=run_record.run_id,
+                        issue_number=0,
+                        from_state=DiscoveryState.DISCOVERY_RUNNING.value,
+                        to_state=DiscoveryState.DISCOVERY_HALTED_NO_GATE.value,
+                        trigger_event=DiscoveryEvent.GATE_MISSING.value,
+                        blocked_stage=DiscoveryState.DISCOVERY_RUNNING.value,
+                        reason_code="RUN_ONCE_NODE_FAILURE",
+                        reason_detail=(
+                            f"{str(ex)}; "
+                            f"last_error_class={type(ex).__name__}"
+                        ),
+                        timestamp_utc=datetime.now(timezone.utc).isoformat(),
+                        adapter_source="system",
+                    )
+                )
 
             # Return halted result
             return DiscoveryRunResult(

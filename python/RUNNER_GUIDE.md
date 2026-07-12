@@ -259,15 +259,34 @@ The `pm_runner.py` script uses `StubLLMAdapter` by default, which returns hardco
 
 ### Replace with Real Adapter
 
-To use a real LLM (e.g., Claude via Copilot SDK), replace `StubLLMAdapter` with your actual adapter:
+Use the factory helper so the runtime can fail closed when SDK setup is missing:
 
 ```python
-# In pm_runner.py, replace:
-# adapter = StubLLMAdapter(args.model)
+from aios_orchestration_core.llm.adapter_factory import create_adapter
 
-# With:
-from aios_orchestration_core.llm.copilot_sdk_adapter import CopilotSDKAdapter
-adapter = CopilotSDKAdapter(your_client, config)
+adapter = create_adapter(model=args.model, use_stub=False)
+```
+
+If you need stub behavior for local-only testing, enable it explicitly:
+
+```python
+adapter = create_adapter(model=args.model, use_stub=True, stub_class=StubLLMAdapter)
+```
+
+### Live Tool-Call Conformance Check
+
+Validate schema-conformant tool payloads across all task types with the real Copilot SDK path:
+
+```powershell
+cd python
+$env:PYTHONPATH='.'
+python scripts/copilot_task_conformance.py --trials 1
+```
+
+Target a single task during triage:
+
+```powershell
+python scripts/copilot_task_conformance.py --trials 3 --task pm_phase1
 ```
 
 ## Environment Variables

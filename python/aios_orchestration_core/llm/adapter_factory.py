@@ -5,6 +5,7 @@ from typing import Optional
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.copilot_sdk_adapter import CopilotSDKAdapter, CopilotAdapterConfig
+from aios_orchestration_core.llm.copilot_runtime_client import CopilotRuntimeClient
 
 logger = logging.getLogger(__name__)
 
@@ -73,12 +74,9 @@ def _get_copilot_client():
         ImportError: If Copilot SDK is not available or cannot be imported
     """
     try:
-        # Try importing from GitHub Copilot SDK
-        from github_copilot_sdk import CopilotClient
-        
-        # Initialize with default configuration
-        client = CopilotClient()
-        return client
+        # Ensure SDK package is importable, then return runtime wrapper.
+        import copilot  # noqa: F401
+        return CopilotRuntimeClient()
     except ImportError:
         raise ImportError(
             "GitHub Copilot SDK not found. Install with: pip install github-copilot-sdk"
