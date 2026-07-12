@@ -7,7 +7,7 @@ from aios_orchestration_core.github.foundation_gateway import (
     FoundationIssue,
 )
 from aios_orchestration_core.policies.retry import RetryPolicy
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.foundation import FoundationState
 from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, FoundationRunRegistry
 

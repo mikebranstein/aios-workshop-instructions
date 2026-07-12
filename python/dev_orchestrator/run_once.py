@@ -13,7 +13,7 @@ from aios_orchestration_core.labels.dev_labels import (
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.dev import DevState, TERMINAL_DEV_STATES
 from dev_orchestrator.circuit_breaker import DevCircuitBreaker
 from dev_orchestrator.nodes.build import DevBuildNode

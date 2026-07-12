@@ -2,7 +2,7 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.github.dev_gateway import DevGitHubGateway, DevIssue
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.dev import DevState
 from dev_orchestrator.nodes.build import DevBuildNode
 from dev_orchestrator.nodes.design import DevDesignNode

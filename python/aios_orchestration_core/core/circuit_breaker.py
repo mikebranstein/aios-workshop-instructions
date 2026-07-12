@@ -4,7 +4,7 @@ from typing import Any, Generic, TypeVar
 
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 
 S = TypeVar("S")
 

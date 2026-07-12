@@ -1,6 +1,6 @@
 from aios_orchestration_core.core.circuit_breaker import BlockContext, LoopCircuitBreaker
 from aios_orchestration_core.policies.retry import RetryPolicy
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.pm import PMState
 
 # Backward-compatible alias so existing call sites keep working.

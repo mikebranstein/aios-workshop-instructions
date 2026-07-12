@@ -2,7 +2,7 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.github.po_gateway import POGitHubGateway, POIssue
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.po import POState
 from po_orchestrator.run_once import PORunOnceOrchestrator, PORunRegistry
 
@@ -96,19 +96,18 @@ class PORunOnceTests(unittest.TestCase):
     def test_transition_log_written_for_each_step(self) -> None:
         gateway = POGitHubGateway({1: POIssue(1, "Op", "body", labels={"po:queued"})})
         with tempfile.TemporaryDirectory() as tmp:
-            log_path = f"{tmp}/runlog.sqlite"
-            self._orchestrator(
+            orch = self._orchestrator(
                 gateway, tmp,
                 {"decision": "DEFER", "reason": "no"},
                 {"feature_requests": []},
-            ).run_once(1)
-            import sqlite3
-            conn = sqlite3.connect(log_path)
-            rows = conn.execute("SELECT loop_id, from_state, to_state FROM transition_log").fetchall()
-            conn.close()
-        self.assertTrue(all(r[0] == "po" for r in rows))
-        states_visited = [r[1] for r in rows]
-        self.assertIn("PO_QUEUED", states_visited)
+            )
+            orch.run_once(1)
+            # Verify transitions were logged
+            entries = orch.log_store.all()
+        self.assertTrue(len(entries) > 0, "Expected at least one transition logged")
+        self.assertTrue(all(e.loop_id == "po" for e in entries), "All entries should be from po loop")
+        states_visited = [e.from_state for e in entries]
+        self.assertIn("PO_QUEUED", states_visited, "PO_QUEUED should be visited")
 
 
 if __name__ == "__main__":

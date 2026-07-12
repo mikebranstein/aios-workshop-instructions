@@ -2,7 +2,7 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.pm import PMState
 from pm_orchestrator.circuit_breaker import PMBlockContext, PMCircuitBreaker
 

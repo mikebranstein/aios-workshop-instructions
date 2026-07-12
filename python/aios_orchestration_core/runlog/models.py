@@ -26,3 +26,21 @@ class TransitionLogEntry:
             f"reason_code={self.reason_code}{blocked} "
             f"detail={self.reason_detail}"
         )
+
+    def to_markdown_row(self) -> str:
+        """Return a markdown table row for this transition."""
+        blocked = f" [{self.blocked_stage}]" if self.blocked_stage else ""
+        return (
+            f"| {self.loop_id} | {self.run_id[:8]}... | {self.issue_number} | "
+            f"{self.from_state} | {self.to_state} | {self.trigger_event} | "
+            f"{self.reason_code}{blocked} | {self.timestamp_utc} |"
+        )
+
+    def to_stdout(self) -> str:
+        """Return a human-readable one-liner for console output."""
+        blocked = f" [BLOCKED: {self.blocked_stage}]" if self.blocked_stage else ""
+        return (
+            f"[{self.timestamp_utc}] [{self.loop_id}] issue={self.issue_number} "
+            f"{self.from_state} -> {self.to_state} "
+            f"({self.trigger_event}, {self.reason_code}){blocked}"
+        )

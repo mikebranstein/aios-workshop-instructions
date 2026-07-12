@@ -5,7 +5,7 @@ from aios_orchestration_core.github.foundation_gateway import FoundationGateway
 from aios_orchestration_core.labels.foundation_labels import FOUNDATION_CANONICAL_LABEL_BY_STATE, FOUNDATION_CANONICAL_STATE_LABELS
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.foundation import FoundationState
 from aios_orchestration_core.transitions.foundation import get_next_foundation_state
 

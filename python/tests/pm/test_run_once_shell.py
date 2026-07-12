@@ -2,7 +2,7 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.github.pm_gateway import PMGitHubGateway, PMIssue
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from pm_orchestrator.run_once import PMRunOnceOrchestrator, PMRunRegistry
 
 

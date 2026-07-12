@@ -2,7 +2,7 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.github.po_gateway import POGitHubGateway, POIssue
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.po import POState
 from po_orchestrator.nodes.create_features import POCreateFeaturesNode
 from po_orchestrator.nodes.prioritize import POPrioritizeNode

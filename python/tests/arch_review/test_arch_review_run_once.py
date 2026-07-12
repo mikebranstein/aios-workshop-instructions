@@ -3,7 +3,7 @@ import unittest
 
 from aios_orchestration_core.github.arch_review_gateway import ArchReviewGitHubGateway, ArchReviewIssue
 from aios_orchestration_core.policies.retry import RetryPolicy
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.arch_review import ArchReviewState
 from arch_review_orchestrator.run_once import ArchReviewRunOnceOrchestrator, ArchReviewRunRegistry
 

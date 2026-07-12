@@ -18,7 +18,7 @@ from aios_orchestration_core.github.dev_gateway import DevGateway
 from aios_orchestration_core.labels.dev_labels import DEV_CANONICAL_LABEL_BY_STATE, DEV_CANONICAL_STATE_LABELS
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.dev import DevState, TERMINAL_DEV_STATES
 from aios_orchestration_core.transitions.dev import get_next_dev_state
 

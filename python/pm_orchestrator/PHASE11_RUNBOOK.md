@@ -7,7 +7,7 @@ Run a local dress rehearsal of PM pilot phases with mocked GitHub and mocked Cop
 1. Run phase test suite with `PYTHONPATH=python`.
 2. Run smoke harness `python -c "from pm_orchestrator.smoke import run_pm_phase_smoke; print(run_pm_phase_smoke())"`.
 3. Confirm migration scanner flags legacy label queries.
-4. Confirm transition log entries are persisted to sqlite.
+4. Confirm transition log entries are recorded in-memory and printed to stdout.
 
 ## Pilot Go-Live Checks
 1. Forced tool capability probe passes in runtime startup.

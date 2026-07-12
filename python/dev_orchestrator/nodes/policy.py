@@ -1,7 +1,7 @@
 from aios_orchestration_core.events.dev import DevEvent
 from aios_orchestration_core.github.dev_gateway import DevGateway
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.dev import DevState
 from dev_orchestrator.nodes._stage_helper import run_dev_stage_node
 

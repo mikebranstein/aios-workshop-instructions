@@ -22,10 +22,9 @@ venv/
 env/
 ENV/
 
-# SQLite runlog databases
-*.sqlite
-*.sqlite3
-*.db
+# Markdown runlog exports
+*.runlog.md
+transitions.md
 
 # Type checkers
 .mypy_cache/

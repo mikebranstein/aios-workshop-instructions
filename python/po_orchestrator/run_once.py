@@ -14,7 +14,7 @@ from aios_orchestration_core.labels.po_labels import (
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.po import POState, TERMINAL_PO_STATES
 from aios_orchestration_core.transitions.po import get_next_po_state
 from po_orchestrator.circuit_breaker import POCircuitBreaker

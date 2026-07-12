@@ -14,7 +14,7 @@ from aios_orchestration_core.labels.arch_review_labels import (
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.arch_review import ArchReviewState, TERMINAL_ARCH_REVIEW_STATES
 from aios_orchestration_core.transitions.arch_review import get_next_arch_review_state
 from arch_review_orchestrator.circuit_breaker import ArchReviewCircuitBreaker

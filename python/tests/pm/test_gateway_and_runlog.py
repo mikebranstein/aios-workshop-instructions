@@ -3,7 +3,7 @@ import unittest
 
 from aios_orchestration_core.github.pm_gateway import PMGitHubGateway, PMIssue
 from aios_orchestration_core.runlog.models import TransitionLogEntry
-from aios_orchestration_core.runlog.sqlite_store import TransitionLogStore
+from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 
 
 class Phase3GatewayRunlogTests(unittest.TestCase):
