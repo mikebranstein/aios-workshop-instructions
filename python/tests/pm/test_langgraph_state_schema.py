@@ -153,22 +153,32 @@ class LangGraphGraphTests(unittest.TestCase):
         """Verify router returns valid node name or END."""
         from langgraph.graph import END
 
-        # Test terminal state
+        # Test terminal state from normalize_and_route
         state_terminal: PMRunState = {
             "source_issue_number": 1,
             "run_id": "test-run-123",
             "current_state": PMState.PM_OUTPUT_PUBLISHED,
         }
-        result = self.orchestrator._router_from_state(state_terminal)
+        result = self.orchestrator._route_normalize_and_route(state_terminal)
         self.assertEqual(result, END)
 
-        # Test active state
+        # Test active state from normalize_and_route
         state_active: PMRunState = {
             "source_issue_number": 1,
             "run_id": "test-run-123",
             "current_state": PMState.PM_PHASE1_VALIDATING,
         }
-        result = self.orchestrator._router_from_state(state_active)
+        result = self.orchestrator._route_normalize_and_route(state_active)
+        self.assertIsInstance(result, str)
+        self.assertNotEqual(result, END)
+
+        # Test foundation_gate router
+        state_foundation: PMRunState = {
+            "source_issue_number": 1,
+            "run_id": "test-run-123",
+            "current_state": PMState.PM_PHASE1_VALIDATING,
+        }
+        result = self.orchestrator._route_foundation_gate(state_foundation)
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, END)
 

@@ -1,9 +1,9 @@
 """LangGraph StateGraph for PO orchestration loop.
 
-This module wraps the PO orchestration logic in a LangGraph StateGraph.
-Routing is driven by TransitionTable (_TABLE), the single source of truth.
-Nodes focus on business logic; routing functions in conditional_edges
-determine next node based on TransitionTable entries.
+This module wraps the PO orchestration logic in a LangGraph StateGraph using conditional_edges.
+Nodes focus on business logic and return updated state (dict).
+Routing functions check current_state and return next node name (string) or END.
+This maintains the non-negotiable constraint: _PO_TABLE remains the single source of truth.
 """
 
 from typing import Optional, TypedDict

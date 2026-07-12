@@ -70,76 +70,85 @@ class LangGraphConditionalEdgesTests(unittest.TestCase):
             phase2_adapter=self.adapter,
         )
 
-    def test_router_from_state_returns_end_for_terminal_states(self):
+    def test_route_foundation_gate_returns_end_for_terminal_states(self):
         """Verify router returns END for all terminal states."""
         for terminal_state in TERMINAL_PM_STATES:
             state: PMRunState = {
                 "source_issue_number": 1,
                 "current_state": terminal_state,
             }
-            result = self.orchestrator._router_from_state(state)
+            result = self.orchestrator._route_foundation_gate(state)
             self.assertEqual(result, END, f"Failed for terminal state: {terminal_state}")
 
-    def test_router_from_state_phase1(self):
+    def test_route_foundation_gate_to_phase1(self):
         """Verify router routes to phase1 when in PHASE1_VALIDATING."""
         state: PMRunState = {
             "source_issue_number": 1,
             "current_state": PMState.PM_PHASE1_VALIDATING,
         }
-        result = self.orchestrator._router_from_state(state)
+        result = self.orchestrator._route_foundation_gate(state)
         self.assertEqual(result, "phase1")
 
-    def test_router_from_state_research_planning(self):
+    def test_route_phase1_to_research_planning(self):
         """Verify router routes to research_planning when in RESEARCH_PLANNING."""
         state: PMRunState = {
             "source_issue_number": 1,
             "current_state": PMState.PM_RESEARCH_PLANNING,
         }
-        result = self.orchestrator._router_from_state(state)
+        result = self.orchestrator._route_phase1(state)
         self.assertEqual(result, "research_planning")
 
-    def test_router_from_state_research_waiting(self):
-        """Verify router returns END when in RESEARCH_WAITING (gate didn't pass)."""
+    def test_route_research_planning_to_closure_gate(self):
+        """Verify router routes to research_closure_gate when in RESEARCH_WAITING."""
         state: PMRunState = {
             "source_issue_number": 1,
             "current_state": PMState.PM_RESEARCH_WAITING,
         }
-        result = self.orchestrator._router_from_state(state)
-        self.assertEqual(result, END)
+        result = self.orchestrator._route_research_planning(state)
+        self.assertEqual(result, "research_closure_gate")
 
-    def test_router_from_state_synthesis(self):
-        """Verify router routes to synthesis when in RESEARCH_SYNTHESIZING."""
+    def test_route_research_closure_gate_synthesis(self):
+        """Verify router routes to synthesis when in RESEARCH_SYNTHESIZING (gate passed)."""
         state: PMRunState = {
             "source_issue_number": 1,
             "current_state": PMState.PM_RESEARCH_SYNTHESIZING,
         }
-        result = self.orchestrator._router_from_state(state)
+        result = self.orchestrator._route_research_closure_gate(state)
         self.assertEqual(result, "synthesis")
 
-    def test_router_from_state_phase2(self):
+    def test_route_research_closure_gate_loop_back(self):
+        """Verify router routes back to research_planning when in RESEARCH_WAITING (gate not passed)."""
+        state: PMRunState = {
+            "source_issue_number": 1,
+            "current_state": PMState.PM_RESEARCH_WAITING,
+        }
+        result = self.orchestrator._route_research_closure_gate(state)
+        self.assertEqual(result, "research_planning")
+
+    def test_route_synthesis_to_phase2(self):
         """Verify router routes to phase2 when in PHASE2_VALIDATING."""
         state: PMRunState = {
             "source_issue_number": 1,
             "current_state": PMState.PM_PHASE2_VALIDATING,
         }
-        result = self.orchestrator._router_from_state(state)
+        result = self.orchestrator._route_synthesis(state)
         self.assertEqual(result, "phase2")
 
-    def test_router_from_normalize_queued_to_foundation_gate(self):
+    def test_route_normalize_queued_to_foundation_gate(self):
         """Verify router from normalize directs to foundation_gate for QUEUED state."""
         state: PMRunState = {
             "current_state": PMState.PM_QUEUED,
         }
-        result = self.orchestrator._router_from_normalize(state)
+        result = self.orchestrator._route_normalize_and_route(state)
         self.assertEqual(result, "foundation_gate")
 
-    def test_router_from_normalize_returns_end_for_terminal(self):
+    def test_route_normalize_returns_end_for_terminal(self):
         """Verify router from normalize returns END for terminal states."""
         for terminal_state in TERMINAL_PM_STATES:
             state: PMRunState = {
                 "current_state": terminal_state,
             }
-            result = self.orchestrator._router_from_normalize(state)
+            result = self.orchestrator._route_normalize_and_route(state)
             self.assertEqual(result, END, f"Failed for terminal state: {terminal_state}")
 
     def test_router_respects_transition_table(self):
@@ -150,15 +159,22 @@ class LangGraphConditionalEdgesTests(unittest.TestCase):
         # - BLOCKED (via PHASE1_BLOCK)
         # All of which are valid next nodes or END
 
-        for next_state in [PMState.PM_RESEARCH_PLANNING, PMState.PM_DEFERRED, PMState.PM_BLOCKED]:
+        # Test routing from normalize_and_route entry point
+        test_cases = [
+            (PMState.PM_RESEARCH_PLANNING, "research_planning"),
+            (PMState.PM_DEFERRED, END),
+            (PMState.PM_BLOCKED, END),
+        ]
+        
+        for state_value, expected_result in test_cases:
             state: PMRunState = {
-                "current_state": next_state,
+                "current_state": state_value,
             }
-            result = self.orchestrator._router_from_state(state)
-            # Result should be valid (either a node name or END)
-            self.assertTrue(
-                result == END or isinstance(result, str),
-                f"Router returned invalid result: {result}",
+            result = self.orchestrator._route_normalize_and_route(state)
+            self.assertEqual(
+                result,
+                expected_result,
+                f"Router returned {result} for state {state_value}, expected {expected_result}",
             )
 
 

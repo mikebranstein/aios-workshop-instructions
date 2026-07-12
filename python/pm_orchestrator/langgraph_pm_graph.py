@@ -111,31 +111,33 @@ class PMGraphOrchestrator:
         # Conditional edges: routing determined by TransitionTable
         builder.add_conditional_edges(
             "normalize_and_route",
-            self._router_from_normalize,
+            self._route_normalize_and_route,
         )
         builder.add_conditional_edges(
             "foundation_gate",
-            self._router_from_state,
+            self._route_foundation_gate,
         )
         builder.add_conditional_edges(
             "phase1",
-            self._router_from_state,
+            self._route_phase1,
         )
         builder.add_conditional_edges(
             "research_planning",
-            self._router_from_state,
+            self._route_research_planning,
         )
         builder.add_conditional_edges(
             "research_closure_gate",
-            self._router_from_state,
+            self._route_research_closure_gate,
         )
         builder.add_conditional_edges(
             "synthesis",
-            self._router_from_state,
+            self._route_synthesis,
         )
         builder.add_edge("phase2", END)
 
-    def _router_from_normalize(self, state: PMRunState) -> str:
+        return builder.compile()
+
+    def _route_normalize_and_route(self, state: PMRunState) -> str:
         """Route from normalize_and_route using TransitionTable."""
         current_state = state.get("current_state")
         if current_state in TERMINAL_PM_STATES:
@@ -144,46 +146,70 @@ class PMGraphOrchestrator:
         # Check TransitionTable for next node
         if current_state == PMState.PM_QUEUED:
             return "foundation_gate"
-        elif current_state == PMState.PM_FOUNDATION_NEEDED:
-            return "foundation_gate"
-        elif current_state == PMState.PM_PHASE1_RESEARCH:
+        elif current_state == PMState.PM_PHASE1_VALIDATING:
             return "phase1"
         elif current_state == PMState.PM_RESEARCH_PLANNING:
             return "research_planning"
         elif current_state == PMState.PM_RESEARCH_WAITING:
-            return "research_planning"
-        elif current_state == PMState.PM_RESEARCH_CLOSURE:
             return "research_closure_gate"
-        elif current_state == PMState.PM_SYNTHESIS:
+        elif current_state == PMState.PM_RESEARCH_SYNTHESIZING:
             return "synthesis"
-        elif current_state == PMState.PM_PHASE2_DECISION:
+        elif current_state == PMState.PM_PHASE2_VALIDATING:
             return "phase2"
         else:
             return END
 
-    def _router_from_state(self, state: PMRunState) -> str:
-        """Route using TransitionTable based on current state."""
+    def _route_foundation_gate(self, state: PMRunState) -> str:
+        """Route from foundation_gate using TransitionTable."""
         current_state = state.get("current_state")
         if current_state in TERMINAL_PM_STATES:
             return END
-        
-        # Map current state to next node based on state machine flow
-        if current_state == PMState.PM_QUEUED or current_state == PMState.PM_FOUNDATION_NEEDED:
-            return "foundation_gate"
-        elif current_state == PMState.PM_PHASE1_RESEARCH:
+        elif current_state == PMState.PM_PHASE1_VALIDATING:
             return "phase1"
-        elif current_state == PMState.PM_RESEARCH_PLANNING or current_state == PMState.PM_RESEARCH_WAITING:
-            return "research_planning"
-        elif current_state == PMState.PM_RESEARCH_CLOSURE:
-            return "research_closure_gate"
-        elif current_state == PMState.PM_SYNTHESIS:
-            return "synthesis"
-        elif current_state == PMState.PM_PHASE2_DECISION:
-            return "phase2"
         else:
             return END
 
-        return builder.compile()
+    def _route_phase1(self, state: PMRunState) -> str:
+        """Route from phase1 using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_PM_STATES:
+            return END
+        elif current_state == PMState.PM_RESEARCH_PLANNING:
+            return "research_planning"
+        else:
+            return END
+
+    def _route_research_planning(self, state: PMRunState) -> str:
+        """Route from research_planning using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_PM_STATES:
+            return END
+        elif current_state == PMState.PM_RESEARCH_WAITING:
+            return "research_closure_gate"
+        else:
+            return END
+
+    def _route_research_closure_gate(self, state: PMRunState) -> str:
+        """Route from research_closure_gate using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_PM_STATES:
+            return END
+        elif current_state == PMState.PM_RESEARCH_WAITING:
+            return "research_planning"  # Gate not passed; loop back
+        elif current_state == PMState.PM_RESEARCH_SYNTHESIZING:
+            return "synthesis"  # Gate passed; advance
+        else:
+            return END
+
+    def _route_synthesis(self, state: PMRunState) -> str:
+        """Route from synthesis using TransitionTable."""
+        current_state = state.get("current_state")
+        if current_state in TERMINAL_PM_STATES:
+            return END
+        elif current_state == PMState.PM_PHASE2_VALIDATING:
+            return "phase2"
+        else:
+            return END
 
     def _node_normalize_and_route(self, state: PMRunState) -> PMRunState:
         """Entry point: normalize state from GitHub labels."""
