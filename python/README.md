@@ -9,7 +9,7 @@ This directory contains the complete Python implementation of the AIOS (Agentic 
 ### Prerequisites
 
 - Python 3.9+
-- No external dependencies required (standard library only)
+- LangGraph and pytest (install with `pip install langgraph pytest`)
 
 ### Run All Tests
 
@@ -19,7 +19,7 @@ $env:PYTHONPATH = (Get-Location).Path
 python -m pytest tests/ -q
 ```
 
-Expected: **164 tests pass, 8 skipped**.
+Expected: **163 passed, 10 skipped**.
 
 ### Run a Specific Loop's Tests
 
@@ -42,7 +42,7 @@ Cross-validates the markdown routing registry against all Python state machines:
 python -m pytest tests/registry/test_routing_registry_alignment.py -q
 ```
 
-This ensures every decision in `templates-v2/orchestration/routing-registry.md` has a corresponding Python transition.
+This ensures every decision in `templates-old-v2/orchestration/routing-registry.md` has a corresponding Python transition.
 
 ---
 
@@ -414,7 +414,7 @@ events = allowed_events_for_pm_state(PMState.PM_DEFERRED)
 - **Testable**: Contract tests can verify completeness (all transitions declared, all terminals have no outgoing edges)
 - **No side effects**: Calling `next_state()` has no behavioral side effects — it's a pure function lookup
 
-**Benefits across all 7 loops:**
+**Benefits across all 6 loops:**
 - Every loop uses identical `TransitionTable[S, E]` pattern
 - Transitions are declarative and verified at startup
 - No implicit state changes or side effects in transition logic
