@@ -14,6 +14,10 @@ class _S:
     def __init__(self, payload):
         self.payload = payload
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, *a, **kw):
         return type("R", (), {"payload": self.payload, "model": "smoke"})()
 

@@ -13,6 +13,10 @@ class _S:
         self._payloads = list(payloads)
         self._idx = 0
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, *a, **kw):
         p = self._payloads[min(self._idx, len(self._payloads) - 1)]
         self._idx += 1

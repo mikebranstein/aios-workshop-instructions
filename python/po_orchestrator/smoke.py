@@ -10,6 +10,10 @@ class _StaticAdapter:
     def __init__(self, payload):
         self.payload = payload
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         return type("Result", (), {"payload": self.payload, "model": "smoke-model"})()
 

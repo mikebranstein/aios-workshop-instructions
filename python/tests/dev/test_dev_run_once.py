@@ -11,6 +11,10 @@ class _A:
     def __init__(self, payload):
         self.payload = payload
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, *a, **kw):
         return type("R", (), {"payload": self.payload, "model": "t"})()
 
@@ -55,6 +59,10 @@ class DevRunOnceTests(unittest.TestCase):
         calls = {"n": 0}
 
         class _DesignAdapter:
+            @property
+            def adapter_source(self):
+                return "stub"
+
             def invoke_json(self, *a, **kw):
                 calls["n"] += 1
                 d = "REVISE" if calls["n"] == 1 else "APPROVED"
@@ -78,6 +86,10 @@ class DevRunOnceTests(unittest.TestCase):
 
     def test_circuit_breaker_escalates(self) -> None:
         class _Fail:
+            @property
+            def adapter_source(self):
+                return "stub"
+
             def invoke_json(self, *a, **kw):
                 raise RuntimeError("fail")
 
