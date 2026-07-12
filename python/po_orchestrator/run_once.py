@@ -4,22 +4,17 @@ from typing import Dict, Iterable, Optional
 from uuid import uuid4
 
 from aios_orchestration_core.core.circuit_breaker import BlockContext
-from aios_orchestration_core.events.po import POEvent
 from aios_orchestration_core.github.po_gateway import POGateway
 from aios_orchestration_core.labels.po_labels import (
     PO_CANONICAL_LABEL_BY_STATE,
     PO_CANONICAL_STATE_LABELS,
-    PO_LABEL_REGISTRY,
 )
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
-from aios_orchestration_core.runlog.models import TransitionLogEntry
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.po import POState, TERMINAL_PO_STATES
-from aios_orchestration_core.transitions.po import get_next_po_state
 from po_orchestrator.circuit_breaker import POCircuitBreaker
-from po_orchestrator.nodes.create_features import POCreateFeaturesNode
-from po_orchestrator.nodes.prioritize import POPrioritizeNode
+from po_orchestrator.langgraph_po_graph import POGraphOrchestrator, PORunState
 
 
 @dataclass
@@ -51,19 +46,11 @@ def _normalize_po_state(labels: Iterable[str]) -> Optional[POState]:
     Canonical labels take precedence.  Returns None if the state is
     ambiguous or unknown (caller defaults to PO_QUEUED).
     """
-    canonical_hits = set()
-    all_hits = set()
-    for label in labels:
-        state = PO_LABEL_REGISTRY.state_for_label(label)
-        if state is not None:
-            all_hits.add(state)
-            if label in PO_LABEL_REGISTRY.all_canonical_labels:
-                canonical_hits.add(state)
-    if len(canonical_hits) == 1:
-        return next(iter(canonical_hits))
-    if len(all_hits) == 1:
-        return next(iter(all_hits))
-    return None
+    from aios_orchestration_core.labels.po_labels import normalize_po_state_from_labels
+    
+    normalized = normalize_po_state_from_labels(labels)
+    return normalized.state
+
 
 
 class PORunOnceOrchestrator:
@@ -71,6 +58,7 @@ class PORunOnceOrchestrator:
 
     Picks up a strategic-opportunity issue at any point in the PO pipeline
     and advances it as far as possible in one invocation.
+    Uses LangGraph-backed orchestration internally.
     """
 
     def __init__(
@@ -85,9 +73,10 @@ class PORunOnceOrchestrator:
         self.gateway = gateway
         self.log_store = log_store
         self.run_registry = run_registry
-        self.prioritize_node = POPrioritizeNode(prioritize_adapter, gateway, log_store)
-        self.create_features_node = POCreateFeaturesNode(create_features_adapter, gateway, log_store)
         self.circuit_breaker = POCircuitBreaker(retry_policy or RetryPolicy(max_attempts=3), log_store)
+        self.graph_orchestrator = POGraphOrchestrator(
+            gateway, log_store, prioritize_adapter, create_features_adapter
+        )
 
     def run_once(self, source_issue_number: int) -> PORunRecord:
         run = self.run_registry.start_new_run(source_issue_number)
@@ -102,25 +91,18 @@ class PORunOnceOrchestrator:
                 run.ended_at_utc = datetime.now(timezone.utc).isoformat()
                 return run
 
-            if current_state == POState.PO_QUEUED:
-                next_state = get_next_po_state(POState.PO_QUEUED, POEvent.ENTERED_PRIORITIZATION)
-                self._apply_transition(
-                    run.run_id, source_issue_number,
-                    POState.PO_QUEUED, next_state, POEvent.ENTERED_PRIORITIZATION,
-                    "ENTERED_PRIORITIZATION", "Strategic opportunity entered PO prioritization",
-                )
-                current_state = next_state
+            # Prepare initial state for graph
+            initial_state: PORunState = {
+                "source_issue_number": source_issue_number,
+                "run_id": run.run_id,
+                "current_state": current_state,
+            }
 
-            if current_state == POState.PO_PRIORITIZING:
-                current_state = self.prioritize_node.run(run.run_id, source_issue_number)
-
-            if current_state in TERMINAL_PO_STATES:
-                run.ended_at_utc = datetime.now(timezone.utc).isoformat()
-                return run
-
-            if current_state == POState.PO_CREATING_FEATURES:
-                current_state = self.create_features_node.run(run.run_id, source_issue_number)
-
+            # Invoke graph
+            final_state = self.graph_orchestrator.invoke(initial_state)
+            
+            # Update run record with final state
+            run.ended_at_utc = datetime.now(timezone.utc).isoformat()
             retry_state.attempts = 0
 
         except Exception as ex:
@@ -150,31 +132,3 @@ class PORunOnceOrchestrator:
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()
         return run
 
-    def _apply_transition(
-        self,
-        run_id: str,
-        issue_number: int,
-        from_state: POState,
-        to_state: POState,
-        event: POEvent,
-        reason_code: str,
-        reason_detail: str,
-    ) -> None:
-        self.gateway.set_state_labels(
-            issue_number,
-            list(PO_CANONICAL_STATE_LABELS),
-            [PO_CANONICAL_LABEL_BY_STATE[to_state]],
-        )
-        entry = TransitionLogEntry(
-            loop_id="po",
-            run_id=run_id,
-            issue_number=issue_number,
-            from_state=from_state.value,
-            to_state=to_state.value,
-            trigger_event=event.value,
-            reason_code=reason_code,
-            reason_detail=reason_detail,
-            timestamp_utc=datetime.now(timezone.utc).isoformat(),
-        )
-        self.log_store.append(entry)
-        self.gateway.post_comment(issue_number, entry.to_comment())
