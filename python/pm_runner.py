@@ -71,6 +71,10 @@ class StubLLMAdapter(JudgmentLLMAdapter):
     def __init__(self, model: str = "gpt-4"):
         self.model = model
 
+    @property
+    def adapter_source(self) -> str:
+        return "stub"
+
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
         """Return stub response. In production, invoke actual LLM."""
         # Stub responses for different task types

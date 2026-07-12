@@ -37,6 +37,7 @@ class FoundationResearchNode:
             from_state=FoundationState.FOUNDATION_IN_PROGRESS.value, to_state=next_state.value,
             trigger_event=event.value, reason_code=f"FOUNDATION_RESEARCH_{decision}",
             reason_detail=result.payload.get("reason", ""), timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            adapter_source=self.adapter.adapter_source,
         )
         self.log_store.append(entry)
         self.gateway.post_comment(issue_number, entry.to_comment())

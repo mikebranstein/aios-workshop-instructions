@@ -12,6 +12,10 @@ class StubPrioritizeAdapter:
     def __init__(self, decision: str):
         self.decision = decision
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         return type("R", (), {"payload": {"decision": self.decision, "reason": "test"}})()
 
@@ -19,6 +23,10 @@ class StubPrioritizeAdapter:
 class StubCreateFeaturesAdapter:
     def __init__(self, specs):
         self.specs = specs
+
+    @property
+    def adapter_source(self):
+        return "stub"
 
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         return type("R", (), {"payload": {"feature_requests": self.specs}})()

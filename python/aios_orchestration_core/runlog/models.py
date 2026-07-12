@@ -12,10 +12,10 @@ class TransitionLogEntry:
     reason_code: str
     reason_detail: str
     timestamp_utc: str
+    adapter_source: str  # REQUIRED: "copilot" or "stub" — must be explicitly set by all callers
     loop_id: str = "pm"
     actor: str = "orchestrator"
     blocked_stage: Optional[str] = None
-    adapter_source: str = "copilot"  # "copilot" or "stub" — MUST be explicitly set by nodes
 
     def to_comment(self) -> str:
         blocked = f" blocked_stage={self.blocked_stage}" if self.blocked_stage else ""

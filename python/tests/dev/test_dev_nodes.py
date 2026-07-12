@@ -15,6 +15,10 @@ class _A:
     def __init__(self, decision):
         self.decision = decision
 
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         return type("R", (), {"payload": {"decision": self.decision, "reason": "test"}})()
 

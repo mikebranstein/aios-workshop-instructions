@@ -57,6 +57,7 @@ class PMPhase1Node:
             reason_code=f"PM_PHASE1_{decision}",
             reason_detail=result.payload.get("reason", "PM phase1 decision"),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            adapter_source=self.adapter.adapter_source,  # Track which adapter made this decision
         )
         self.log_store.append(entry)
         self.gateway.post_comment(issue_number, entry.to_comment())

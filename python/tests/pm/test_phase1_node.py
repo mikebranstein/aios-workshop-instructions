@@ -8,6 +8,10 @@ from pm_orchestrator.nodes.phase1 import PMPhase1Node, Phase1Config
 
 
 class StubAdapter:
+    @property
+    def adapter_source(self):
+        return "stub"
+
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         return type("Result", (), {"payload": {"decision": "PROVISIONAL_CHAMPION", "reason": "signal"}})()
 

@@ -154,6 +154,7 @@ class FoundationGraphOrchestrator:
                 reason_code="FOUNDATION_STARTED",
                 reason_detail="Starting foundation research",
                 timestamp_utc=datetime.now(timezone.utc).isoformat(),
+                adapter_source="system",  # Auto-transition, no LLM
             )
             self.log_store.append(entry)
             self.gateway.post_comment(state["source_issue_number"], entry.to_comment())

@@ -63,6 +63,7 @@ class POPrioritizeNode:
             reason_code=f"PO_PRIORITIZE_{decision}",
             reason_detail=result.payload.get("reason", "PO prioritization decision"),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            adapter_source=self.adapter.adapter_source,
         )
         self.log_store.append(entry)
         self.gateway.post_comment(issue_number, entry.to_comment())

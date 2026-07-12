@@ -76,6 +76,7 @@ class LoopCircuitBreaker(Generic[S]):
                     f"attempts={retry_state.attempts}"
                 ),
                 timestamp_utc=datetime.now(timezone.utc).isoformat(),
+                adapter_source="system",  # Circuit breaker escalation (not adapter decision)
             )
             self.log_store.append(entry)
             return self.escalation_state

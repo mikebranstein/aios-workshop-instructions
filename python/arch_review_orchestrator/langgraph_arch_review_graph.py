@@ -164,6 +164,7 @@ class ArchReviewGraphOrchestrator:
                 reason_code="EVALUATION_STARTED",
                 reason_detail="Starting architecture review",
                 timestamp_utc=datetime.now(timezone.utc).isoformat(),
+                adapter_source="system",  # Auto-transition, no LLM
             )
             self.log_store.append(entry)
             self.gateway.post_comment(state["source_issue_number"], entry.to_comment())

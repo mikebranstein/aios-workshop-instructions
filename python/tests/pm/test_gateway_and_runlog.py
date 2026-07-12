@@ -31,6 +31,7 @@ class Phase3GatewayRunlogTests(unittest.TestCase):
                 reason_code="FOUNDATION_GATE",
                 reason_detail="foundation-approved present",
                 timestamp_utc="2026-07-12T00:00:00+00:00",
+                adapter_source="copilot",  # Test with real adapter
             )
             store.append(entry)
 

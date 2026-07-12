@@ -204,6 +204,7 @@ class DiscoveryGraphOrchestrator:
             reason_code=reason_code,
             reason_detail=reason_detail,
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            adapter_source=self.idea_scout_adapter.adapter_source,
         )
         self.log_store.append(entry)
 

@@ -66,6 +66,7 @@ def run_dev_stage_node(
         reason_code=f"{reason_prefix}_{decision}",
         reason_detail=result.payload.get("reason", f"{reason_prefix} decision"),
         timestamp_utc=datetime.now(timezone.utc).isoformat(),
+        adapter_source=adapter.adapter_source,
     )
     log_store.append(entry)
     gateway.post_comment(issue_number, entry.to_comment())

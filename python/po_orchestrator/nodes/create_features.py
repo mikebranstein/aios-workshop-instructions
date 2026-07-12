@@ -79,6 +79,7 @@ class POCreateFeaturesNode:
             reason_code="FEATURE_REQUESTS_COMMITTED",
             reason_detail=f"Created {len(created_numbers)} feature request(s): {created_numbers}",
             timestamp_utc=now,
+            adapter_source=self.adapter.adapter_source,
         )
         self.log_store.append(entry)
         self.gateway.post_comment(issue_number, entry.to_comment())
