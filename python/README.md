@@ -55,7 +55,7 @@ Complex workflows (like strategic planning → product ownership → development
 ### The Solution
 
 **Separation of concerns:**
-- **Core infrastructure** (`aios_orchestration_core/core/`): Generic typed state machines, label registries, circuit breakers
+- **Core infrastructure** (`aios_orchestration_core/core/`): Generic typed state machines, label registries, **circuit breakers** (exception handlers that escalate to humans when retry thresholds are exceeded)
 - **Loop-specific infrastructure** (`aios_orchestration_core/states/`, `events/`, `transitions/`, `labels/`): State enum, event enum, transition table, canonical + legacy label mappings
 - **LangGraph orchestrators** (`pm_orchestrator/`, `po_orchestrator/`, etc.): StateGraph-based orchestrators that wrap loop-specific nodes
 - **Nodes**: Individual decision points that invoke an LLM adapter and apply a transition (wrapped by LangGraph)
@@ -338,7 +338,7 @@ python/
 
 ### 1. LangGraph StateGraph Architecture
 
-All 6 orchestrators use **LangGraph StateGraph** for deterministic workflow orchestration:
+All 6 orchestrators use **LangGraph StateGraph** (referred to as "the graph") for deterministic workflow orchestration. The graph is a directed acyclic structure where nodes represent work steps (decisions, LLM invocations) and edges represent state transitions determined by the TransitionTable:
 
 ```python
 # Each orchestrator wraps its loop's nodes in a LangGraph StateGraph
