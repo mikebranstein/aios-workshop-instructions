@@ -7,7 +7,6 @@ This maintains the non-negotiable constraint: _DISCOVERY_TABLE remains the singl
 """
 
 from typing import Optional, TypedDict
-from typing_extensions import Literal
 from datetime import datetime, timezone
 from dataclasses import field
 

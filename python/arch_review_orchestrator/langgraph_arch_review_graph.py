@@ -8,7 +8,6 @@ This maintains the non-negotiable constraint: _ARCH_REVIEW_TABLE remains the sin
 
 from typing import Optional, TypedDict
 from datetime import datetime, timezone
-from typing_extensions import Literal
 
 from langgraph.graph import StateGraph, START, END
 

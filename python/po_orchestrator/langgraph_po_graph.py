@@ -7,7 +7,6 @@ determine next node based on TransitionTable entries.
 """
 
 from typing import Optional, TypedDict
-from typing_extensions import Literal
 from datetime import datetime, timezone
 
 from langgraph.graph import StateGraph, START, END

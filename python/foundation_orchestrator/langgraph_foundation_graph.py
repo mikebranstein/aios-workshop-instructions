@@ -7,7 +7,6 @@ This maintains the non-negotiable constraint: _FOUNDATION_TABLE remains the sing
 """
 
 from typing import Optional, TypedDict
-from typing_extensions import Literal
 from datetime import datetime, timezone
 
 from langgraph.graph import StateGraph, START, END

@@ -8,7 +8,6 @@ Supports feedback loops: DESIGN_REVISE->INTAKE, QA_FAILED->DESIGN.
 """
 
 from typing import Optional, TypedDict
-from typing_extensions import Literal
 
 from langgraph.graph import StateGraph, START, END
 

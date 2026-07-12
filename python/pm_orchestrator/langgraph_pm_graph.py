@@ -7,7 +7,6 @@ This maintains the non-negotiable constraint: _PM_TABLE remains the single sourc
 """
 
 from typing import Optional, TypedDict
-from typing_extensions import Literal
 
 from langgraph.graph import StateGraph, START, END
 
