@@ -15,71 +15,65 @@ def create_adapter(
     stub_class: Optional[type] = None,
 ) -> JudgmentLLMAdapter:
     """
-    Create an LLM adapter with fallback logic.
+    Create an LLM adapter. No silent fallbacks — fails closed on SDK unavailability.
     
     Args:
         model: Model hint to pass to the adapter
-        use_stub: If True, use stub adapter; if False, try Copilot then fall back to stub
-        stub_class: Custom stub class to use (required if use_stub=True or on fallback)
+        use_stub: If True, use stub adapter; if False, require CopilotSDKAdapter
+        stub_class: Custom stub class to use (required if use_stub=True)
     
     Returns:
         JudgmentLLMAdapter: Either CopilotSDKAdapter or StubLLMAdapter
     
+    Raises:
+        ValueError: If use_stub=True but stub_class not provided
+        ImportError: If use_stub=False but Copilot SDK unavailable (fails closed)
+        Exception: If use_stub=False but Copilot SDK initialization fails (fails closed)
+    
     Note:
-        When use_stub=False (default), this attempts to use CopilotSDKAdapter.
-        If the Copilot SDK is not available, it falls back to StubLLMAdapter with a warning.
-        The stub_class parameter must be provided by the caller (typically from the runner script).
+        This function fails closed. If Copilot SDK is required (use_stub=False) 
+        and unavailable, it raises an error immediately. There are no silent fallbacks.
+        Callers must explicitly use --stub to enable stub responses.
     """
     
     if use_stub:
         if stub_class is None:
             raise ValueError("stub_class is required when use_stub=True")
+        logger.info(f"Using StubLLMAdapter (explicit --stub flag) with model={model}")
         return stub_class(model)
     
-    # Try to create Copilot adapter
+    # Copilot is required when use_stub=False
+    # Fail closed if it's not available (do NOT fall back silently)
     try:
-        # Try to get the Copilot SDK client
-        # This would typically come from the GitHub Copilot extension or SDK
         client = _get_copilot_client()
         config = CopilotAdapterConfig(model_default=model)
         logger.info(f"Using CopilotSDKAdapter with model={model}")
         return CopilotSDKAdapter(client, config)
     except ImportError as e:
-        logger.warning(
-            f"Copilot SDK not available ({e}). Falling back to StubLLMAdapter. "
-            "To use Copilot, ensure the GitHub Copilot SDK is installed."
+        logger.error(
+            f"FAILED: Copilot SDK not available ({e}). "
+            "To use Copilot, ensure the GitHub Copilot SDK is installed. "
+            "To use stub (test mode only), pass --stub flag."
         )
-        if stub_class is None:
-            raise ValueError(
-                "Copilot SDK unavailable and no fallback stub_class provided. "
-                "Pass stub_class to create_adapter() or use --stub flag."
-            )
-        logger.warning("Using StubLLMAdapter - LLM calls will return stub responses")
-        return stub_class(model)
+        raise
     except Exception as e:
-        logger.warning(
-            f"Failed to initialize Copilot adapter: {e}. "
-            "Falling back to StubLLMAdapter."
+        logger.error(
+            f"FAILED: Could not initialize Copilot adapter: {e}. "
+            "Check SDK configuration and try again. "
+            "To use stub (test mode only), pass --stub flag."
         )
-        if stub_class is None:
-            raise ValueError(
-                f"Failed to initialize Copilot adapter ({e}) and no fallback stub_class provided. "
-                "Pass stub_class to create_adapter() or use --stub flag."
-            )
-        logger.warning("Using StubLLMAdapter - LLM calls will return stub responses")
-        return stub_class(model)
+        raise
 
 
 def _get_copilot_client():
     """
-    Get the Copilot SDK client.
+    Get the Copilot SDK client. Fails closed if unavailable.
     
     Raises:
-        ImportError: If Copilot SDK is not available
+        ImportError: If Copilot SDK is not available or cannot be imported
     """
     try:
         # Try importing from GitHub Copilot SDK
-        # This is a placeholder - adjust import based on actual SDK availability
         from github_copilot_sdk import CopilotClient
         
         # Initialize with default configuration
