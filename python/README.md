@@ -46,6 +46,210 @@ This ensures every decision in `templates-v2/orchestration/routing-registry.md` 
 
 ---
 
+## Running Orchestrators Against External Repos
+
+The AIOS orchestration system can be run from this directory against any GitHub repository in **two modes**: **continuous** (process all matching issues until queue empty) or **single-issue** (process one specific issue).
+
+### Prerequisites
+
+1. **GitHub CLI** (`gh`) installed and authenticated:
+   ```powershell
+   gh auth login
+   ```
+
+2. **Python 3.9+** with this directory on your `PYTHONPATH`
+
+### Execution Modes
+
+#### 1. Continuous Mode (Recommended)
+Continuously processes all matching issues until the queue is empty. Best for production orchestration pipelines.
+
+**PM Orchestrator** — Process all strategic opportunities:
+```powershell
+python pm_runner.py owner/my-repo --continuous
+```
+Finds all `pm:queued` issues and processes them FIFO until none remain.
+
+**PO Orchestrator** — Process all prioritized opportunities:
+```powershell
+python po_runner.py owner/my-repo --continuous
+```
+Finds all `po:queued` issues and processes them through prioritization.
+
+**Dev Orchestrator** — Process all intake features:
+```powershell
+python dev_runner.py owner/my-repo --continuous
+```
+Finds all `dev:intake` issues and processes them through the full development pipeline.
+
+**Foundation Orchestrator** — Establish project norms (runs once):
+```powershell
+python foundation_runner.py owner/my-repo
+```
+Reads `FOUNDATION.md`, establishes foundational standards. Supports `--force` to restart.
+
+**Architecture Review Orchestrator** — Audit codebase (runs once):
+```powershell
+python arch_review_runner.py owner/my-repo
+```
+Wholistically audits entire codebase for refactoring opportunities. Supports `--force` to re-audit.
+
+**Discovery Orchestrator** — Generate opportunities (runs once):
+```powershell
+python discovery_runner.py owner/my-repo
+```
+Reads `focus.md`, generates strategic opportunities, creates `pm-idea` issues. Supports `--force` to re-scout.
+
+#### 2. Single-Issue Mode
+Process one specific issue through its orchestrator loop. Useful for testing or targeted validation.
+
+```powershell
+python pm_runner.py owner/my-repo 42
+python po_runner.py owner/my-repo 42
+python dev_runner.py owner/my-repo 42
+```
+
+### Continuous Execution Flow
+
+Per the Module 13 design, the three continuous orchestrators work as a pipeline:
+
+```
+PM Continuous Loop
+├─ Find all pm:queued issues
+├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
+└─ Exit when no pm:queued remain
+        ↓ (async handoff)
+PO Continuous Loop  
+├─ Find all po:queued issues
+├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
+└─ Exit when no po:queued remain
+        ↓ (async handoff)
+Dev Continuous Loop
+├─ Find all dev:intake issues
+├─ Process issue #1 → #2 → #3 → ... (sequential FIFO)
+└─ Exit when no dev:intake remain
+```
+
+The three generator/auditor orchestrators (Foundation, ArchReview, Discovery) run independently and do not require pre-created issues.
+
+### Environment Variables
+
+```powershell
+$env:AIOS_TARGET_REPO = "owner/my-repo"
+
+# Now you can omit the repo argument:
+python pm_runner.py --continuous
+python pm_runner.py 42
+python foundation_runner.py --force
+```
+
+### Common Flags
+
+All runners support these flags:
+
+| Flag | Purpose |
+|------|---------|
+| `--dry-run` | Preview without executing (print what would run) |
+| `--force` | Restart from scratch (ignores prior state) |
+| `--log-dir` | Directory for runlog SQLite databases (default: `./{runner}_runs`) |
+| `--model` | LLM model hint (default: `gpt-4`) |
+
+### Examples
+
+#### Example 1: Continuous PM Validation Loop
+
+Process all strategic opportunities in FIFO order:
+
+```powershell
+python pm_runner.py acme-corp/product-ideas --continuous
+```
+
+Output:
+```
+Running PM orchestrator in CONTINUOUS mode...
+2026-07-13 14:22:15 [INFO] Processing pm:queued issue #15: "Implement dark mode"
+✓ Issue #15 completed with state: PM_OUTPUT_PUBLISHED
+2026-07-13 14:22:45 [INFO] Processing pm:queued issue #23: "Add API rate limiting"
+✓ Issue #23 completed with state: PM_OUTPUT_PUBLISHED
+2026-07-13 14:23:00 [INFO] No more pm:queued issues. Continuous loop complete.
+```
+
+#### Example 2: Three-Phase Pipeline
+
+Execute the complete PM → PO → Dev pipeline:
+
+```powershell
+# Phase 1: PM validates all strategic opportunities
+python pm_runner.py acme-corp/repo --continuous
+
+# Phase 2: PO prioritizes all validated opportunities
+python po_runner.py acme-corp/repo --continuous
+
+# Phase 3: Dev builds all prioritized features
+python dev_runner.py acme-corp/repo --continuous
+```
+
+Each phase processes all matching issues sequentially, then hands off to the next phase.
+
+#### Example 3: Single Issue for Testing
+
+```powershell
+python pm_runner.py acme-corp/product-ideas 123
+```
+
+Executes the PM loop on issue #123 only. After completion, runlog saved to `./pm_runs/pm_issue_123.sqlite`.
+
+#### Example 4: Dry-Run Preview
+
+Preview without executing:
+
+```powershell
+python pm_runner.py acme-corp/repo --continuous --dry-run
+python foundation_runner.py acme-corp/repo --dry-run --force
+python discovery_runner.py acme-corp/repo --dry-run
+```
+
+#### Example 5: Custom Model and Retry Settings
+
+```powershell
+python pm_runner.py acme-corp/repo --continuous \
+  --model gpt-4-turbo \
+  --log-dir ./production_logs
+```
+
+### Repository Context Detection
+
+The `RepoContext` class automatically detects repository type:
+
+```python
+from aios_orchestration_core.repo_context import RepoContext
+
+# GitHub detection (owner/repo format)
+context = RepoContext.from_string("acme-corp/my-repo")
+assert context.is_github == True
+gateway = context.create_pm_gateway()  # Returns GitHubApiPMGateway
+```
+
+Gateways use the GitHub CLI (`gh`) for real repository interaction.
+
+### Troubleshooting
+
+#### "gh" command not found
+Install GitHub CLI: https://cli.github.com/
+
+#### "Repository not found" or authentication error
+Verify:
+1. You're authenticated: `gh auth status`
+2. Repo exists: `gh repo view owner/repo`
+3. You have access to the repo
+
+#### List open issues in target repo
+```powershell
+gh -R owner/repo issue list --state open --label pm:queued
+```
+
+---
+
 ## Architecture Overview
 
 ### The Problem
