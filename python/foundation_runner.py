@@ -506,7 +506,7 @@ def _process_research_issue_inner(
                 "research area can be closed."
             )
             gateway.post_issue_comment(linked_issue.number, blocked_comment)
-            gateway.close_issue(linked_issue.number, "not_planned")
+            gateway.close_issue(linked_issue.number, "not planned")
             return {
                 "issue_number": linked_issue.number,
                 "decision": "BLOCKED",

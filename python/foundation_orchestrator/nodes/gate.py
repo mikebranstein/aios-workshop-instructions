@@ -93,7 +93,7 @@ class FoundationGateNode:
         self.gateway.set_state_labels(issue_number, list(FOUNDATION_CANONICAL_STATE_LABELS), [FOUNDATION_CANONICAL_LABEL_BY_STATE[next_state]])
 
         if next_state == FoundationState.FOUNDATION_APPROVED:
-            self.gateway.close_issue(issue_number, "foundation approved")
+            self.gateway.close_issue(issue_number, "completed")
 
         entry = TransitionLogEntry(
             loop_id="foundation", run_id=run_id, issue_number=issue_number,
