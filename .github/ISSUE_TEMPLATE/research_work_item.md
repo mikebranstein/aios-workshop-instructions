@@ -12,6 +12,10 @@ Reference the pm-idea issue number.
 ## Research Objective
 What question must this research answer?
 
+## Decision Area
+Which foundation decision area does this research address?
+(runtime/language | framework/engine | architecture style | data/storage | deployment | NFRs | other)
+
 ## Target Persona or Segment
 Who should be studied?
 
@@ -27,4 +31,5 @@ Checklist of completion criteria.
 - [ ] Findings documented
 - [ ] Confidence level assigned
 - [ ] Evidence links included
+- [ ] Primary recommendation does not conflict with any other complete research issue in the same decision area, OR a reconciliation comment has been posted explaining the conflict and how it was resolved
 - [ ] Issue closed with summary comment
