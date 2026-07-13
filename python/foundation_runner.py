@@ -561,12 +561,10 @@ def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown
 def _sync_foundation_research_backlog(
     gateway,
     foundation_issue_number: int,
-    foundation_markdown: str,
     research_areas: list[str],
 ) -> None:
     existing = gateway.list_linked_research_issues(foundation_issue_number)
     existing_titles = {item.title for item in existing}
-    context_excerpt = foundation_markdown.strip()[:1600] if foundation_markdown else "(No FOUNDATION.md content captured)"
     for area in research_areas:
         title = f"[foundation-research] {area} for #{foundation_issue_number}"
         if title in existing_titles:
@@ -576,14 +574,16 @@ def _sync_foundation_research_backlog(
             title=title,
             body=(
                 f"Research decision area: {area}\n\n"
-                "Use FOUNDATION.md context below, produce concrete recommendations,\n"
-                "and post evidence links (wiki + ADR where relevant).\n\n"
+                "Before researching, read the following files from the repository to inform your work:\n"
+                "- `FOUNDATION.md` — project context, constraints, and locked decisions\n"
+                "- `docs/foundation-decision-pack.md` — decisions already made in other areas\n"
+                "- `docs/adr/` — existing ADRs; do not re-open settled decisions\n"
+                "- `docs/discovery-focus.md` — target audience and priority problems (if present)\n\n"
                 "Required outputs:\n"
-                "- Decision recommendation with rationale and alternatives\n"
+                "- Decision recommendation with rationale and alternatives considered\n"
                 "- Risks and mitigations\n"
                 "- Links to supporting evidence (wiki pages, references)\n"
-                "- ADR link(s) for accepted major decisions\n\n"
-                f"FOUNDATION.md excerpt:\n{context_excerpt}"
+                "- ADR link(s) for accepted major decisions\n"
             ),
             labels=[],
         )
@@ -734,7 +734,7 @@ def _process_foundation_pass(
             # titles each time, bypassing deduplication and creating duplicate issues.
             if current_state in (FoundationState.FOUNDATION_NEEDED, FoundationState.FOUNDATION_NEEDS_HUMAN):
                 planned_areas = _plan_research_areas(adapter, planning_issue, foundation_markdown)
-                _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown, planned_areas)
+                _sync_foundation_research_backlog(gateway, issue_number, planned_areas)
             _cleanup_supporting_issue_state_labels(gateway, issue_number)
 
             normalized_current = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
