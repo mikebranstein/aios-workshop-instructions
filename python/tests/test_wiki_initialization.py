@@ -31,8 +31,8 @@ class WikiInitializationVerificationTests(unittest.TestCase):
         self._bare = self._root / "remote.wiki.git"
         subprocess.run(["git", "init", "--bare", "-q", str(self._bare)], check=True)
 
-    def test_ensure_wiki_exists_verifies_home_page_created(self) -> None:
-        """Test that _ensure_wiki_exists actually verifies the Home page exists."""
+    def test_ensure_wiki_exists_raises_when_not_initialized(self) -> None:
+        """Test that _ensure_wiki_exists raises with clear instructions if wiki not initialized."""
         # Create a gateway with a local wiki manager
         config = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(config)
@@ -51,24 +51,15 @@ class WikiInitializationVerificationTests(unittest.TestCase):
             mock_result.returncode = 0  # Repo lookup succeeds
             mock_gh_api.return_value = mock_result
             
-            # This should not raise
-            gateway._ensure_wiki_exists()
-        
-        # Verify the wiki is now initialized
-        self.assertTrue(gateway._wiki_initialized)
-        
-        # Verify the Home page exists
-        pages_after = gateway._wiki.list_pages()
-        self.assertIn("Home.md", pages_after)
-        
-        # Verify the Home page has content (it's auto-generated or the bootstrap text)
-        home_content = gateway._wiki.read_page("Home.md")
-        self.assertIsNotNone(home_content)
-        # The Home page should have either the auto-generated index or the bootstrap text
-        self.assertTrue(
-            "Wiki" in home_content or "wiki" in home_content.lower(),
-            f"Home page should contain 'Wiki': {home_content}"
-        )
+            # Should raise RuntimeError with instructions
+            with self.assertRaises(RuntimeError) as ctx:
+                gateway._ensure_wiki_exists()
+            
+            error_msg = str(ctx.exception)
+            self.assertIn("not initialized", error_msg)
+            self.assertIn("create the first wiki page manually", error_msg)
+            self.assertIn("https://github.com/owner/repo/wiki", error_msg)
+            self.assertIn("Click 'New Page'", error_msg)
 
     def test_ensure_wiki_exists_with_existing_home_page(self) -> None:
         """Test that _ensure_wiki_exists skips bootstrap if wiki already has pages."""
@@ -105,11 +96,11 @@ class WikiInitializationVerificationTests(unittest.TestCase):
         self.assertIn("existing-page.md", pages_after)
 
     def test_ensure_wiki_exists_raises_on_bootstrap_failure(self) -> None:
-        """Test that _ensure_wiki_exists raises if bootstrap fails."""
+        """Test that _ensure_wiki_exists raises with clear message if wiki doesn't exist."""
         config = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(config)
         
-        # Use a wiki manager with a non-existent remote (will fail to push)
+        # Use a wiki manager with a non-existent remote (simulates uninitialized wiki)
         gateway._wiki = _LocalWikiManager("/nonexistent/remote.git")
         gateway._wiki_initialized = False
         
@@ -118,11 +109,13 @@ class WikiInitializationVerificationTests(unittest.TestCase):
             mock_result.returncode = 0
             mock_gh_api.return_value = mock_result
             
-            # This should raise because the remote doesn't exist
+            # Should raise with instructions for manual wiki creation
             with self.assertRaises(RuntimeError) as ctx:
                 gateway._ensure_wiki_exists()
             
-            self.assertIn("Failed to bootstrap wiki", str(ctx.exception))
+            error_msg = str(ctx.exception)
+            self.assertIn("not initialized", error_msg)
+            self.assertIn("create the first wiki page manually", error_msg)
 
     def test_ensure_wiki_exists_idempotent(self) -> None:
         """Test that calling _ensure_wiki_exists multiple times is safe."""
@@ -131,12 +124,19 @@ class WikiInitializationVerificationTests(unittest.TestCase):
         gateway._wiki = _LocalWikiManager(str(self._bare))
         gateway._wiki_initialized = False
         
+        # Create a page so wiki appears initialized
+        gateway._wiki.write_page(
+            "Test.md",
+            "# Test Page\n\nFor testing.",
+            "test page"
+        )
+        
         with patch.object(gateway, '_gh_api') as mock_gh_api:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_gh_api.return_value = mock_result
             
-            # First call initializes
+            # First call should recognize wiki exists
             gateway._ensure_wiki_exists()
             self.assertTrue(gateway._wiki_initialized)
             
@@ -144,9 +144,9 @@ class WikiInitializationVerificationTests(unittest.TestCase):
             gateway._ensure_wiki_exists()
             self.assertTrue(gateway._wiki_initialized)
             
-            # Home page should still exist
+            # Pages should still exist
             pages = gateway._wiki.list_pages()
-            self.assertIn("Home.md", pages)
+            self.assertIn("Test.md", pages)
 
 
 if __name__ == "__main__":
