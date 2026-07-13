@@ -158,7 +158,7 @@ All runners support these flags:
 | `--dry-run` | Preview without executing (print what would run) |
 | `--force` | Restart from scratch (ignores prior state) |
 | `--log-dir` | Directory for runlog SQLite databases (default: `./{runner}_runs`) |
-| `--model` | LLM model hint (default: `gpt-4`) |
+| `--model` | LLM model hint (default: `copilot-standard`) |
 
 ### Examples
 
@@ -219,7 +219,7 @@ python discovery_runner.py acme-corp/repo --dry-run
 
 ```powershell
 python pm_runner.py acme-corp/repo --continuous \
-  --model gpt-4-turbo \
+  --model copilot-standard \
   --log-dir ./production_logs
 ```
 

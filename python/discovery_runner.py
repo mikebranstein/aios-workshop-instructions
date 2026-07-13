@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub LLM adapter for discovery decisions."""
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "copilot-standard"):
         self.model = model
 
     @property
@@ -141,7 +141,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="gpt-4",
+        default="copilot-standard",
         help="LLM model hint",
     )
     parser.add_argument(

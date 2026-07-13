@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub adapter for demonstration."""
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "copilot-standard"):
         self.model = model
 
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
@@ -79,7 +79,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="gpt-4",
+        default="copilot-standard",
         help="LLM model hint",
     )
     parser.add_argument(

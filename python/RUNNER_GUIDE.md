@@ -176,7 +176,7 @@ If nothing resumable exists, runner creates a new issue labeled `arch:review-pen
 All runners support:
 
 ```powershell
---model <model_name>   # default: gpt-4
+--model <model_name>   # default: copilot-standard
 --stub                 # use stub adapter explicitly
 --dry-run              # preview only, no execution
 --log-dir <path>       # per-runner default directory

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_adapter(
-    model: str = "gpt-4",
+    model: str = "copilot-standard",
     use_stub: bool = False,
     stub_class: Optional[type] = None,
 ) -> JudgmentLLMAdapter:

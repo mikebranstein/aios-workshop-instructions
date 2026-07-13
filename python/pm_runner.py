@@ -34,7 +34,7 @@ Usage Examples:
 Environment Variables:
     AIOS_TARGET_REPO      Target GitHub repo (owner/repo format)
     AIOS_PM_LOG_DIR       Directory for runlog database (default: ./pm_runs)
-    AIOS_LLM_MODEL        LLM model hint (default: "gpt-4")
+    AIOS_LLM_MODEL        LLM model hint (default: "copilot-standard")
 
 Exit Codes:
     0   Success
@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub adapter for demonstration. Replace with real adapter in production."""
 
-    def __init__(self, model: str = "gpt-4"):
+    def __init__(self, model: str = "copilot-standard"):
         self.model = model
 
     @property
@@ -114,7 +114,7 @@ def main():
         help="Run continuously until no more pm:queued issues remain (default mode if no issue number)",
     )
     parser.add_argument("--log-dir", default="./pm_runs", help="Directory for runlog database")
-    parser.add_argument("--model", default="gpt-4", help="LLM model hint")
+    parser.add_argument("--model", default="copilot-standard", help="LLM model hint")
     parser.add_argument("--max-retries", type=int, default=3, help="Circuit breaker max retries")
     parser.add_argument("--min-research", type=int, default=1, help="Minimum research count required")
     parser.add_argument("--min-synthesis-conf", type=float, default=0.75, help="Minimum synthesis confidence")
