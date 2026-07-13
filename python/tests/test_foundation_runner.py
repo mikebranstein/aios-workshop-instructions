@@ -1,5 +1,7 @@
 import io
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import foundation_runner
@@ -17,6 +19,29 @@ class _GatewayMissingFoundation:
         raise AssertionError("Runner should fail before creating issues when FOUNDATION.md is missing")
 
 
+class _LoopGatewayStub:
+    """Minimal gateway that satisfies main()'s bootstrap so the verification loop runs."""
+
+    def __init__(self, open_issues):
+        self._open_issues = open_issues
+        self.created = []
+        self.comment_formatter = None
+
+    def foundation_markdown_exists(self) -> bool:
+        return True
+
+    def read_foundation_markdown(self) -> str:
+        return "# FOUNDATION"
+
+    def list_open_issues_with_any_label(self, labels):
+        return list(self._open_issues)
+
+    def create_foundation_issue(self, title, body):
+        number = 100 + len(self.created)
+        self.created.append(number)
+        return number
+
+
 class _ContextStub:
     def __init__(self, gateway):
         self._gateway = gateway
@@ -26,6 +51,24 @@ class _ContextStub:
 
     def __str__(self) -> str:
         return "GitHub: owner/repo"
+
+
+def _run_main_with_loop(gateway, signatures, extra_args=None):
+    """Run main() against a stub gateway, patching the per-pass work and signatures."""
+    context = _ContextStub(gateway)
+    with tempfile.TemporaryDirectory() as tmp:
+        argv = ["foundation_runner.py", "owner/repo", "--stub", "--log-dir", tmp]
+        if extra_args:
+            argv.extend(extra_args)
+        with patch("sys.argv", argv), patch(
+            "foundation_runner.RepoContext.from_string", return_value=context
+        ), patch(
+            "foundation_runner._process_foundation_pass", return_value=([], [])
+        ) as pass_mock, patch(
+            "foundation_runner._world_signature", side_effect=list(signatures)
+        ):
+            exit_code = foundation_runner.main()
+    return exit_code, pass_mock
 
 
 class FoundationRunnerTests(unittest.TestCase):
@@ -41,6 +84,61 @@ class FoundationRunnerTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertIn("FOUNDATION.md not found", stderr.getvalue())
+
+    def test_verification_loop_confirms_idle_before_exiting(self) -> None:
+        gateway = _LoopGatewayStub(open_issues=[FoundationIssue(number=1, title="F", body="b", labels={"foundation:needed"})])
+        # Signature is queried before/after each pass and never changes -> every pass idle.
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway, signatures=[("same",)] * 10, extra_args=["--verify-passes", "2"]
+        )
+        self.assertEqual(exit_code, 0)
+        # verify-passes=2 consecutive idle passes -> exactly 2 passes.
+        self.assertEqual(pass_mock.call_count, 2)
+
+    def test_verification_loop_continues_while_progress_is_made(self) -> None:
+        gateway = _LoopGatewayStub(open_issues=[FoundationIssue(number=1, title="F", body="b", labels={"foundation:needed"})])
+        # pass1: before=A, after=B (progress, reset)
+        # pass2: before=B, after=B (idle 1)
+        # pass3: before=B, after=B (idle 2 -> stop)
+        signatures = [("A",), ("B",), ("B",), ("B",), ("B",), ("B",)]
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway, signatures=signatures, extra_args=["--verify-passes", "2"]
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(pass_mock.call_count, 3)
+
+    def test_verification_loop_honors_max_passes_cap(self) -> None:
+        gateway = _LoopGatewayStub(open_issues=[FoundationIssue(number=1, title="F", body="b", labels={"foundation:needed"})])
+        # Signature always differs across before/after -> never idle; cap must stop it.
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway,
+            signatures=[(str(i),) for i in range(50)],
+            extra_args=["--verify-passes", "2", "--max-passes", "3"],
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(pass_mock.call_count, 3)
+
+    def test_bootstrap_creates_issue_only_once_when_none_open(self) -> None:
+        gateway = _LoopGatewayStub(open_issues=[])
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway, signatures=[("s",)] * 10, extra_args=["--verify-passes", "2"]
+        )
+        self.assertEqual(exit_code, 0)
+        # Even across multiple passes, only one foundation issue is created.
+        self.assertEqual(len(gateway.created), 1)
+
+    def test_world_signature_reflects_state_and_research_counts(self) -> None:
+        gateway = FoundationGitHubGateway(
+            issues={
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:in-progress"}, open=True),
+                101: FoundationIssue(number=101, title="research", body="b", labels={"foundation:research"}, open=True),
+            },
+            sub_issues={1: [101]},
+        )
+        sig_before = foundation_runner._world_signature(gateway)
+        gateway.close_issue(101, "completed")
+        sig_after = foundation_runner._world_signature(gateway)
+        self.assertNotEqual(sig_before, sig_after)
 
     def test_supporting_research_issue_detection_true_for_foundation_research_label(self) -> None:
         issue = FoundationIssue(
