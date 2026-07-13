@@ -40,6 +40,7 @@ import json
 import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
@@ -318,101 +319,175 @@ def _apply_wiki_manager_plan(
     )
 
 
+def _process_research_issue(
+    gateway,
+    adapter: JudgmentLLMAdapter,
+    foundation_issue_number: int,
+    foundation_markdown: str,
+    linked_issue,
+) -> dict:
+    """Process a single research issue and return stats + results for posting."""
+    issue = gateway.get_issue(linked_issue.number)
+    comments = gateway.get_issue_comments(linked_issue.number)
+    result = adapter.invoke_json(
+        "foundation_research_worker",
+        {
+            "foundation_issue_number": foundation_issue_number,
+            "research_issue_number": linked_issue.number,
+            "research_issue_title": issue.title,
+            "research_issue_body": issue.body,
+            "research_issue_comments": comments,
+            "foundation_markdown": foundation_markdown,
+        },
+    )
+    payload = result.payload or {}
+    decision = payload.get("decision", "NEEDS_MORE_RESEARCH")
+    summary = payload.get("summary", "No summary provided")
+    wiki_title = payload.get("wiki_page_title", "").strip()
+    wiki_summary = payload.get("wiki_summary", "").strip()
+    adr_title = payload.get("adr_title", "").strip()
+    adr_summary = payload.get("adr_summary", "").strip()
+    next_actions = payload.get("next_actions") or []
+    next_actions_text = "\n".join([f"- {item}" for item in next_actions if isinstance(item, str) and item.strip()])
+    adr_link = f"docs/adr/{_slugify(adr_title)}.md" if adr_title else ""
+    wiki_page_path = ""
+
+    worker_comment_lines = [
+        f"Foundation research worker decision: {decision}",
+        "",
+        f"Summary: {summary}",
+    ]
+    if wiki_title:
+        worker_comment_lines.extend(
+            [
+                "",
+                f"Wiki output: {wiki_title}",
+                f"Proposed wiki link: wiki/foundation/{_slugify(wiki_title)}.md",
+                f"Wiki summary: {wiki_summary or 'No wiki summary provided.'}",
+            ]
+        )
+    if adr_title:
+        worker_comment_lines.extend(
+            [
+                "",
+                f"ADR draft: {adr_title}",
+                f"ADR link: {adr_link}",
+                f"ADR summary: {adr_summary or 'No ADR summary provided.'}",
+            ]
+        )
+    if next_actions_text:
+        worker_comment_lines.extend(["", "Next actions:", next_actions_text])
+
+    if decision == "COMPLETE":
+        if wiki_title or wiki_summary:
+            wiki_page_path = _apply_wiki_manager_plan(
+                gateway=gateway,
+                adapter=adapter,
+                foundation_issue_number=foundation_issue_number,
+                research_issue_number=linked_issue.number,
+                research_issue_title=issue.title,
+                summary=summary,
+                wiki_title=wiki_title,
+                wiki_summary=wiki_summary,
+                adr_link=adr_link,
+            )
+        gateway.close_issue(linked_issue.number, "completed")
+        primary_lines = [
+            f"Linked foundation research #{linked_issue.number} completed.",
+            f"Summary: {summary}",
+        ]
+        if wiki_page_path:
+            primary_lines.append(f"Research wiki reference: wiki/{wiki_page_path}")
+        if adr_link:
+            primary_lines.append(f"Research ADR reference: {adr_link}")
+        return {
+            "issue_number": linked_issue.number,
+            "decision": decision,
+            "summary": summary,
+            "worker_comment": "\n".join(worker_comment_lines),
+            "primary_comment": "\n".join(primary_lines),
+            "blocked": False,
+            "completed": True,
+        }
+    elif decision == "BLOCKED":
+        return {
+            "issue_number": linked_issue.number,
+            "decision": decision,
+            "summary": summary,
+            "worker_comment": "\n".join(worker_comment_lines),
+            "primary_comment": f"Linked foundation research #{linked_issue.number} is blocked. Summary: {summary}",
+            "blocked": True,
+            "completed": False,
+        }
+    else:
+        return {
+            "issue_number": linked_issue.number,
+            "decision": decision,
+            "summary": summary,
+            "worker_comment": "\n".join(worker_comment_lines),
+            "primary_comment": None,
+            "blocked": False,
+            "completed": False,
+        }
+
+
 def _run_linked_research_workers(
     gateway,
     adapter: JudgmentLLMAdapter,
     foundation_issue_number: int,
     foundation_markdown: str,
+    max_workers: int = 3,
 ) -> dict:
+    """Run research workers on linked research issues in parallel.
+    
+    Args:
+        gateway: GitHub gateway
+        adapter: LLM adapter
+        foundation_issue_number: The foundation issue number
+        foundation_markdown: Foundation markdown context
+        max_workers: Number of parallel worker threads (default 3)
+    
+    Returns:
+        Dict with 'completed', 'touched', 'blocked' counts
+    """
     completed = 0
     touched = 0
     blocked = 0
-    for linked in gateway.list_linked_research_issues(foundation_issue_number):
-        if not linked.open:
-            continue
-        issue = gateway.get_issue(linked.number)
-        comments = gateway.get_issue_comments(linked.number)
-        result = adapter.invoke_json(
-            "foundation_research_worker",
-            {
-                "foundation_issue_number": foundation_issue_number,
-                "research_issue_number": linked.number,
-                "research_issue_title": issue.title,
-                "research_issue_body": issue.body,
-                "research_issue_comments": comments,
-                "foundation_markdown": foundation_markdown,
-            },
-        )
-        payload = result.payload or {}
-        decision = payload.get("decision", "NEEDS_MORE_RESEARCH")
-        summary = payload.get("summary", "No summary provided")
-        wiki_title = payload.get("wiki_page_title", "").strip()
-        wiki_summary = payload.get("wiki_summary", "").strip()
-        adr_title = payload.get("adr_title", "").strip()
-        adr_summary = payload.get("adr_summary", "").strip()
-        next_actions = payload.get("next_actions") or []
-        next_actions_text = "\n".join([f"- {item}" for item in next_actions if isinstance(item, str) and item.strip()])
-        adr_link = f"docs/adr/{_slugify(adr_title)}.md" if adr_title else ""
-        wiki_page_path = ""
+    linked_issues = [linked for linked in gateway.list_linked_research_issues(foundation_issue_number) if linked.open]
 
-        worker_comment_lines = [
-            f"Foundation research worker decision: {decision}",
-            "",
-            f"Summary: {summary}",
-        ]
-        if wiki_title:
-            worker_comment_lines.extend(
-                [
-                    "",
-                    f"Wiki output: {wiki_title}",
-                    f"Proposed wiki link: wiki/foundation/{_slugify(wiki_title)}.md",
-                    f"Wiki summary: {wiki_summary or 'No wiki summary provided.'}",
-                ]
-            )
-        if adr_title:
-            worker_comment_lines.extend(
-                [
-                    "",
-                    f"ADR draft: {adr_title}",
-                    f"ADR link: {adr_link}",
-                    f"ADR summary: {adr_summary or 'No ADR summary provided.'}",
-                ]
-            )
-        if next_actions_text:
-            worker_comment_lines.extend(["", "Next actions:", next_actions_text])
-        gateway.post_comment(linked.number, "\n".join(worker_comment_lines))
-        touched += 1
+    if not linked_issues:
+        return {"completed": completed, "touched": touched, "blocked": blocked}
 
-        if decision == "COMPLETE":
-            if wiki_title or wiki_summary:
-                wiki_page_path = _apply_wiki_manager_plan(
-                    gateway=gateway,
-                    adapter=adapter,
-                    foundation_issue_number=foundation_issue_number,
-                    research_issue_number=linked.number,
-                    research_issue_title=issue.title,
-                    summary=summary,
-                    wiki_title=wiki_title,
-                    wiki_summary=wiki_summary,
-                    adr_link=adr_link,
-                )
-            gateway.close_issue(linked.number, "completed")
-            completed += 1
-            primary_lines = [
-                f"Linked foundation research #{linked.number} completed.",
-                f"Summary: {summary}",
-            ]
-            if wiki_page_path:
-                primary_lines.append(f"Research wiki reference: wiki/{wiki_page_path}")
-            if adr_link:
-                primary_lines.append(f"Research ADR reference: {adr_link}")
-            gateway.post_comment(foundation_issue_number, "\n".join(primary_lines))
-        elif decision == "BLOCKED":
-            blocked += 1
-            gateway.post_comment(
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(
+                _process_research_issue,
+                gateway,
+                adapter,
                 foundation_issue_number,
-                f"Linked foundation research #{linked.number} is blocked. Summary: {summary}",
-            )
+                foundation_markdown,
+                linked_issue,
+            ): linked_issue
+            for linked_issue in linked_issues
+        }
+
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                issue_number = result["issue_number"]
+                gateway.post_comment(issue_number, result["worker_comment"])
+                touched += 1
+
+                if result["completed"]:
+                    completed += 1
+                    gateway.post_comment(foundation_issue_number, result["primary_comment"])
+                elif result["blocked"]:
+                    blocked += 1
+                    gateway.post_comment(foundation_issue_number, result["primary_comment"])
+            except Exception as e:
+                linked = futures[future]
+                logger.error(f"Error processing research issue #{linked.number}: {e}", exc_info=True)
+                touched += 1
 
     return {"completed": completed, "touched": touched, "blocked": blocked}
 
@@ -566,12 +641,16 @@ def _process_foundation_pass(
     orchestrator,
     foundation_markdown: str,
     progress_tracker: "ProgressTracker",
+    max_research_workers: int = 3,
 ) -> tuple[list, list]:
     """Run one full foundation pass.
 
     Re-pulls open foundation issues fresh, processes each actionable issue, and
     persists progress. Returns ``(actionable, failed_issues)`` where
     ``failed_issues`` is a list of ``(issue_number, reason)`` tuples.
+    
+    Args:
+        max_research_workers: Number of parallel workers for research issue processing
     """
     open_foundation_issues = gateway.list_open_issues_with_any_label(_ACTIONABLE_LABELS)
 
@@ -660,6 +739,7 @@ def _process_foundation_pass(
                     adapter=adapter,
                     foundation_issue_number=issue_number,
                     foundation_markdown=foundation_markdown,
+                    max_workers=max_research_workers,
                 )
                 open_research = gateway.count_open_linked_research_issues(issue_number)
                 closed_research = gateway.count_closed_linked_research_issues(issue_number)
@@ -809,6 +889,12 @@ def main():
         default=25,
         help="Safety cap on total verification passes to avoid looping forever. Default: 25",
     )
+    parser.add_argument(
+        "--research-workers",
+        type=int,
+        default=3,
+        help="Number of parallel research worker threads. Default: 3",
+    )
 
     args = parser.parse_args()
 
@@ -913,6 +999,7 @@ def main():
                 orchestrator=orchestrator,
                 foundation_markdown=foundation_markdown,
                 progress_tracker=progress_tracker,
+                max_research_workers=args.research_workers,
             )
             last_actionable_count = len(actionable)
             for issue_number, reason in failed_issues:
