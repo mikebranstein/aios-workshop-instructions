@@ -34,6 +34,7 @@ from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.adapter_factory import create_adapter
+from aios_orchestration_core.github.comment_formatter import build_comment_formatter
 from aios_orchestration_core.labels.foundation_labels import (
     FOUNDATION_CANONICAL_LABEL_BY_STATE,
     FOUNDATION_CANONICAL_STATE_LABELS,
@@ -594,6 +595,7 @@ def main():
         # Create orchestrator
         log_db = f"{args.log_dir}/foundation_run.runlog.md"
         adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+        gateway.comment_formatter = build_comment_formatter(adapter)
         orchestrator = FoundationRunOnceOrchestrator(
             gateway=gateway,
             log_store=TransitionLogStore(log_db),

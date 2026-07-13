@@ -9,6 +9,7 @@ from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.adapter_factory import create_adapter
+from aios_orchestration_core.github.comment_formatter import build_comment_formatter
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.runlog.paths import default_runlog_dir
@@ -107,6 +108,7 @@ def _run_single(gateway, args, issue_number: int) -> int:
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
     log_db = f"{args.log_dir}/po_issue_{issue_number}.runlog.md"
     adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
+    gateway.comment_formatter = build_comment_formatter(adapter)
     orchestrator = PORunOnceOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),
@@ -133,6 +135,7 @@ def _run_continuous(gateway, args) -> int:
         )
         print(f"Detail: {type(e).__name__}: {e}", file=sys.stderr)
         return 3
+    gateway.comment_formatter = build_comment_formatter(adapter)
     orchestrator = POContinuousOrchestrator(
         gateway=gateway,
         log_store=TransitionLogStore(log_db),

@@ -403,3 +403,25 @@ TASK_TOOL_MAP.update(
         "debt_triage": DEBT_TRIAGE_TOOL,
     }
 )
+
+# ---------------------------------------------------------------------------
+# Cross-cutting tools
+# ---------------------------------------------------------------------------
+
+FORMAT_ISSUE_COMMENT_TOOL = ToolSpec(
+    name="submit_formatted_issue_comment",
+    description="Submit the polished Markdown rewrite of a GitHub issue comment.",
+    parameters_schema={
+        "type": "object",
+        "required": ["formatted_markdown"],
+        "properties": {
+            "formatted_markdown": {"type": "string", "minLength": 1},
+        },
+    },
+)
+
+TASK_TOOL_MAP.update(
+    {
+        "format_issue_comment": FORMAT_ISSUE_COMMENT_TOOL,
+    }
+)

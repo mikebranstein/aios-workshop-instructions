@@ -4,6 +4,10 @@ import subprocess
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
 
+from aios_orchestration_core.github.comment_formatter import (
+    CommentFormatter,
+    NullCommentFormatter,
+)
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
 from aios_orchestration_core.github.po_gateway import POIssue
 
@@ -11,8 +15,9 @@ from aios_orchestration_core.github.po_gateway import POIssue
 class GitHubApiPOGateway:
     """GitHub CLI-backed PO gateway."""
 
-    def __init__(self, config: GitHubApiConfig):
+    def __init__(self, config: GitHubApiConfig, comment_formatter: Optional[CommentFormatter] = None):
         self.config = config
+        self.comment_formatter: CommentFormatter = comment_formatter or NullCommentFormatter()
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
@@ -94,7 +99,7 @@ class GitHubApiPOGateway:
         self.add_labels(issue_number, labels_to_add)
 
     def post_comment(self, issue_number: int, body: str) -> None:
-        self._gh(["issue", "comment", str(issue_number), "--body", body])
+        self._gh(["issue", "comment", str(issue_number), "--body", self.comment_formatter.format(body)])
 
     def close_issue(self, issue_number: int, reason: str) -> None:
         self._gh(["issue", "close", str(issue_number), "--reason", reason])

@@ -2,8 +2,12 @@ import json
 import re
 import subprocess
 import base64
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
+from aios_orchestration_core.github.comment_formatter import (
+    CommentFormatter,
+    NullCommentFormatter,
+)
 from aios_orchestration_core.github.foundation_gateway import (
     FoundationIssue,
     LinkedFoundationIssue,
@@ -15,8 +19,9 @@ from aios_orchestration_core.wiki.github_wiki_manager import GitHubWikiManager
 class GitHubApiFoundationGateway:
     """GitHub CLI-backed Foundation gateway."""
 
-    def __init__(self, config: GitHubApiConfig):
+    def __init__(self, config: GitHubApiConfig, comment_formatter: Optional[CommentFormatter] = None):
         self.config = config
+        self.comment_formatter: CommentFormatter = comment_formatter or NullCommentFormatter()
         self._wiki = GitHubWikiManager(repo=self.config.repo, temp_prefix="aios-foundation-wiki-")
 
     def _gh(self, args: List[str]) -> str:
@@ -124,7 +129,7 @@ class GitHubApiFoundationGateway:
         self.remove_labels(issue_number, remove_after_add)
 
     def post_comment(self, issue_number: int, body: str) -> None:
-        self._gh(["issue", "comment", str(issue_number), "--body", body])
+        self._gh(["issue", "comment", str(issue_number), "--body", self.comment_formatter.format(body)])
 
     def close_issue(self, issue_number: int, reason: str) -> None:
         self._gh(["issue", "close", str(issue_number), "--reason", reason])

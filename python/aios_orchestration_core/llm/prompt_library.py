@@ -12,6 +12,7 @@ _TASK_PROMPT_FILE_MAP = {
     "foundation_research_worker": _PROMPTS_ROOT / "foundation" / "foundation_research_worker.md",
     "foundation_wiki_manager": _PROMPTS_ROOT / "wiki" / "wiki_manager.md",
     "wiki_manager": _PROMPTS_ROOT / "wiki" / "wiki_manager.md",
+    "format_issue_comment": _PROMPTS_ROOT / "github" / "format_issue_comment.md",
 }
 
 
