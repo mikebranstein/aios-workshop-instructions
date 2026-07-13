@@ -1,10 +1,11 @@
 import asyncio
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from copilot import CopilotClient
-from copilot.session_events import AssistantMessageData
+from copilot.session_events import AssistantMessageData, AssistantUsageData
 from copilot.tools import define_tool
 
+from aios_orchestration_core.llm.base import LLMUsage
 from aios_orchestration_core.llm.schema_validation import validate_json_schema
 
 
@@ -51,6 +52,7 @@ class CopilotRuntimeClient:
 
         tool_calls: List[Dict[str, Any]] = []
         attempted_calls: List[Dict[str, Any]] = []
+        last_usage_data: Optional[AssistantUsageData] = None
 
         @define_tool(
             name=tool_name,
@@ -86,6 +88,18 @@ class CopilotRuntimeClient:
                     enable_skills=False,
                     skip_custom_instructions=True,
                 )
+
+            # Capture assistant.usage events — these fire on the same stream as
+            # assistant.message but are not returned by send_and_wait, so we
+            # subscribe before sending. The event is documented as ephemeral and
+            # may not fire on every backend/model path.
+            def _usage_handler(event: Any) -> None:
+                nonlocal last_usage_data
+                if isinstance(event.data, AssistantUsageData):
+                    last_usage_data = event.data
+
+            session.on(_usage_handler)
+
             event = await session.send_and_wait(joined_prompt, timeout=90.0)
 
             assistant_content = None
@@ -99,6 +113,7 @@ class CopilotRuntimeClient:
                 "request_id": getattr(session, "session_id", "unknown"),
                 "tool_calls": calls_for_adapter,
                 "assistant_content": assistant_content,
+                "usage": _extract_usage(last_usage_data),
             }
 
     @staticmethod
@@ -119,3 +134,24 @@ class CopilotRuntimeClient:
             content = msg.get("content", "")
             lines.append(f"{role}: {content}")
         return "\n".join(lines)
+
+
+def _extract_usage(data: Optional[AssistantUsageData]) -> Optional[LLMUsage]:
+    """Convert an SDK AssistantUsageData event to our LLMUsage model.
+
+    Returns None if no data was captured (event is ephemeral).
+    """
+    if data is None:
+        return None
+    nano_aiu: Optional[float] = None
+    if data.copilot_usage is not None:
+        nano_aiu = data.copilot_usage.total_nano_aiu
+    return LLMUsage(
+        input_tokens=data.input_tokens,
+        output_tokens=data.output_tokens,
+        cache_read_tokens=data.cache_read_tokens,
+        cache_write_tokens=data.cache_write_tokens,
+        reasoning_tokens=data.reasoning_tokens,
+        nano_aiu=nano_aiu,
+        cost=data.cost,
+    )

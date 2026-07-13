@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import json
 from typing import Any, Dict, List, Optional, Protocol
 
-from aios_orchestration_core.llm.base import JudgmentLLMAdapter, LLMInvocationResult
+from aios_orchestration_core.llm.base import JudgmentLLMAdapter, LLMInvocationResult, LLMUsage
 from aios_orchestration_core.llm.exceptions import (
     ForcedToolCallMissing,
     ToolSchemaValidationError,
@@ -107,6 +107,7 @@ class CopilotSDKAdapter(JudgmentLLMAdapter):
                 payload=normalized_payload,
                 model=response.get("model", model),
                 request_id=response.get("request_id", "unknown"),
+                usage=response.get("usage"),
             )
 
     @staticmethod
