@@ -1322,6 +1322,12 @@ def main():
             )
             logger.info(f"Created new foundation issue #{created_issue}")
         elif not open_foundation_issues:
+            if gateway.has_approved_foundation_issue():
+                logger.info(
+                    "Foundation work already complete — a closed foundation:approved issue exists. "
+                    "Nothing to do. Re-run with --force to start a new foundation cycle."
+                )
+                return 0
             logger.info("No open foundation issues. Creating a new foundation issue.")
             created_issue = gateway.create_foundation_issue(
                 title="Foundation Setup",

@@ -442,3 +442,27 @@ class GitHubApiFoundationGateway:
         if not match:
             raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
         return int(match.group(1))
+
+    def has_approved_foundation_issue(self) -> bool:
+        for state in ("open", "closed"):
+            raw = self._gh(
+                [
+                    "issue",
+                    "list",
+                    "--state",
+                    state,
+                    "--label",
+                    "foundation:approved",
+                    "--limit",
+                    "1",
+                    "--json",
+                    "number",
+                ]
+            )
+            try:
+                items = json.loads(raw) if raw else []
+            except json.JSONDecodeError:
+                items = []
+            if items:
+                return True
+        return False

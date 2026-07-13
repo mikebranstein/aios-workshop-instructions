@@ -48,6 +48,9 @@ class _LoopGatewayStub:
         """Stub: do nothing."""
         pass
 
+    def has_approved_foundation_issue(self) -> bool:
+        return False
+
 
 class _ContextStub:
     def __init__(self, gateway):
@@ -146,6 +149,31 @@ class FoundationRunnerTests(unittest.TestCase):
         gateway.close_issue(101, "completed")
         sig_after = foundation_runner._world_signature(gateway)
         self.assertNotEqual(sig_before, sig_after)
+
+    def test_has_approved_foundation_issue_detects_closed_approved(self) -> None:
+        gateway = FoundationGitHubGateway(
+            issues={
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:approved"}, open=False),
+            }
+        )
+        self.assertTrue(gateway.has_approved_foundation_issue())
+
+    def test_has_approved_foundation_issue_detects_open_approved(self) -> None:
+        """An open issue tagged foundation:approved (stuck after close failure) must be detected."""
+        gateway = FoundationGitHubGateway(
+            issues={
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:approved"}, open=True),
+            }
+        )
+        self.assertTrue(gateway.has_approved_foundation_issue())
+
+    def test_has_approved_foundation_issue_false_when_none_approved(self) -> None:
+        gateway = FoundationGitHubGateway(
+            issues={
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:in-progress"}, open=True),
+            }
+        )
+        self.assertFalse(gateway.has_approved_foundation_issue())
 
     def test_supporting_research_issue_detection_true_for_foundation_research_label(self) -> None:
         issue = FoundationIssue(
@@ -463,6 +491,36 @@ class FoundationRunnerTests(unittest.TestCase):
         # So the issue SHOULD close. (Adjust if stricter ADR content validation is added.)
         self.assertEqual(result["completed"], 1)
         self.assertFalse(gateway.get_issue(101).open)
+
+    def test_main_returns_0_without_creating_issue_when_approved_issue_exists(self) -> None:
+        """Re-running after completion must not spawn a new foundation issue."""
+
+        class _AlreadyApprovedGateway(_LoopGatewayStub):
+            def has_approved_foundation_issue(self) -> bool:
+                return True
+
+        gateway = _AlreadyApprovedGateway(open_issues=[])
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway, signatures=[("s",)] * 10, extra_args=["--verify-passes", "2"]
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(gateway.created), 0, "Must not create a new issue when one is already approved")
+        pass_mock.assert_not_called()
+
+    def test_main_returns_0_without_creating_issue_when_open_approved_issue_exists(self) -> None:
+        """An open issue with foundation:approved (stuck) must also block re-creation."""
+
+        class _OpenApprovedGateway(_LoopGatewayStub):
+            def has_approved_foundation_issue(self) -> bool:
+                return True  # open + approved, not yet closed
+
+        gateway = _OpenApprovedGateway(open_issues=[])
+        exit_code, pass_mock = _run_main_with_loop(
+            gateway, signatures=[("s",)] * 10, extra_args=["--verify-passes", "2"]
+        )
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(gateway.created), 0, "Must not create a new issue when open approved issue exists")
+        pass_mock.assert_not_called()
 
 
 if __name__ == "__main__":

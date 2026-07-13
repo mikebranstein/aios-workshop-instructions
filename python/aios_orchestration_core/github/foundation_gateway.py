@@ -51,6 +51,7 @@ class FoundationGateway(BaseGateway, Protocol):
     def list_adr_files(self) -> List[str]: ...
     def write_repo_file(self, path: str, content: str, commit_message: str) -> bool: ...
     def create_foundation_issue(self, title: str, body: str) -> int: ...
+    def has_approved_foundation_issue(self) -> bool: ...
 
 
 class FoundationGitHubGateway:
@@ -229,3 +230,9 @@ class FoundationGitHubGateway:
             labels={"foundation:needed"},
         )
         return self._next
+
+    def has_approved_foundation_issue(self) -> bool:
+        return any(
+            "foundation:approved" in i.labels
+            for i in self.issues.values()
+        )
