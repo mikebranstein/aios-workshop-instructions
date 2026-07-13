@@ -37,10 +37,13 @@ class GitHubApiFoundationGateway:
         return subprocess.run(cmd, check=False, capture_output=True, text=True)
 
     def _ensure_wiki_exists(self) -> None:
-        """Ensure the wiki backing repo exists; bootstrap with a home page if needed."""
+        """Ensure the wiki backing repo exists; bootstrap with a home page if needed.
+        
+        Raises:
+            RuntimeError: If wiki initialization fails.
+        """
         if self._wiki_initialized:
             return
-        self._wiki_initialized = True
 
         # Check if the wiki backing repo exists via gh api
         result = self._gh_api(f"repos/{self.config.repo}/contents", jq=".")
@@ -52,19 +55,50 @@ class GitHubApiFoundationGateway:
         # by attempting a minimal operation. If the wiki has no pages, cloning fails
         # with exit 128. Bootstrap it with a Home page.
         try:
-            _ = self._wiki.list_pages()
-        except Exception:
-            # Clone/access failed; bootstrap wiki with a Home page
-            try:
-                self._wiki.write_page(
-                    "Home.md",
-                    "# Wiki\n\nInitialized by Foundation Orchestrator.\n",
-                    "wiki: bootstrap home page",
+            pages = self._wiki.list_pages()
+            # Wiki exists and has pages (or is empty but accessible)
+            if pages and "Home.md" in pages:
+                # Wiki is fully initialized
+                self._wiki_initialized = True
+                return
+            # Wiki exists but needs Home page
+            home_content = self._wiki.read_page("Home.md")
+            if home_content:
+                # Home page already exists
+                self._wiki_initialized = True
+                return
+        except Exception as e:
+            # Clone/access failed; wiki not yet initialized
+            pass
+
+        # Bootstrap wiki with a Home page if not already present
+        try:
+            success = self._wiki.write_page(
+                "Home.md",
+                "# Wiki\n\nInitialized by Foundation Orchestrator.\n",
+                "wiki: bootstrap home page",
+            )
+            if not success:
+                # write_page returned False (content already existed as-is)
+                pass
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to bootstrap wiki for {self.config.repo}: {e}"
+            ) from e
+
+        # Verify the Home page now exists
+        try:
+            home_content = self._wiki.read_page("Home.md")
+            if not home_content:
+                raise RuntimeError(
+                    f"Wiki Home.md page not created or empty after bootstrap for {self.config.repo}"
                 )
-            except Exception:
-                # If bootstrap fails, that's a real error—let it propagate up
-                # so the orchestrator sees it and reports it clearly.
-                raise
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to verify wiki initialization for {self.config.repo}: {e}"
+            ) from e
+
+        self._wiki_initialized = True
 
     def _ensure_labels(self, labels: Sequence[str]) -> None:
         for label in labels:
