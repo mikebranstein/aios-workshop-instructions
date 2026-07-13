@@ -29,7 +29,6 @@ import argparse
 import json
 import logging
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -45,6 +44,7 @@ from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.runlog.paths import default_runlog_dir
 from aios_orchestration_core.states.foundation import FoundationState
+from aios_orchestration_core.wiki.llm_wiki_manager import LLMWikiManager, WikiManagerPolicy, slugify
 from foundation_orchestrator.evidence import EvidenceSnapshot, classify_adr_links, classify_wiki_links, extract_links
 from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, FoundationRunRegistry
 
@@ -252,19 +252,7 @@ def _post_issue_run_summary(gateway, issue_number: int) -> None:
 
 
 def _slugify(value: str) -> str:
-    lowered = (value or "").strip().lower()
-    cleaned = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
-    return cleaned or "foundation-research"
-
-
-def _normalize_wiki_page_path(value: str) -> str:
-    path = (value or "").strip().replace("\\", "/")
-    path = re.sub(r"/+", "/", path).strip("/")
-    if not path:
-        return "foundation/research.md"
-    if not path.lower().endswith(".md"):
-        path = f"{path}.md"
-    return path
+    return slugify(value, fallback="foundation-research")
 
 
 def _apply_wiki_manager_plan(
@@ -278,13 +266,26 @@ def _apply_wiki_manager_plan(
     wiki_summary: str,
     adr_link: str,
 ) -> str:
-    preview = gateway.get_wiki_snapshot(limit=50, excerpt_chars=1200)
-
     desired_slug = _slugify(wiki_title or research_issue_title)
     desired_path = f"foundation/{desired_slug}.md"
-    result = adapter.invoke_json(
-        "foundation_wiki_manager",
-        {
+    manager = LLMWikiManager(
+        WikiManagerPolicy(
+            target_root="foundation/",
+            required_sections=(
+                "Summary",
+                "Decision",
+                "Alternatives Considered",
+                "Evidence",
+                "Risks and Mitigations",
+                "Traceability",
+            ),
+        )
+    )
+    return manager.apply_llm_plan(
+        gateway=gateway,
+        adapter=adapter,
+        task_type="foundation_wiki_manager",
+        prompt_vars={
             "foundation_issue_number": foundation_issue_number,
             "research_issue_number": research_issue_number,
             "research_issue_title": research_issue_title,
@@ -292,56 +293,18 @@ def _apply_wiki_manager_plan(
             "wiki_title": wiki_title,
             "wiki_summary": wiki_summary,
             "adr_link": adr_link,
-            "existing_wiki_pages": preview,
-            "proposed_default_path": desired_path,
-            "wiki_manager_policy": {
-                "prefer_update_when_overlap_high": True,
-                "target_root": "foundation/",
-                "required_sections": [
-                    "Summary",
-                    "Decision",
-                    "Alternatives Considered",
-                    "Evidence",
-                    "Risks and Mitigations",
-                    "Traceability",
-                ],
-                "content_index_file": "Content-Index.md",
-                "reorganize_when_needed": True,
-            },
         },
-    )
-    payload = result.payload or {}
-    page_path = _normalize_wiki_page_path(payload.get("page_path", desired_path))
-    page_content = payload.get("page_content")
-    if not isinstance(page_content, str) or not page_content.strip():
-        page_content = (
+        default_page_path=desired_path,
+        fallback_page_content=(
             f"# {wiki_title or research_issue_title}\n\n"
             f"{wiki_summary or summary}\n\n"
             f"Source issue: #{research_issue_number}\n"
             f"Related ADR: {adr_link or 'N/A'}\n"
-        )
-    page_moves = payload.get("page_moves") or []
-    normalized_moves = []
-    for move in page_moves:
-        if not isinstance(move, dict):
-            continue
-        from_path = _normalize_wiki_page_path(str(move.get("from_path", "")))
-        to_path = _normalize_wiki_page_path(str(move.get("to_path", "")))
-        if from_path and to_path and from_path != to_path:
-            normalized_moves.append({"from_path": from_path, "to_path": to_path})
-    index_summary = payload.get("content_index_summary")
-    if not isinstance(index_summary, str) or not index_summary.strip():
-        index_summary = summary
-
-    gateway.apply_wiki_manager_changes(
-        page_path=page_path,
-        page_content=page_content,
-        page_moves=normalized_moves,
+        ),
         index_issue_number=research_issue_number,
-        index_summary=index_summary,
+        default_index_summary=summary,
         commit_message=f"foundation: update wiki for issue #{research_issue_number}",
     )
-    return page_path
 
 
 def _run_linked_research_workers(

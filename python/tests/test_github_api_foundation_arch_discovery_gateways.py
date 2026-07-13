@@ -82,7 +82,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
                 (target / "foundation" / "runtime.md").write_text("# Runtime\n", encoding="utf-8")
             return _cp("")
 
-        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+        with patch("aios_orchestration_core.wiki.github_wiki_manager.subprocess.run", side_effect=fake_run):
             pages = gateway.list_wiki_pages()
 
         self.assertEqual(pages, ["Home.md", "foundation/runtime.md"])
@@ -100,7 +100,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
                 target.mkdir(parents=True, exist_ok=True)
             return _cp("")
 
-        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+        with patch("aios_orchestration_core.wiki.github_wiki_manager.subprocess.run", side_effect=fake_run):
             changed = gateway.write_wiki_page(
                 "foundation/new-page.md",
                 "# New Page\n\nBody",
@@ -126,7 +126,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
                 (target / "old" / "runtime.md").write_text("# Runtime\n", encoding="utf-8")
             return _cp("")
 
-        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+        with patch("aios_orchestration_core.wiki.github_wiki_manager.subprocess.run", side_effect=fake_run):
             changed = gateway.apply_wiki_manager_changes(
                 page_path="foundation/runtime.md",
                 page_content="# Runtime\n\nUpdated",
