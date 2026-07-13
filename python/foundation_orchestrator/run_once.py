@@ -81,7 +81,7 @@ class FoundationRunOnceOrchestrator:
             final_state = self.graph_orchestrator.invoke({
                 "run_id": run.run_id,
                 "source_issue_number": source_issue_number,
-            })
+            }, recursion_limit=(self.max_cycles * 4) + 5)
             
             run.cycle_count = 1
             retry_state.attempts = 0
@@ -110,6 +110,8 @@ class FoundationRunOnceOrchestrator:
                     source_issue_number,
                     "Foundation run_once: transitioned to needs-human after retry threshold",
                 )
+            else:
+                raise
 
         run.ended_at_utc = datetime.now(timezone.utc).isoformat()
         return run

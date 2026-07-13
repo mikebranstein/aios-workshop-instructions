@@ -216,7 +216,7 @@ class FoundationGraphOrchestrator:
         else:
             return END
 
-    def invoke(self, initial_state: FoundationRunState) -> FoundationRunState:
+    def invoke(self, initial_state: FoundationRunState, recursion_limit: int | None = None) -> FoundationRunState:
         """Invoke the graph with an initial state.
         
         Args:
@@ -225,4 +225,6 @@ class FoundationGraphOrchestrator:
         Returns:
             Final state dict after graph execution.
         """
-        return self._graph.invoke(initial_state)
+        if recursion_limit is None:
+            return self._graph.invoke(initial_state)
+        return self._graph.invoke(initial_state, config={"recursion_limit": recursion_limit})

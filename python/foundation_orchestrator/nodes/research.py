@@ -22,9 +22,27 @@ class FoundationResearchNode:
 
     def run(self, run_id: str, issue_number: int) -> FoundationState:
         issue = self.gateway.get_issue(issue_number)
+        linked_research = self.gateway.list_linked_research_issues(issue_number)
+        foundation_markdown = self.gateway.read_foundation_markdown()
+        comments = self.gateway.get_issue_comments(issue_number)
         result = self.adapter.invoke_json(
             "foundation_research",
-            {"issue_number": issue.number, "title": issue.title, "body": issue.body},
+            {
+                "issue_number": issue.number,
+                "title": issue.title,
+                "body": issue.body,
+                "comments": comments,
+                "foundation_markdown": foundation_markdown,
+                "linked_research": [
+                    {
+                        "number": r.number,
+                        "title": r.title,
+                        "body": r.body,
+                        "open": r.open,
+                    }
+                    for r in linked_research
+                ],
+            },
         )
         decision = result.payload["decision"]
         event = _DECISION_MAP[decision]

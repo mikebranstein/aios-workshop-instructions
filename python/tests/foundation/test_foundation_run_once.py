@@ -2,7 +2,6 @@ import tempfile
 import unittest
 
 from aios_orchestration_core.github.foundation_gateway import (
-    FoundationArtifactState,
     FoundationGitHubGateway,
     FoundationIssue,
 )
@@ -27,13 +26,23 @@ class _S:
         return type("R", (), {"payload": p, "model": "t"})()
 
 
-def _gw(labels, **artifact_kwargs):
+def _gw(labels):
     return FoundationGitHubGateway(
-        {1: FoundationIssue(1, "Foundation", "body", labels=set(labels))},
-        artifact_state=FoundationArtifactState(**artifact_kwargs) if artifact_kwargs else FoundationArtifactState(
-            decision_pack_exists=True, adr_template_exists=True,
-            discovery_focus_exists=True, discovery_focus_populated=True,
-        ),
+        {
+            1: FoundationIssue(
+                1,
+                "Foundation",
+                "See docs/adr/0001-runtime.md and https://github.com/owner/repo/wiki/Foundation-Research",
+                labels=set(labels),
+            ),
+            2: FoundationIssue(
+                2,
+                "[foundation-research] closed evidence",
+                "Evidence captured",
+                labels={"foundation:research", "foundation-source-1"},
+                open=False,
+            ),
+        },
     )
 
 

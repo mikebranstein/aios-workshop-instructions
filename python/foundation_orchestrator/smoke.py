@@ -1,7 +1,6 @@
 import tempfile
 
 from aios_orchestration_core.github.foundation_gateway import (
-    FoundationArtifactState,
     FoundationGitHubGateway,
     FoundationIssue,
 )
@@ -22,19 +21,23 @@ class _S:
         return type("R", (), {"payload": self.payload, "model": "smoke"})()
 
 
-def _full_artifact_state() -> FoundationArtifactState:
-    return FoundationArtifactState(
-        decision_pack_exists=True,
-        adr_template_exists=True,
-        discovery_focus_exists=True,
-        discovery_focus_populated=True,
-    )
-
-
 def run_foundation_full_lifecycle_smoke() -> bool:
     gateway = FoundationGitHubGateway(
-        {1: FoundationIssue(1, "Foundation", "body", labels={"foundation:needed"})},
-        artifact_state=_full_artifact_state(),
+        {
+            1: FoundationIssue(
+                1,
+                "Foundation",
+                "See docs/adr/0001-runtime.md and https://github.com/owner/repo/wiki/Foundation-Research",
+                labels={"foundation:needed"},
+            ),
+            2: FoundationIssue(
+                2,
+                "[foundation-research] evidence",
+                "evidence closed",
+                labels={"foundation:research", "foundation-source-1"},
+                open=False,
+            ),
+        },
     )
     with tempfile.TemporaryDirectory() as tmp:
         FoundationRunOnceOrchestrator(
@@ -49,8 +52,21 @@ def run_foundation_full_lifecycle_smoke() -> bool:
 
 def run_foundation_terminal_smoke(research_decision: str = "RECOMMEND", gate_decision: str = "APPROVE_FOUNDATION") -> str:
     gateway = FoundationGitHubGateway(
-        {1: FoundationIssue(1, "Foundation", "body", labels={"foundation:needed"})},
-        artifact_state=_full_artifact_state(),
+        {
+            1: FoundationIssue(
+                1,
+                "Foundation",
+                "See docs/adr/0001-runtime.md and https://github.com/owner/repo/wiki/Foundation-Research",
+                labels={"foundation:needed"},
+            ),
+            2: FoundationIssue(
+                2,
+                "[foundation-research] evidence",
+                "evidence closed",
+                labels={"foundation:research", "foundation-source-1"},
+                open=False,
+            ),
+        },
     )
     with tempfile.TemporaryDirectory() as tmp:
         FoundationRunOnceOrchestrator(
@@ -74,7 +90,6 @@ def run_foundation_needs_human_smoke() -> str:
 
     gateway = FoundationGitHubGateway(
         {1: FoundationIssue(1, "Foundation", "body", labels={"foundation:needed"})},
-        artifact_state=_full_artifact_state(),
     )
     with tempfile.TemporaryDirectory() as tmp:
         FoundationRunOnceOrchestrator(

@@ -1,11 +1,12 @@
 import json
 import re
 import subprocess
+import base64
 from typing import List, Sequence
 
 from aios_orchestration_core.github.foundation_gateway import (
-    FoundationArtifactState,
     FoundationIssue,
+    LinkedFoundationIssue,
 )
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
 
@@ -51,11 +52,15 @@ class GitHubApiFoundationGateway:
         result = self._gh_api(f"repos/{self.config.repo}/contents/{path}", ".type")
         return result.returncode == 0
 
-    def _file_is_populated(self, path: str) -> bool:
-        result = self._gh_api(f"repos/{self.config.repo}/contents/{path}", ".size")
+    def _read_repo_file(self, path: str) -> str:
+        result = self._gh_api(f"repos/{self.config.repo}/contents/{path}")
         if result.returncode != 0:
-            return False
-        return int(result.stdout.strip() or "0") > 0
+            return ""
+        payload = json.loads(result.stdout)
+        encoded = (payload.get("content") or "").replace("\n", "")
+        if not encoded:
+            return ""
+        return base64.b64decode(encoded).decode("utf-8", errors="replace")
 
     def get_issue(self, issue_number: int) -> FoundationIssue:
         raw = self._gh(
@@ -104,11 +109,17 @@ class GitHubApiFoundationGateway:
     def remove_labels(self, issue_number: int, labels: Sequence[str]) -> None:
         if not labels:
             return
-        self._gh(["issue", "edit", str(issue_number), "--remove-label", ",".join(labels)])
+        issue = self.get_issue(issue_number)
+        removable = [label for label in labels if label in issue.labels]
+        if not removable:
+            return
+        self._gh(["issue", "edit", str(issue_number), "--remove-label", ",".join(removable)])
 
     def set_state_labels(self, issue_number: int, labels_to_remove: Sequence[str], labels_to_add: Sequence[str]) -> None:
-        self.remove_labels(issue_number, labels_to_remove)
+        # Add first, then remove old labels; this avoids no-state windows.
         self.add_labels(issue_number, labels_to_add)
+        remove_after_add = [label for label in labels_to_remove if label not in set(labels_to_add)]
+        self.remove_labels(issue_number, remove_after_add)
 
     def post_comment(self, issue_number: int, body: str) -> None:
         self._gh(["issue", "comment", str(issue_number), "--body", body])
@@ -116,17 +127,99 @@ class GitHubApiFoundationGateway:
     def close_issue(self, issue_number: int, reason: str) -> None:
         self._gh(["issue", "close", str(issue_number), "--reason", reason])
 
-    def get_artifact_state(self) -> FoundationArtifactState:
-        focus_path = "docs/discovery-focus.md"
-        return FoundationArtifactState(
-            decision_pack_exists=self._file_exists("docs/foundation-decision-pack.md"),
-            adr_template_exists=self._file_exists("docs/adr/0000-template.md"),
-            discovery_focus_exists=self._file_exists(focus_path),
-            discovery_focus_populated=self._file_is_populated(focus_path),
-        )
-
     def foundation_markdown_exists(self) -> bool:
         return self._file_exists("FOUNDATION.md")
+
+    def read_foundation_markdown(self) -> str:
+        return self._read_repo_file("FOUNDATION.md")
+
+    def get_issue_comments(self, issue_number: int) -> List[str]:
+        raw = self._gh(
+            [
+                "issue",
+                "view",
+                str(issue_number),
+                "--json",
+                "comments",
+            ]
+        )
+        obj = json.loads(raw)
+        return [comment.get("body", "") for comment in obj.get("comments", [])]
+
+    def ensure_research_issue(
+        self,
+        foundation_issue_number: int,
+        title: str,
+        body: str,
+        labels: Sequence[str],
+    ) -> int:
+        trace_label = f"foundation-source-{foundation_issue_number}"
+        raw = self._gh(
+            [
+                "issue",
+                "list",
+                "--state",
+                "open",
+                "--label",
+                "foundation:research",
+                "--label",
+                trace_label,
+                "--limit",
+                "200",
+                "--json",
+                "number,title",
+            ]
+        )
+        for item in json.loads(raw):
+            if item.get("title") == title:
+                return int(item["number"])
+
+        create_labels = list(labels) + ["foundation:research", trace_label]
+        self._ensure_labels(create_labels)
+        create_cmd = ["issue", "create", "--title", title, "--body", body]
+        for label in create_labels:
+            create_cmd += ["--label", label]
+        output = self._gh(create_cmd)
+        match = re.search(r"/issues/(\d+)", output)
+        if not match:
+            raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
+        return int(match.group(1))
+
+    def list_linked_research_issues(self, foundation_issue_number: int) -> List[LinkedFoundationIssue]:
+        trace_label = f"foundation-source-{foundation_issue_number}"
+        raw = self._gh(
+            [
+                "issue",
+                "list",
+                "--state",
+                "all",
+                "--label",
+                "foundation:research",
+                "--label",
+                trace_label,
+                "--limit",
+                "200",
+                "--json",
+                "number,title,body,state",
+            ]
+        )
+        result: List[LinkedFoundationIssue] = []
+        for item in json.loads(raw):
+            result.append(
+                LinkedFoundationIssue(
+                    number=int(item["number"]),
+                    title=item.get("title", ""),
+                    body=item.get("body", ""),
+                    open=item.get("state", "OPEN").upper() == "OPEN",
+                )
+            )
+        return result
+
+    def count_open_linked_research_issues(self, foundation_issue_number: int) -> int:
+        return len([i for i in self.list_linked_research_issues(foundation_issue_number) if i.open])
+
+    def count_closed_linked_research_issues(self, foundation_issue_number: int) -> int:
+        return len([i for i in self.list_linked_research_issues(foundation_issue_number) if not i.open])
 
     def create_foundation_issue(self, title: str, body: str) -> int:
         self._ensure_labels(["foundation:needed"])

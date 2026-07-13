@@ -32,32 +32,22 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
 
         self.assertTrue(exists)
 
-    def test_get_artifact_state_reads_expected_files(self) -> None:
+    def test_read_foundation_markdown_decodes_content(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
 
         def fake_run(cmd, check, capture_output, text):
             if cmd[:2] == ["gh", "api"]:
                 path = cmd[2]
-                jq = cmd[4] if len(cmd) >= 5 and cmd[3] == "--jq" else ""
-                if path.endswith("/docs/foundation-decision-pack.md") and jq == ".type":
-                    return _cp("file")
-                if path.endswith("/docs/adr/0000-template.md") and jq == ".type":
-                    return _cp("file")
-                if path.endswith("/docs/discovery-focus.md") and jq == ".type":
-                    return _cp("file")
-                if path.endswith("/docs/discovery-focus.md") and jq == ".size":
-                    return _cp("128")
+                if path.endswith("/FOUNDATION.md"):
+                    return _cp(json.dumps({"content": "IyBUZXN0IEZPVU5EQVRJT04K"}))
                 return _cp("", returncode=1)
             return _cp("")
 
         with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
-            state = gateway.get_artifact_state()
+            content = gateway.read_foundation_markdown()
 
-        self.assertTrue(state.decision_pack_exists)
-        self.assertTrue(state.adr_template_exists)
-        self.assertTrue(state.discovery_focus_exists)
-        self.assertTrue(state.discovery_focus_populated)
+        self.assertEqual(content, "# Test FOUNDATION\n")
 
     def test_create_foundation_issue_returns_created_number(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")

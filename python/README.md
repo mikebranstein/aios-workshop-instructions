@@ -91,7 +91,8 @@ Finds all `dev:intake` issues and processes them through the full development pi
 ```powershell
 python foundation_runner.py owner/my-repo
 ```
-Reads `FOUNDATION.md`, establishes foundational standards. Supports `--force` to restart.
+Reads `FOUNDATION.md` and processes all actionable foundation issues in priority order (`review` → `in-progress` → `needs-human` → `needed`).
+Approval requires LLM gate decision plus objective evidence checks (closed linked research issues, wiki/ADR links, at least one ADR link). Supports `--force`.
 
 **Architecture Review Orchestrator** — Audit codebase (runs once):
 ```powershell

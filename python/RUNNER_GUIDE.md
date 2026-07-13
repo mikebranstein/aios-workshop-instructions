@@ -109,10 +109,10 @@ Queue label for continuous mode: `dev:intake`
 ### Foundation
 
 ```powershell
-# Resume open foundation issue, or create a new one if none exist
+# Process all actionable foundation issues (or create one if none exist)
 python foundation_runner.py owner/my-repo
 
-# Force fresh run (ignore resumable open issues)
+# Force creation of a fresh foundation issue in this run
 python foundation_runner.py owner/my-repo --force
 ```
 
@@ -121,8 +121,18 @@ Resume label set:
 - `foundation:needed`
 - `foundation:in-progress`
 - `foundation:review`
+- `foundation:needs-human`
 
-If nothing resumable exists, runner creates a new issue labeled `foundation:needed`.
+Processing priority: `foundation:review` → `foundation:in-progress` → `foundation:needs-human` → `foundation:needed`.
+
+Approval gate requires both:
+- LLM gate decision (`APPROVE_FOUNDATION`)
+- objective evidence checks:
+  - all linked foundation research issues are closed
+  - issue body/comments contain wiki or ADR links
+  - at least one ADR link exists
+
+If no progress is detected for 3 consecutive cycles, the issue is moved to `foundation:needs-human` with explicit unblock steps.
 
 ### Discovery
 
