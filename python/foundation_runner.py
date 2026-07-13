@@ -281,7 +281,7 @@ def _post_issue_run_summary(gateway, issue_number: int) -> None:
 
 
 def _slugify(value: str) -> str:
-    return slugify(value, fallback="foundation-research")
+    return slugify(value, fallback="foundation-research", max_len=50)
 
 
 def _apply_wiki_manager_plan(

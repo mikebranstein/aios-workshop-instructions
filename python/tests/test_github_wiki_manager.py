@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from aios_orchestration_core.wiki.github_wiki_manager import GitHubWikiManager
+from aios_orchestration_core.wiki.llm_wiki_manager import slugify
 
 
 class _LocalWikiManager(GitHubWikiManager):
@@ -93,6 +94,44 @@ class GitHubWikiManagerHomeIndexTests(unittest.TestCase):
         home = self.manager.read_page("Home.md")
         self.assertIn("[Topic](foundation/Topic)", home)
         self.assertIn("An important research topic.", home)
+
+
+class SlugifyTests(unittest.TestCase):
+    def test_basic_lowercasing_and_dash_replacement(self) -> None:
+        self.assertEqual(slugify("Runtime and Language"), "runtime-and-language")
+
+    def test_special_characters_removed(self) -> None:
+        self.assertEqual(slugify("Choose: PostgreSQL (v14)!"), "choose-postgresql-v14")
+
+    def test_leading_trailing_dashes_stripped(self) -> None:
+        self.assertEqual(slugify("  --hello--  "), "hello")
+
+    def test_fallback_used_for_empty_input(self) -> None:
+        self.assertEqual(slugify("", fallback="fallback"), "fallback")
+        self.assertEqual(slugify("   ", fallback="fb"), "fb")
+
+    def test_max_len_truncates_at_word_boundary(self) -> None:
+        long_title = "Architecture Style and Topology for the Shared Application Foundation"
+        result = slugify(long_title, max_len=50)
+        self.assertLessEqual(len(result), 50)
+        self.assertFalse(result.endswith("-"), "slug must not end with a dash after truncation")
+
+    def test_max_len_none_does_not_truncate(self) -> None:
+        long_title = "A" * 100
+        result = slugify(long_title, max_len=None)
+        self.assertEqual(len(result), 100)
+
+    def test_max_len_exact_fit_is_not_truncated(self) -> None:
+        value = "a" * 50
+        self.assertEqual(slugify(value, max_len=50), value)
+
+    def test_max_len_applied_in_foundation_runner_slugify(self) -> None:
+        """_slugify in foundation_runner caps at 50 chars."""
+        import foundation_runner
+        long_value = "Choose the right runtime and language stack for the entire project foundation"
+        result = foundation_runner._slugify(long_value)
+        self.assertLessEqual(len(result), 50)
+        self.assertFalse(result.endswith("-"))
 
 
 if __name__ == "__main__":

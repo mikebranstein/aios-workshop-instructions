@@ -47,10 +47,13 @@ def normalize_wiki_page_path(value: str, default_path: str) -> str:
     return path
 
 
-def slugify(value: str, fallback: str = "research") -> str:
+def slugify(value: str, fallback: str = "research", max_len: int | None = None) -> str:
     lowered = (value or "").strip().lower()
     cleaned = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
-    return cleaned or fallback
+    result = cleaned or fallback
+    if max_len and len(result) > max_len:
+        result = result[:max_len].rstrip("-")
+    return result
 
 
 class LLMWikiManager:
