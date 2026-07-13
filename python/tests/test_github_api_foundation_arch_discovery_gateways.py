@@ -179,7 +179,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
 
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "pm: publish strategic opportunity artifact #42"], commands)
-        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "master"], commands)
 
     def test_list_wiki_pages_clones_in_temp_and_returns_markdown_paths(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
@@ -224,7 +224,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         self.assertTrue(changed)
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "foundation: update wiki page"], commands)
-        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "master"], commands)
 
     def test_apply_wiki_manager_changes_uses_single_clone_and_commit(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
@@ -357,7 +357,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
 
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "discovery: publish run summary"], commands)
-        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "master"], commands)
 
 
 if __name__ == "__main__":

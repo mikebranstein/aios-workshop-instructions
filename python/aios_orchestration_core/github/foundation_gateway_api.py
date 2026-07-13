@@ -28,7 +28,7 @@ class GitHubApiFoundationGateway:
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
         completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        return completed.stdout.strip()
+        return (completed.stdout or "").strip()
 
     def _gh_api(self, path: str, jq: str | None = None) -> subprocess.CompletedProcess:
         cmd = ["gh", "api", path]
