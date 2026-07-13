@@ -34,7 +34,11 @@ from pathlib import Path
 
 from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.adapter_factory import create_adapter
-from aios_orchestration_core.labels.foundation_labels import normalize_foundation_state_from_labels
+from aios_orchestration_core.labels.foundation_labels import (
+    FOUNDATION_CANONICAL_LABEL_BY_STATE,
+    FOUNDATION_CANONICAL_STATE_LABELS,
+    normalize_foundation_state_from_labels,
+)
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
@@ -159,6 +163,68 @@ def _build_unblock_message(gateway, issue_number: int, snapshot: EvidenceSnapsho
     return "Needs-human unblock requirements:\n- " + "\n- ".join(missing)
 
 
+def _approval_blockers(snapshot: EvidenceSnapshot, open_research: int) -> list[str]:
+    blockers = []
+    if snapshot.closed_research_count == 0:
+        blockers.append("no linked foundation research issues are closed")
+    if open_research > 0:
+        blockers.append(f"{open_research} linked foundation research issue(s) remain open")
+    if not snapshot.adr_links:
+        blockers.append("at least one ADR link is required")
+    if not snapshot.wiki_links and not snapshot.adr_links:
+        blockers.append("wiki/ADR outcome links are missing")
+    return blockers
+
+
+def _next_actions_for_state(state: FoundationState | None, blockers: list[str], open_research: int) -> list[str]:
+    if state == FoundationState.FOUNDATION_NEEDED:
+        return ["initialize foundation research backlog"]
+    if state == FoundationState.FOUNDATION_IN_PROGRESS:
+        if open_research > 0:
+            return ["complete and close all linked foundation research issues"]
+        return ["close at least one linked research issue with concrete evidence links"]
+    if state == FoundationState.FOUNDATION_REVIEW:
+        if blockers:
+            return ["address approval blockers listed below, then rerun gate review"]
+        return ["run architecture gate decision (approve/revise/block)"]
+    if state == FoundationState.FOUNDATION_NEEDS_HUMAN:
+        return ["satisfy unblock requirements and add fresh evidence links before rerun"]
+    if state == FoundationState.FOUNDATION_BLOCKED:
+        return ["resolve contradictions, then move issue back to foundation:in-progress"]
+    if state == FoundationState.FOUNDATION_APPROVED:
+        return ["foundation complete; use ADR/wiki outputs as downstream design contract"]
+    return ["review issue state and add clarifying context"]
+
+
+def _post_issue_run_summary(gateway, issue_number: int) -> None:
+    issue = gateway.get_issue(issue_number)
+    normalized = normalize_foundation_state_from_labels(issue.labels)
+    state = normalized.state
+    state_label = FOUNDATION_CANONICAL_LABEL_BY_STATE.get(state, "foundation:needed")
+    snapshot = _snapshot_issue(gateway, issue_number)
+    open_research = gateway.count_open_linked_research_issues(issue_number)
+    blockers = _approval_blockers(snapshot, open_research)
+    next_actions = _next_actions_for_state(state, blockers, open_research)
+
+    lines = [
+        "Foundation run summary:",
+        f"- State: {state_label}",
+        f"- Linked research: open={open_research}, closed={snapshot.closed_research_count}",
+        (
+            f"- Evidence links: total={len(snapshot.relevant_links)}, "
+            f"wiki={len(snapshot.wiki_links)}, adr={len(snapshot.adr_links)}"
+        ),
+    ]
+    if blockers:
+        lines.append("- Blocking items:")
+        lines.extend([f"  - {item}" for item in blockers])
+    else:
+        lines.append("- Blocking items: none")
+    lines.append("- Next actions:")
+    lines.extend([f"  - {item}" for item in next_actions])
+    gateway.post_comment(issue_number, "\n".join(lines))
+
+
 def _ensure_supporting_research_issue(gateway, foundation_issue_number: int) -> None:
     linked = gateway.list_linked_research_issues(foundation_issue_number)
     if linked:
@@ -182,6 +248,69 @@ def _is_supporting_research_issue(issue) -> bool:
     if "foundation:research" in labels:
         return True
     return any(label.startswith("foundation-source-") for label in labels)
+
+
+def _infer_research_areas(foundation_markdown: str) -> list[str]:
+    base = [
+        "Runtime and Language",
+        "Framework or Engine",
+        "Architecture Style",
+        "Data and Storage Strategy",
+        "Testing Strategy",
+        "Deployment and Environments",
+    ]
+    lowered = foundation_markdown.lower()
+    if "game" in lowered or "gaming" in lowered:
+        base.append("Game Engine and Rendering Pipeline")
+    if "security" in lowered or "compliance" in lowered:
+        base.append("Security and Compliance Baseline")
+    return base
+
+
+def _sync_foundation_research_backlog(gateway, foundation_issue_number: int, foundation_markdown: str) -> None:
+    existing = gateway.list_linked_research_issues(foundation_issue_number)
+    existing_titles = {item.title for item in existing}
+    context_excerpt = foundation_markdown.strip()[:1600] if foundation_markdown else "(No FOUNDATION.md content captured)"
+    for area in _infer_research_areas(foundation_markdown):
+        title = f"[foundation-research] {area} for #{foundation_issue_number}"
+        if title in existing_titles:
+            continue
+        gateway.ensure_research_issue(
+            foundation_issue_number=foundation_issue_number,
+            title=title,
+            body=(
+                f"Research decision area: {area}\n\n"
+                "Use FOUNDATION.md context below, produce concrete recommendations,\n"
+                "and post evidence links (wiki + ADR where relevant).\n\n"
+                "Required outputs:\n"
+                "- Decision recommendation with rationale and alternatives\n"
+                "- Risks and mitigations\n"
+                "- Links to supporting evidence (wiki pages, references)\n"
+                "- ADR link(s) for accepted major decisions\n\n"
+                f"FOUNDATION.md excerpt:\n{context_excerpt}"
+            ),
+            labels=[],
+        )
+
+
+def _set_primary_foundation_state(gateway, issue_number: int, next_state: FoundationState, reason: str) -> None:
+    gateway.set_state_labels(
+        issue_number,
+        list(FOUNDATION_CANONICAL_STATE_LABELS),
+        [FOUNDATION_CANONICAL_LABEL_BY_STATE[next_state]],
+    )
+    gateway.post_comment(
+        issue_number,
+        f"Foundation orchestrator transition: {next_state.value} — {reason}",
+    )
+
+
+def _cleanup_supporting_issue_state_labels(gateway, foundation_issue_number: int) -> None:
+    for linked in gateway.list_linked_research_issues(foundation_issue_number):
+        issue = gateway.get_issue(linked.number)
+        removable = [label for label in issue.labels if label in FOUNDATION_CANONICAL_STATE_LABELS]
+        if removable:
+            gateway.remove_labels(linked.number, removable)
 
 
 def main():
@@ -266,6 +395,7 @@ def main():
                 file=sys.stderr,
             )
             return 1
+        foundation_markdown = gateway.read_foundation_markdown()
 
         run_registry = FoundationRunRegistry()
 
@@ -315,85 +445,154 @@ def main():
             issue_number = issue.number
             logger.info(f"Processing foundation issue #{issue_number} ({current_state})")
             before = _snapshot_issue(gateway, issue_number)
-
-            # needs-human is resumable if evidence changed since last run.
-            if current_state == FoundationState.FOUNDATION_NEEDS_HUMAN:
-                previous_payload = progress_tracker.get(issue_number).get("snapshot")
-                if previous_payload:
-                    previous = _dict_to_snapshot(previous_payload)
-                    if _has_progress(previous, before):
+            open_research_before = gateway.count_open_linked_research_issues(issue_number)
+            try:
+                # needs-human is resumable if evidence changed since last run.
+                if current_state == FoundationState.FOUNDATION_NEEDS_HUMAN:
+                    previous_payload = progress_tracker.get(issue_number).get("snapshot")
+                    if previous_payload:
+                        previous = _dict_to_snapshot(previous_payload)
+                        if _has_progress(previous, before):
+                            gateway.post_comment(
+                                issue_number,
+                                "Resuming from foundation:needs-human because new evidence was detected.",
+                            )
+                            gateway.set_state_labels(
+                                issue_number,
+                                ["foundation:needs-human"],
+                                ["foundation:in-progress"],
+                            )
+                        else:
+                            gateway.post_comment(
+                                issue_number,
+                                "Still waiting on needs-human unblock requirements. "
+                                + _build_unblock_message(gateway, issue_number, before),
+                            )
+                            progress_tracker.set(
+                                issue_number,
+                                {
+                                    "no_progress_count": progress_tracker.get(issue_number).get("no_progress_count", 0),
+                                    "snapshot": _snapshot_to_dict(before),
+                                },
+                            )
+                            continue
+                    else:
                         gateway.post_comment(
                             issue_number,
-                            "Resuming from foundation:needs-human because new evidence was detected.",
+                            "Resuming from foundation:needs-human to re-evaluate current evidence.",
                         )
                         gateway.set_state_labels(
                             issue_number,
                             ["foundation:needs-human"],
                             ["foundation:in-progress"],
                         )
-                    else:
+
+                _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown)
+                _cleanup_supporting_issue_state_labels(gateway, issue_number)
+
+                normalized_current = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
+                active_state = normalized_current.state or FoundationState.FOUNDATION_NEEDED
+
+                if active_state == FoundationState.FOUNDATION_NEEDED:
+                    _set_primary_foundation_state(
+                        gateway,
+                        issue_number,
+                        FoundationState.FOUNDATION_IN_PROGRESS,
+                        "Initialized foundation workflow and created scoped research backlog.",
+                    )
+                    progress_tracker.set(
+                        issue_number,
+                        {
+                            "no_progress_count": 0,
+                            "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
+                        },
+                    )
+                    continue
+
+                if active_state == FoundationState.FOUNDATION_IN_PROGRESS:
+                    open_research = gateway.count_open_linked_research_issues(issue_number)
+                    closed_research = gateway.count_closed_linked_research_issues(issue_number)
+                    if open_research > 0:
                         gateway.post_comment(
                             issue_number,
-                            "Still waiting on needs-human unblock requirements. "
-                            + _build_unblock_message(gateway, issue_number, before),
+                            f"Foundation research in progress: waiting on {open_research} linked research issue(s) to close.",
                         )
                         progress_tracker.set(
                             issue_number,
                             {
-                                "no_progress_count": progress_tracker.get(issue_number).get("no_progress_count", 0),
-                                "snapshot": _snapshot_to_dict(before),
+                                "no_progress_count": 0,
+                                "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
                             },
                         )
                         continue
-                else:
+                    if closed_research > 0:
+                        _set_primary_foundation_state(
+                            gateway,
+                            issue_number,
+                            FoundationState.FOUNDATION_REVIEW,
+                            "All linked research issues are closed. Advancing to architecture review.",
+                        )
+                        progress_tracker.set(
+                            issue_number,
+                            {
+                                "no_progress_count": 0,
+                                "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
+                            },
+                        )
+                        continue
                     gateway.post_comment(
                         issue_number,
-                        "Resuming from foundation:needs-human to re-evaluate current evidence.",
+                        "No linked research is complete yet; remaining in foundation:in-progress.",
                     )
+                    progress_tracker.set(
+                        issue_number,
+                        {
+                            "no_progress_count": 0,
+                            "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
+                        },
+                    )
+                    continue
+
+                try:
+                    orchestrator.run_once(issue_number)
+                except Exception as ex:
+                    failed_issues.append((issue_number, str(ex)))
+                    gateway.post_comment(issue_number, f"Foundation run failed for this cycle: {ex}")
+                    continue
+
+                after = _snapshot_issue(gateway, issue_number)
+                no_progress = (
+                    before.state_label == after.state_label
+                    and after.closed_research_count <= before.closed_research_count
+                    and after.relevant_links == before.relevant_links
+                )
+                if open_research_before > 0 and gateway.count_open_linked_research_issues(issue_number) > 0:
+                    no_progress = False
+                prior = progress_tracker.get(issue_number).get("no_progress_count", 0)
+                no_progress_count = prior + 1 if no_progress else 0
+
+                normalized_after = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
+                if (
+                    no_progress_count >= 3
+                    and normalized_after.state in {FoundationState.FOUNDATION_IN_PROGRESS, FoundationState.FOUNDATION_REVIEW}
+                ):
                     gateway.set_state_labels(
                         issue_number,
+                        ["foundation:in-progress", "foundation:review", "foundation:needed"],
                         ["foundation:needs-human"],
-                        ["foundation:in-progress"],
                     )
+                    gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, after))
+                    no_progress_count = 0
 
-            _ensure_supporting_research_issue(gateway, issue_number)
-
-            try:
-                orchestrator.run_once(issue_number)
-            except Exception as ex:
-                failed_issues.append((issue_number, str(ex)))
-                gateway.post_comment(issue_number, f"Foundation run failed for this cycle: {ex}")
-                continue
-
-            after = _snapshot_issue(gateway, issue_number)
-            no_progress = (
-                before.state_label == after.state_label
-                and after.closed_research_count <= before.closed_research_count
-                and after.relevant_links == before.relevant_links
-            )
-            prior = progress_tracker.get(issue_number).get("no_progress_count", 0)
-            no_progress_count = prior + 1 if no_progress else 0
-
-            normalized_after = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
-            if (
-                no_progress_count >= 3
-                and normalized_after.state in {FoundationState.FOUNDATION_IN_PROGRESS, FoundationState.FOUNDATION_REVIEW}
-            ):
-                gateway.set_state_labels(
+                progress_tracker.set(
                     issue_number,
-                    ["foundation:in-progress", "foundation:review", "foundation:needed"],
-                    ["foundation:needs-human"],
+                    {
+                        "no_progress_count": no_progress_count,
+                        "snapshot": _snapshot_to_dict(after),
+                    },
                 )
-                gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, after))
-                no_progress_count = 0
-
-            progress_tracker.set(
-                issue_number,
-                {
-                    "no_progress_count": no_progress_count,
-                    "snapshot": _snapshot_to_dict(after),
-                },
-            )
+            finally:
+                _post_issue_run_summary(gateway, issue_number)
 
         progress_tracker.save()
         if failed_issues:
