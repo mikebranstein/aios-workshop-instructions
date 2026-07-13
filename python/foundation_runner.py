@@ -329,6 +329,21 @@ def _process_research_issue(
     """Process a single research issue and return stats + results for posting."""
     issue = gateway.get_issue(linked_issue.number)
     comments = gateway.get_issue_comments(linked_issue.number)
+
+    # Skip issues that already have a worker decision this pass to avoid
+    # posting duplicate NEEDS_MORE_RESEARCH comments on every loop.
+    worker_decision_marker = "Foundation research worker decision:"
+    if any(worker_decision_marker in c for c in comments):
+        return {
+            "issue_number": linked_issue.number,
+            "decision": "ALREADY_PROCESSED",
+            "summary": "Skipped — worker decision already recorded.",
+            "worker_comment": None,
+            "primary_comment": None,
+            "blocked": False,
+            "completed": False,
+        }
+
     result = adapter.invoke_json(
         "foundation_research_worker",
         {
@@ -475,7 +490,10 @@ def _run_linked_research_workers(
             try:
                 result = future.result()
                 issue_number = result["issue_number"]
-                gateway.post_comment(issue_number, result["worker_comment"])
+
+                # worker_comment is None when the issue was already processed this pass
+                if result["worker_comment"] is not None:
+                    gateway.post_comment(issue_number, result["worker_comment"])
                 touched += 1
 
                 if result["completed"]:
@@ -710,8 +728,13 @@ def _process_foundation_pass(
                     )
 
             planning_issue = gateway.get_issue(issue_number)
-            planned_areas = _plan_research_areas(adapter, planning_issue, foundation_markdown)
-            _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown, planned_areas)
+            # Only plan research areas when the issue is first picked up (NEEDED or
+            # resuming from NEEDS_HUMAN). Once IN_PROGRESS the backlog is fixed —
+            # re-planning every pass causes the LLM to generate slightly different
+            # titles each time, bypassing deduplication and creating duplicate issues.
+            if current_state in (FoundationState.FOUNDATION_NEEDED, FoundationState.FOUNDATION_NEEDS_HUMAN):
+                planned_areas = _plan_research_areas(adapter, planning_issue, foundation_markdown)
+                _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown, planned_areas)
             _cleanup_supporting_issue_state_labels(gateway, issue_number)
 
             normalized_current = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
