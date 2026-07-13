@@ -34,6 +34,7 @@ class GitHubWikiManager:
         wiki_dir = workspace / "wiki"
         clone = subprocess.run(
             ["git", "clone", self._remote_url, str(wiki_dir)],
+            check=False,
             capture_output=True,
             text=True,
             cwd=str(workspace),

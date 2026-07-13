@@ -426,9 +426,7 @@ def _ensure_supporting_research_issue(gateway, foundation_issue_number: int) -> 
 
 def _is_supporting_research_issue(issue) -> bool:
     labels = getattr(issue, "labels", set()) or set()
-    if "foundation:research" in labels:
-        return True
-    return any(label.startswith("foundation-source-") for label in labels)
+    return "foundation:research" in labels
 
 
 def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown: str) -> list[str]:

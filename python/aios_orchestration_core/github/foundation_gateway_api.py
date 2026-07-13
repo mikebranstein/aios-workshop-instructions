@@ -155,28 +155,11 @@ class GitHubApiFoundationGateway:
         body: str,
         labels: Sequence[str],
     ) -> int:
-        trace_label = f"foundation-source-{foundation_issue_number}"
-        raw = self._gh(
-            [
-                "issue",
-                "list",
-                "--state",
-                "open",
-                "--label",
-                "foundation:research",
-                "--label",
-                trace_label,
-                "--limit",
-                "200",
-                "--json",
-                "number,title",
-            ]
-        )
-        for item in json.loads(raw):
-            if item.get("title") == title:
-                return int(item["number"])
+        for child in self._list_sub_issues(foundation_issue_number):
+            if child.get("title") == title and self._has_research_label(child):
+                return int(child["number"])
 
-        create_labels = list(labels) + ["foundation:research", trace_label]
+        create_labels = list(labels) + ["foundation:research"]
         self._ensure_labels(create_labels)
         create_cmd = ["issue", "create", "--title", title, "--body", body]
         for label in create_labels:
@@ -185,37 +168,71 @@ class GitHubApiFoundationGateway:
         match = re.search(r"/issues/(\d+)", output)
         if not match:
             raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
-        return int(match.group(1))
+        child_number = int(match.group(1))
+        self._link_sub_issue(foundation_issue_number, child_number)
+        return child_number
 
     def list_linked_research_issues(self, foundation_issue_number: int) -> List[LinkedFoundationIssue]:
-        trace_label = f"foundation-source-{foundation_issue_number}"
-        raw = self._gh(
-            [
-                "issue",
-                "list",
-                "--state",
-                "all",
-                "--label",
-                "foundation:research",
-                "--label",
-                trace_label,
-                "--limit",
-                "200",
-                "--json",
-                "number,title,body,state",
-            ]
-        )
         result: List[LinkedFoundationIssue] = []
-        for item in json.loads(raw):
+        for child in self._list_sub_issues(foundation_issue_number):
+            if not self._has_research_label(child):
+                continue
             result.append(
                 LinkedFoundationIssue(
-                    number=int(item["number"]),
-                    title=item.get("title", ""),
-                    body=item.get("body", ""),
-                    open=item.get("state", "OPEN").upper() == "OPEN",
+                    number=int(child["number"]),
+                    title=child.get("title", ""),
+                    body=child.get("body", "") or "",
+                    open=str(child.get("state", "open")).lower() == "open",
                 )
             )
         return result
+
+    @staticmethod
+    def _has_research_label(issue: dict) -> bool:
+        for label in issue.get("labels", []) or []:
+            name = label.get("name") if isinstance(label, dict) else label
+            if name == "foundation:research":
+                return True
+        return False
+
+    def _list_sub_issues(self, foundation_issue_number: int) -> List[dict]:
+        result = self._gh_api(
+            f"repos/{self.config.repo}/issues/{foundation_issue_number}/sub_issues"
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            return []
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return []
+        return data if isinstance(data, list) else []
+
+    def _issue_db_id(self, issue_number: int) -> int:
+        result = self._gh_api(
+            f"repos/{self.config.repo}/issues/{issue_number}", jq=".id"
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            raise RuntimeError(
+                f"Unable to resolve database id for issue #{issue_number}: {result.stderr.strip()}"
+            )
+        return int(result.stdout.strip())
+
+    def _link_sub_issue(self, foundation_issue_number: int, child_issue_number: int) -> None:
+        child_id = self._issue_db_id(child_issue_number)
+        subprocess.run(
+            [
+                "gh",
+                "api",
+                "--method",
+                "POST",
+                f"repos/{self.config.repo}/issues/{foundation_issue_number}/sub_issues",
+                "-F",
+                f"sub_issue_id={child_id}",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
     def count_open_linked_research_issues(self, foundation_issue_number: int) -> int:
         return len([i for i in self.list_linked_research_issues(foundation_issue_number) if i.open])

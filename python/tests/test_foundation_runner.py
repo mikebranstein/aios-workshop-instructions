@@ -47,7 +47,7 @@ class FoundationRunnerTests(unittest.TestCase):
             number=1,
             title="Research",
             body="body",
-            labels={"foundation:research", "foundation:in-progress", "foundation-source-2"},
+            labels={"foundation:research", "foundation:in-progress"},
         )
         self.assertTrue(foundation_runner._is_supporting_research_issue(issue))
 
@@ -73,10 +73,11 @@ class FoundationRunnerTests(unittest.TestCase):
                     number=101,
                     title="[foundation-research] Runtime and Language for #1",
                     body="Research body",
-                    labels={"foundation:research", "foundation-source-1"},
+                    labels={"foundation:research"},
                     open=True,
                 ),
-            }
+            },
+            sub_issues={1: [101]},
         )
 
         class _Adapter:

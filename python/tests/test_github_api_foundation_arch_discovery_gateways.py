@@ -67,6 +67,84 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
 
         self.assertEqual(issue_number, 44)
 
+    def test_ensure_research_issue_creates_and_links_sub_issue(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+        posted = []
+
+        def fake_run(cmd, check, capture_output, text):
+            # Parent has no existing sub-issues yet.
+            if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues") and "--method" not in cmd:
+                return _cp("[]")
+            # Resolve child DB id.
+            if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/50") and "--jq" in cmd:
+                return _cp("9999")
+            # Link sub-issue (POST).
+            if cmd[:2] == ["gh", "api"] and "--method" in cmd and "POST" in cmd:
+                posted.append(cmd)
+                return _cp("{}")
+            gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
+            if gh_args[:2] == ["label", "create"]:
+                return _cp("")
+            if gh_args[:2] == ["issue", "create"]:
+                return _cp("https://github.com/owner/repo/issues/50")
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            number = gateway.ensure_research_issue(4, "Research topic", "Body", labels=[])
+
+        self.assertEqual(number, 50)
+        self.assertTrue(posted, "expected a sub_issues POST to link the child")
+        self.assertIn("sub_issue_id=9999", posted[0])
+
+    def test_ensure_research_issue_dedupes_on_existing_sub_issue(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+        created = []
+
+        def fake_run(cmd, check, capture_output, text):
+            if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues"):
+                return _cp(json.dumps([
+                    {"number": 51, "title": "Research topic", "state": "open",
+                     "labels": [{"name": "foundation:research"}]}
+                ]))
+            gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
+            if gh_args[:2] == ["issue", "create"]:
+                created.append(cmd)
+                return _cp("https://github.com/owner/repo/issues/99")
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            number = gateway.ensure_research_issue(4, "Research topic", "Body", labels=[])
+
+        self.assertEqual(number, 51)
+        self.assertFalse(created, "should not create a new issue when one already exists")
+
+    def test_list_linked_research_issues_reads_sub_issues(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+
+        def fake_run(cmd, check, capture_output, text):
+            if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues"):
+                return _cp(json.dumps([
+                    {"number": 51, "title": "Open one", "body": "b1", "state": "open",
+                     "labels": [{"name": "foundation:research"}]},
+                    {"number": 52, "title": "Closed one", "body": "b2", "state": "closed",
+                     "labels": [{"name": "foundation:research"}]},
+                    {"number": 53, "title": "Not research", "body": "b3", "state": "open",
+                     "labels": [{"name": "something-else"}]},
+                ]))
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            linked = gateway.list_linked_research_issues(4)
+            open_count = gateway.count_open_linked_research_issues(4)
+            closed_count = gateway.count_closed_linked_research_issues(4)
+
+        self.assertEqual([i.number for i in linked], [51, 52])
+        self.assertEqual(open_count, 1)
+        self.assertEqual(closed_count, 1)
+
     def test_pm_publish_strategic_artifact_writes_wiki(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiPMGateway(cfg)
@@ -101,7 +179,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
 
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "pm: publish strategic opportunity artifact #42"], commands)
-        self.assertIn(["git", "push"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
 
     def test_list_wiki_pages_clones_in_temp_and_returns_markdown_paths(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
@@ -146,7 +224,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         self.assertTrue(changed)
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "foundation: update wiki page"], commands)
-        self.assertIn(["git", "push"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
 
     def test_apply_wiki_manager_changes_uses_single_clone_and_commit(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
@@ -279,7 +357,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
 
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "discovery: publish run summary"], commands)
-        self.assertIn(["git", "push"], commands)
+        self.assertIn(["git", "push", "-u", "origin", "HEAD"], commands)
 
 
 if __name__ == "__main__":

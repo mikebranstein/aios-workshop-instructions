@@ -55,11 +55,15 @@ class FoundationGitHubGateway:
         self,
         issues: Optional[Dict[int, FoundationIssue]] = None,
         wiki_pages: Optional[Dict[str, str]] = None,
+        sub_issues: Optional[Dict[int, List[int]]] = None,
     ) -> None:
         self.issues: Dict[int, FoundationIssue] = issues or {}
         self.wiki_pages: Dict[str, str] = dict(wiki_pages or {})
         self._next = max(self.issues.keys(), default=0) + 100
         self._research_issue_cache: Dict[int, int] = {}
+        self._sub_issues: Dict[int, List[int]] = {
+            parent: list(children) for parent, children in (sub_issues or {}).items()
+        }
 
     def get_issue(self, issue_number: int) -> FoundationIssue:
         return self.issues[issue_number]
@@ -104,25 +108,27 @@ class FoundationGitHubGateway:
             number=self._next,
             title=title,
             body=body,
-            labels=set(labels) | {"foundation:research", f"foundation-source-{foundation_issue_number}"},
+            labels=set(labels) | {"foundation:research"},
         )
         self.issues[self._next] = issue
+        self._sub_issues.setdefault(foundation_issue_number, []).append(self._next)
         self._research_issue_cache[foundation_issue_number] = self._next
         return self._next
 
     def list_linked_research_issues(self, foundation_issue_number: int) -> List[LinkedFoundationIssue]:
-        trace_label = f"foundation-source-{foundation_issue_number}"
         result: List[LinkedFoundationIssue] = []
-        for issue in self.issues.values():
-            if "foundation:research" in issue.labels and trace_label in issue.labels:
-                result.append(
-                    LinkedFoundationIssue(
-                        number=issue.number,
-                        title=issue.title,
-                        body=issue.body,
-                        open=issue.open,
-                    )
+        for child_number in self._sub_issues.get(foundation_issue_number, []):
+            issue = self.issues.get(child_number)
+            if issue is None or "foundation:research" not in issue.labels:
+                continue
+            result.append(
+                LinkedFoundationIssue(
+                    number=issue.number,
+                    title=issue.title,
+                    body=issue.body,
+                    open=issue.open,
                 )
+            )
         return result
 
     def count_open_linked_research_issues(self, foundation_issue_number: int) -> int:

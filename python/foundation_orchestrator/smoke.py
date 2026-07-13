@@ -34,10 +34,11 @@ def run_foundation_full_lifecycle_smoke() -> bool:
                 2,
                 "[foundation-research] evidence",
                 "evidence closed",
-                labels={"foundation:research", "foundation-source-1"},
+                labels={"foundation:research"},
                 open=False,
             ),
         },
+        sub_issues={1: [2]},
     )
     with tempfile.TemporaryDirectory() as tmp:
         FoundationRunOnceOrchestrator(
@@ -63,10 +64,11 @@ def run_foundation_terminal_smoke(research_decision: str = "RECOMMEND", gate_dec
                 2,
                 "[foundation-research] evidence",
                 "evidence closed",
-                labels={"foundation:research", "foundation-source-1"},
+                labels={"foundation:research"},
                 open=False,
             ),
         },
+        sub_issues={1: [2]},
     )
     with tempfile.TemporaryDirectory() as tmp:
         FoundationRunOnceOrchestrator(

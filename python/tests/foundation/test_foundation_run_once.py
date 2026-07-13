@@ -39,10 +39,11 @@ def _gw(labels):
                 2,
                 "[foundation-research] closed evidence",
                 "Evidence captured",
-                labels={"foundation:research", "foundation-source-1"},
+                labels={"foundation:research"},
                 open=False,
             ),
         },
+        sub_issues={1: [2]},
     )
 
 
