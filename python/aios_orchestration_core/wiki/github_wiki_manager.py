@@ -21,13 +21,22 @@ class GitHubWikiManager:
         return f"https://github.com/{self.repo}.wiki.git"
 
     def _run_git(self, cwd: Path, args: List[str]) -> subprocess.CompletedProcess:
-        return subprocess.run(
+        result = subprocess.run(
             ["git", *args],
-            check=True,
+            check=False,
             capture_output=True,
             text=True,
             cwd=str(cwd),
         )
+        if result.returncode != 0:
+            # Format error message with both stdout and stderr
+            error_msg = f"git {' '.join(args)} failed with exit code {result.returncode}"
+            if result.stderr:
+                error_msg += f"\nstderr: {result.stderr}"
+            if result.stdout:
+                error_msg += f"\nstdout: {result.stdout}"
+            raise RuntimeError(error_msg)
+        return result
 
     def _wiki_workspace(self) -> tuple[Path, Path]:
         workspace = Path(tempfile.mkdtemp(prefix=self.temp_prefix, dir=tempfile.gettempdir()))
@@ -47,6 +56,9 @@ class GitHubWikiManager:
             wiki_dir.mkdir(parents=True, exist_ok=True)
             self._run_git(wiki_dir, ["init", "-q", "-b", "master"])
             self._run_git(wiki_dir, ["remote", "add", "origin", self._remote_url])
+            # Configure git to use gh as credential helper for GitHub HTTPS URLs
+            # This ensures authentication works with the gh CLI token
+            self._run_git(wiki_dir, ["config", "credential.https://github.com.helper", "gh"])
         return workspace, wiki_dir
 
     def _cleanup_workspace(self, workspace: Path) -> None:
