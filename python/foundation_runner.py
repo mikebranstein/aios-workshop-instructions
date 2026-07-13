@@ -580,7 +580,7 @@ def _is_supporting_research_issue(issue) -> bool:
     return "foundation:research" in labels
 
 
-MAX_FOUNDATION_RESEARCH_AREAS = 10
+MAX_FOUNDATION_RESEARCH_AREAS = 25
 
 
 def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown: str) -> list[str]:
