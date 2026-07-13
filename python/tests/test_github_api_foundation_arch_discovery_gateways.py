@@ -19,7 +19,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             if cmd[:2] == ["gh", "api"]:
                 path = cmd[2]
                 jq = cmd[4] if len(cmd) >= 5 and cmd[3] == "--jq" else ""
@@ -37,7 +37,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             if cmd[:2] == ["gh", "api"]:
                 path = cmd[2]
                 if path.endswith("/FOUNDATION.md"):
@@ -54,7 +54,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
             if gh_args[:3] == ["label", "create", "foundation:needed"]:
                 return _cp("")
@@ -72,7 +72,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiFoundationGateway(cfg)
         posted = []
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             # Parent has no existing sub-issues yet.
             if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues") and "--method" not in cmd:
                 return _cp("[]")
@@ -102,7 +102,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiFoundationGateway(cfg)
         created = []
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues"):
                 return _cp(json.dumps([
                     {"number": 51, "title": "Research topic", "state": "open",
@@ -124,7 +124,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiFoundationGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             if cmd[:2] == ["gh", "api"] and cmd[2].endswith("/issues/4/sub_issues"):
                 return _cp(json.dumps([
                     {"number": 51, "title": "Open one", "body": "b1", "state": "open",
@@ -150,7 +150,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiPMGateway(cfg)
         seen = []
 
-        def fake_run(cmd, check, capture_output, text, cwd=None):
+        def fake_run(cmd, check, capture_output, text, cwd=None, **kwargs):
             seen.append((cmd, cwd))
             gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
             if gh_args[:2] == ["issue", "comment"]:
@@ -186,7 +186,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiFoundationGateway(cfg)
         seen = []
 
-        def fake_run(cmd, check, capture_output, text, cwd=None):
+        def fake_run(cmd, check, capture_output, text, cwd=None, **kwargs):
             seen.append((cmd, cwd))
             if cmd[:2] == ["git", "clone"]:
                 target = Path(cmd[3])
@@ -207,7 +207,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiFoundationGateway(cfg)
         seen = []
 
-        def fake_run(cmd, check, capture_output, text, cwd=None):
+        def fake_run(cmd, check, capture_output, text, cwd=None, **kwargs):
             seen.append((cmd, cwd))
             if cmd[:2] == ["git", "clone"]:
                 target = Path(cmd[3])
@@ -231,7 +231,7 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
         gateway = GitHubApiFoundationGateway(cfg)
         seen = []
 
-        def fake_run(cmd, check, capture_output, text, cwd=None):
+        def fake_run(cmd, check, capture_output, text, cwd=None, **kwargs):
             seen.append((cmd, cwd))
             if cmd[:2] == ["git", "clone"]:
                 target = Path(cmd[3])
@@ -265,7 +265,7 @@ class GitHubApiArchReviewGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiArchReviewGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
             if gh_args[:3] == ["label", "create", "architecture-debt"]:
                 return _cp("")
@@ -286,7 +286,7 @@ class GitHubApiArchReviewGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiArchReviewGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
             if gh_args[:3] == ["label", "create", "arch:review-pending"]:
                 return _cp("")
@@ -305,7 +305,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiDiscoveryGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             if cmd[:2] == ["gh", "api"]:
                 path = cmd[2]
                 jq = cmd[4] if len(cmd) >= 5 and cmd[3] == "--jq" else ""
@@ -340,7 +340,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
         gateway = GitHubApiDiscoveryGateway(cfg)
         seen = []
 
-        def fake_run(cmd, check, capture_output, text, cwd=None):
+        def fake_run(cmd, check, capture_output, text, cwd=None, **kwargs):
             seen.append((cmd, cwd))
             if cmd[:2] == ["git", "clone"]:
                 target = Path(cmd[3])

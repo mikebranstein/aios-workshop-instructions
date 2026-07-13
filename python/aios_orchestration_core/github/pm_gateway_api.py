@@ -29,7 +29,7 @@ class GitHubApiPMGateway:
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
-        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        completed = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
         return (completed.stdout or "").strip()
 
     def _ensure_labels(self, labels: Sequence[str]) -> None:
@@ -50,6 +50,8 @@ class GitHubApiPMGateway:
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
     def get_issue(self, issue_number: int) -> PMIssue:

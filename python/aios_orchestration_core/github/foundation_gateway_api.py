@@ -28,14 +28,14 @@ class GitHubApiFoundationGateway:
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
-        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        completed = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
         return (completed.stdout or "").strip()
 
     def _gh_api(self, path: str, jq: str | None = None) -> subprocess.CompletedProcess:
         cmd = ["gh", "api", path]
         if jq is not None:
             cmd += ["--jq", jq]
-        return subprocess.run(cmd, check=False, capture_output=True, text=True)
+        return subprocess.run(cmd, check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     def _ensure_wiki_exists(self) -> None:
         """Ensure the wiki backing repo exists.
@@ -101,6 +101,8 @@ class GitHubApiFoundationGateway:
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
     def _file_exists(self, path: str) -> bool:
@@ -311,6 +313,8 @@ class GitHubApiFoundationGateway:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         if completed.returncode == 0:
             return
@@ -417,7 +421,7 @@ class GitHubApiFoundationGateway:
             "gh", "api", "--method", "PUT",
             f"repos/{self.config.repo}/contents/{path}",
         ] + data
-        completed = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        completed = subprocess.run(cmd, check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
         return completed.returncode == 0
 
     def create_foundation_issue(self, title: str, body: str) -> int:

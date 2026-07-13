@@ -26,6 +26,8 @@ class GitHubWikiManager:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(cwd),
         )
         if result.returncode != 0:
@@ -46,6 +48,8 @@ class GitHubWikiManager:
             check=False,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             cwd=str(workspace),
         )
         if clone.returncode != 0:

@@ -17,7 +17,7 @@ class GitHubApiPOGatewayTests(unittest.TestCase):
         cfg = GitHubApiConfig(repo="owner/repo")
         gateway = GitHubApiPOGateway(cfg)
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:]
             if gh_args[:2] == ["issue", "create"]:
                 return _cp("https://github.com/owner/repo/issues/321")
@@ -58,7 +58,7 @@ class GitHubApiPOGatewayTests(unittest.TestCase):
             },
         ]
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:]
             if gh_args[:2] == ["issue", "list"]:
                 return _cp(json.dumps(issues))
@@ -92,7 +92,7 @@ class GitHubApiDevGatewayTests(unittest.TestCase):
             },
         ]
 
-        def fake_run(cmd, check, capture_output, text):
+        def fake_run(cmd, check, capture_output, text, **kwargs):
             gh_args = cmd[3:]
             if gh_args[:2] == ["issue", "list"]:
                 return _cp(json.dumps(issues))

@@ -18,14 +18,14 @@ class GitHubApiDiscoveryGateway:
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
-        completed = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        completed = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace")
         return (completed.stdout or "").strip()
 
     def _gh_api(self, path: str, jq: str | None = None) -> subprocess.CompletedProcess:
         cmd = ["gh", "api", path]
         if jq is not None:
             cmd += ["--jq", jq]
-        return subprocess.run(cmd, check=False, capture_output=True, text=True)
+        return subprocess.run(cmd, check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
 
     def _ensure_labels(self, labels: List[str]) -> None:
         for label in labels:
@@ -45,6 +45,8 @@ class GitHubApiDiscoveryGateway:
                 check=False,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
 
     def _file_exists(self, path: str) -> bool:
