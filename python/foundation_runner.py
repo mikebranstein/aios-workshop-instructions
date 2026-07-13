@@ -63,6 +63,11 @@ from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, Foun
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+# Suppress noisy internals from the Copilot SDK — CLI lifecycle messages add no
+# diagnostic value and drown out orchestrator progress.
+logging.getLogger("copilot").setLevel(logging.WARNING)
+logging.getLogger("copilot.client").setLevel(logging.WARNING)
+
 DEFAULT_LOG_DIR = default_runlog_dir("foundation")
 
 
@@ -327,6 +332,7 @@ def _process_research_issue(
     linked_issue,
 ) -> dict:
     """Process a single research issue and return stats + results for posting."""
+    logger.info(f"    Research #{linked_issue.number} (parent #{foundation_issue_number}): fetching issue data")
     issue = gateway.get_issue(linked_issue.number)
     comments = gateway.get_issue_comments(linked_issue.number)
 
@@ -341,6 +347,10 @@ def _process_research_issue(
         # this is a true last-resort safety valve.
         _MAX_NEEDS_MORE_RETRIES = 2
         if needs_more_count >= _MAX_NEEDS_MORE_RETRIES:
+            logger.info(
+                f"    Research #{linked_issue.number}: escalating to BLOCKED "
+                f"after {needs_more_count} NEEDS_MORE_RESEARCH attempt(s)"
+            )
             blocked_comment = (
                 f"{worker_decision_marker} BLOCKED\n\n"
                 "Summary: Automatically escalated to BLOCKED after "
@@ -359,6 +369,7 @@ def _process_research_issue(
                 "blocked": True,
                 "completed": False,
             }
+        logger.info(f"    Research #{linked_issue.number}: already processed this pass — skipping")
         return {
             "issue_number": linked_issue.number,
             "decision": "ALREADY_PROCESSED",
@@ -369,6 +380,7 @@ def _process_research_issue(
             "completed": False,
         }
 
+    logger.info(f"    Research #{linked_issue.number}: invoking LLM (foundation_research_worker)")
     result = adapter.invoke_json(
         "foundation_research_worker",
         {
@@ -382,6 +394,7 @@ def _process_research_issue(
     )
     payload = result.payload or {}
     decision = payload.get("decision", "NEEDS_MORE_RESEARCH")
+    logger.info(f"    Research #{linked_issue.number}: LLM decision={decision}")
     summary = payload.get("summary", "No summary provided")
     wiki_title = payload.get("wiki_page_title", "").strip()
     wiki_summary = payload.get("wiki_summary", "").strip()
@@ -496,8 +509,13 @@ def _run_linked_research_workers(
     linked_issues = [linked for linked in gateway.list_linked_research_issues(foundation_issue_number) if linked.open]
 
     if not linked_issues:
+        logger.info(f"  Issue #{foundation_issue_number}: no open research issues to process")
         return {"completed": completed, "touched": touched, "blocked": blocked}
 
+    logger.info(
+        f"  Issue #{foundation_issue_number}: dispatching {len(linked_issues)} research worker(s) "
+        f"(max_workers={max_workers})"
+    )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
             executor.submit(
@@ -532,6 +550,10 @@ def _run_linked_research_workers(
                 logger.error(f"Error processing research issue #{linked.number}: {e}", exc_info=True)
                 touched += 1
 
+    logger.info(
+        f"  Issue #{foundation_issue_number}: research workers done — "
+        f"completed={completed}, touched={touched}, blocked={blocked}"
+    )
     return {"completed": completed, "touched": touched, "blocked": blocked}
 
 
@@ -562,6 +584,7 @@ MAX_FOUNDATION_RESEARCH_AREAS = 10
 
 
 def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown: str) -> list[str]:
+    logger.info(f"  Issue #{issue.number}: invoking LLM to plan research areas (foundation_research_plan)")
     result = adapter.invoke_json(
         "foundation_research_plan",
         {
@@ -584,7 +607,9 @@ def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown
     if not deduped:
         raise ValueError("foundation_research_plan returned no valid research areas")
     # Hard cap: take the first N areas so we never spawn runaway sub-issues.
-    return deduped[:MAX_FOUNDATION_RESEARCH_AREAS]
+    capped = deduped[:MAX_FOUNDATION_RESEARCH_AREAS]
+    logger.info(f"  Issue #{issue.number}: planned {len(capped)} research area(s): {capped}")
+    return capped
 
 
 def _sync_foundation_research_backlog(
@@ -594,6 +619,7 @@ def _sync_foundation_research_backlog(
 ) -> None:
     existing = gateway.list_linked_research_issues(foundation_issue_number)
     existing_titles = {item.title for item in existing}
+    created = 0
     for area in research_areas:
         title = f"[foundation-research] {area} for #{foundation_issue_number}"
         if title in existing_titles:
@@ -616,6 +642,9 @@ def _sync_foundation_research_backlog(
             ),
             labels=[],
         )
+        created += 1
+    if created:
+        logger.info(f"  Issue #{foundation_issue_number}: created {created} new research sub-issue(s)")
 
 
 def _set_primary_foundation_state(gateway, issue_number: int, next_state: FoundationState, reason: str) -> None:
@@ -709,10 +738,13 @@ def _process_foundation_pass(
         actionable.append((issue, normalized.state))
     actionable.sort(key=lambda item: (_priority(item[1]), item[0].number))
 
+    logger.info(f"Pass found {len(actionable)} actionable foundation issue(s)")
+
     failed_issues = []
     for issue, current_state in actionable:
         issue_number = issue.number
-        logger.info(f"Processing foundation issue #{issue_number} ({current_state})")
+        state_label = current_state.value if current_state else "unknown"
+        logger.info(f"Issue #{issue_number} [{state_label}]: starting")
         before = _snapshot_issue(gateway, issue_number)
         open_research_before = gateway.count_open_linked_research_issues(issue_number)
         try:
@@ -722,6 +754,7 @@ def _process_foundation_pass(
                 if previous_payload:
                     previous = _dict_to_snapshot(previous_payload)
                     if _has_progress(previous, before):
+                        logger.info(f"  Issue #{issue_number}: new evidence detected — resuming from needs-human")
                         gateway.post_comment(
                             issue_number,
                             "Resuming from foundation:needs-human because new evidence was detected.",
@@ -732,6 +765,7 @@ def _process_foundation_pass(
                             ["foundation:in-progress"],
                         )
                     else:
+                        logger.info(f"  Issue #{issue_number}: no new evidence — still waiting on needs-human requirements")
                         gateway.post_comment(
                             issue_number,
                             "Still waiting on needs-human unblock requirements. "
@@ -746,6 +780,7 @@ def _process_foundation_pass(
                         )
                         continue
                 else:
+                    logger.info(f"  Issue #{issue_number}: resuming from needs-human (no previous snapshot) — re-evaluating evidence")
                     gateway.post_comment(
                         issue_number,
                         "Resuming from foundation:needs-human to re-evaluate current evidence.",
@@ -770,6 +805,7 @@ def _process_foundation_pass(
             active_state = normalized_current.state or FoundationState.FOUNDATION_NEEDED
 
             if active_state == FoundationState.FOUNDATION_NEEDED:
+                logger.info(f"  Issue #{issue_number}: transitioning needed → in-progress (backlog initialized)")
                 _set_primary_foundation_state(
                     gateway,
                     issue_number,
@@ -786,6 +822,7 @@ def _process_foundation_pass(
                 continue
 
             if active_state == FoundationState.FOUNDATION_IN_PROGRESS:
+                logger.info(f"  Issue #{issue_number}: state=in-progress — running research workers")
                 worker_stats = _run_linked_research_workers(
                     gateway=gateway,
                     adapter=adapter,
@@ -796,6 +833,10 @@ def _process_foundation_pass(
                 open_research = gateway.count_open_linked_research_issues(issue_number)
                 closed_research = gateway.count_closed_linked_research_issues(issue_number)
                 if open_research > 0:
+                    logger.info(
+                        f"  Issue #{issue_number}: {open_research} research issue(s) still open, "
+                        f"{closed_research} closed — staying in-progress"
+                    )
                     gateway.post_comment(
                         issue_number,
                         f"Foundation research in progress: waiting on {open_research} linked research issue(s) to close.",
@@ -810,6 +851,7 @@ def _process_foundation_pass(
                         },
                     )
                     if progress_tracker.get(issue_number).get("no_progress_count", 0) >= 3:
+                        logger.info(f"  Issue #{issue_number}: no-progress threshold reached — escalating to needs-human")
                         gateway.set_state_labels(
                             issue_number,
                             ["foundation:in-progress", "foundation:review", "foundation:needed"],
@@ -818,6 +860,10 @@ def _process_foundation_pass(
                         gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, _snapshot_issue(gateway, issue_number)))
                     continue
                 if closed_research > 0:
+                    logger.info(
+                        f"  Issue #{issue_number}: all research closed ({closed_research} issue(s)) — "
+                        f"advancing to foundation:review"
+                    )
                     _set_primary_foundation_state(
                         gateway,
                         issue_number,
@@ -832,6 +878,7 @@ def _process_foundation_pass(
                         },
                     )
                     continue
+                logger.info(f"  Issue #{issue_number}: no research closed yet — staying in-progress")
                 gateway.post_comment(
                     issue_number,
                     "No linked research is complete yet; remaining in foundation:in-progress.",
@@ -845,6 +892,7 @@ def _process_foundation_pass(
                 )
                 continue
 
+            logger.info(f"  Issue #{issue_number}: state={active_state.value if active_state else 'unknown'} — invoking orchestrator")
             try:
                 orchestrator.run_once(issue_number)
             except Exception as ex:
@@ -864,10 +912,16 @@ def _process_foundation_pass(
             no_progress_count = prior + 1 if no_progress else 0
 
             normalized_after = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
+            after_state_label = normalized_after.state.value if normalized_after.state else "unknown"
+            logger.info(
+                f"  Issue #{issue_number}: orchestrator done — state now={after_state_label}, "
+                f"no_progress_count={no_progress_count}"
+            )
             if (
                 no_progress_count >= 3
                 and normalized_after.state in {FoundationState.FOUNDATION_IN_PROGRESS, FoundationState.FOUNDATION_REVIEW}
             ):
+                logger.info(f"  Issue #{issue_number}: no-progress threshold reached — escalating to needs-human")
                 gateway.set_state_labels(
                     issue_number,
                     ["foundation:in-progress", "foundation:review", "foundation:needed"],
@@ -884,6 +938,7 @@ def _process_foundation_pass(
                 },
             )
         finally:
+            logger.info(f"Issue #{issue_number}: pass complete")
             _post_issue_run_summary(gateway, issue_number)
 
     progress_tracker.save()

@@ -6,6 +6,7 @@ Routing functions check current_state and return next node name (string) or END.
 This maintains the non-negotiable constraint: _FOUNDATION_TABLE remains the single source of truth.
 """
 
+import logging
 from typing import Optional, TypedDict
 from datetime import datetime, timezone
 
@@ -51,6 +52,7 @@ class FoundationGraphOrchestrator:
         """Initialize orchestrator with dependencies."""
         self.gateway = gateway
         self.log_store = log_store
+        self._logger = logging.getLogger(__name__)
 
         # Initialize node instances
         self.research_node = FoundationResearchNode(research_adapter, gateway, log_store)
@@ -112,7 +114,10 @@ class FoundationGraphOrchestrator:
         issue = self.gateway.get_issue(state["source_issue_number"])
         normalized = normalize_foundation_state_from_labels(issue.labels)
         current_state = normalized.state or FoundationState.FOUNDATION_NEEDED
-
+        self._logger.info(
+            f"  Issue #{state['source_issue_number']}: graph node=normalize_and_route, "
+            f"state={current_state.value}"
+        )
         return {
             **state,
             "current_state": current_state,
@@ -139,7 +144,10 @@ class FoundationGraphOrchestrator:
                 FoundationState.FOUNDATION_NEEDED,
                 FoundationEvent.FOUNDATION_STARTED,
             )
-
+            self._logger.info(
+                f"  Issue #{state['source_issue_number']}: graph node=needed_to_in_progress, "
+                f"auto-transitioning needed → {next_state.value}"
+            )
             # Log the transition
             self.gateway.set_state_labels(
                 state["source_issue_number"],
@@ -180,6 +188,9 @@ class FoundationGraphOrchestrator:
 
     def _node_research_wrapper(self, state: FoundationRunState) -> FoundationRunState:
         """Wrapper around FoundationResearchNode. Update state with result."""
+        self._logger.info(
+            f"  Issue #{state['source_issue_number']}: graph node=research"
+        )
         next_state = self.research_node.run(state["run_id"], state["source_issue_number"])
 
         return {
@@ -201,6 +212,9 @@ class FoundationGraphOrchestrator:
 
     def _node_gate_wrapper(self, state: FoundationRunState) -> FoundationRunState:
         """Wrapper around FoundationGateNode. Update state with result."""
+        self._logger.info(
+            f"  Issue #{state['source_issue_number']}: graph node=gate"
+        )
         next_state = self.gate_node.run(state["run_id"], state["source_issue_number"])
 
         return {

@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 from typing import List
 
 from aios_orchestration_core.events.foundation import FoundationEvent
@@ -15,6 +16,8 @@ from aios_orchestration_core.states.foundation import FoundationState
 from aios_orchestration_core.transitions.foundation import get_next_foundation_state
 from foundation_orchestrator.evidence import classify_adr_links, classify_wiki_links, extract_links
 
+logger = logging.getLogger(__name__)
+
 _DECISION_MAP = {
     "APPROVE_FOUNDATION": FoundationEvent.APPROVE_FOUNDATION,
     "REVISE_FOUNDATION": FoundationEvent.REVISE_FOUNDATION,
@@ -30,6 +33,10 @@ class FoundationGateNode:
         issue = self.gateway.get_issue(issue_number)
         normalized = normalize_foundation_state_from_labels(issue.labels)
         if normalized.state != FoundationState.FOUNDATION_REVIEW:
+            logger.warning(
+                f"  Issue #{issue_number}: FoundationGateNode — unexpected state "
+                f"{normalized.state!r} (expected foundation:review); aborting gate"
+            )
             self.gateway.post_comment(
                 issue_number,
                 "Transition validation failed: G1 source state invalid for foundation gate (expected foundation:review).",
@@ -40,6 +47,10 @@ class FoundationGateNode:
         comments = self.gateway.get_issue_comments(issue_number)
         linked_research = self.gateway.list_linked_research_issues(issue_number)
         foundation_markdown = self.gateway.read_foundation_markdown()
+        logger.info(
+            f"  Issue #{issue_number}: FoundationGateNode — invoking LLM (foundation_gate), "
+            f"{len(linked_research)} linked research item(s)"
+        )
         result = self.adapter.invoke_json(
             "foundation_gate",
             {
@@ -64,12 +75,20 @@ class FoundationGateNode:
         if decision == "APPROVE_FOUNDATION":
             evidence_failures = self._approval_evidence_failures(issue_number, issue.body, comments)
             if evidence_failures:
+                logger.info(
+                    f"  Issue #{issue_number}: FoundationGateNode — LLM said APPROVE but "
+                    f"evidence preconditions not met; downgrading to REVISE_FOUNDATION"
+                )
                 decision = "REVISE_FOUNDATION"
                 reason_detail = (
                     f"{reason_detail}\nApproval preconditions not met: " + "; ".join(evidence_failures)
                 ).strip()
         event = _DECISION_MAP[decision]
         next_state = get_next_foundation_state(FoundationState.FOUNDATION_REVIEW, event)
+        logger.info(
+            f"  Issue #{issue_number}: FoundationGateNode — decision={decision}, "
+            f"transitioning to {next_state.value}"
+        )
 
         self.gateway.set_state_labels(issue_number, list(FOUNDATION_CANONICAL_STATE_LABELS), [FOUNDATION_CANONICAL_LABEL_BY_STATE[next_state]])
 

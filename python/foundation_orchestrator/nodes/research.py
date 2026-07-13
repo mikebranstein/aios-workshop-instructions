@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import logging
 
 from aios_orchestration_core.events.foundation import FoundationEvent
 from aios_orchestration_core.github.foundation_gateway import FoundationGateway
@@ -8,6 +9,8 @@ from aios_orchestration_core.runlog.models import TransitionLogEntry
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.states.foundation import FoundationState
 from aios_orchestration_core.transitions.foundation import get_next_foundation_state
+
+logger = logging.getLogger(__name__)
 
 _DECISION_MAP = {
     "RECOMMEND": FoundationEvent.RESEARCH_RECOMMEND,
@@ -25,6 +28,10 @@ class FoundationResearchNode:
         linked_research = self.gateway.list_linked_research_issues(issue_number)
         foundation_markdown = self.gateway.read_foundation_markdown()
         comments = self.gateway.get_issue_comments(issue_number)
+        logger.info(
+            f"  Issue #{issue_number}: FoundationResearchNode — invoking LLM (foundation_research), "
+            f"{len(linked_research)} linked research item(s)"
+        )
         result = self.adapter.invoke_json(
             "foundation_research",
             {
@@ -47,6 +54,10 @@ class FoundationResearchNode:
         decision = result.payload["decision"]
         event = _DECISION_MAP[decision]
         next_state = get_next_foundation_state(FoundationState.FOUNDATION_IN_PROGRESS, event)
+        logger.info(
+            f"  Issue #{issue_number}: FoundationResearchNode — decision={decision}, "
+            f"transitioning to {next_state.value}"
+        )
 
         self.gateway.set_state_labels(issue_number, list(FOUNDATION_CANONICAL_STATE_LABELS), [FOUNDATION_CANONICAL_LABEL_BY_STATE[next_state]])
 
