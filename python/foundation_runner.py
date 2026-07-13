@@ -40,6 +40,7 @@ import json
 import logging
 import os
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -63,6 +64,10 @@ from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, Foun
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+# Serialises the read-number → write-file sequence so concurrent research worker
+# threads never claim the same ADR sequence number.
+_ADR_WRITE_LOCK = threading.Lock()
 
 # Suppress noisy internals from the Copilot SDK — CLI lifecycle messages add no
 # diagnostic value and drown out orchestrator progress.
@@ -416,15 +421,20 @@ def _generate_and_write_adr(
     """Call adr_generator LLM, assemble content, write docs/adr/{number}-{slug}.md.
 
     Returns the written ADR path, or empty string if adr_title is blank.
+
+    The LLM call is intentionally done *outside* the ADR write lock so that
+    concurrent workers can run their expensive LLM requests in parallel.  Only
+    the sequence-number claim and the actual file write are serialised, which
+    prevents two workers from picking the same ADR number.
     """
     if not adr_title:
         return ""
-    adr_number = _next_adr_number(gateway)
-    slug = _slugify(adr_title)
-    adr_path = f"docs/adr/{adr_number:04d}-{slug}.md"
 
+    # --- LLM call (outside lock — can run in parallel) ---
+    # We don't know the sequence number yet, so pass a placeholder; the final
+    # assembled content is built inside the lock where the real number is known.
     logger.info(
-        f"    Research #{research_issue_number}: invoking LLM (adr_generator) → {adr_path}"
+        f"    Research #{research_issue_number}: invoking LLM (adr_generator)"
     )
     result = adapter.invoke_json(
         "adr_generator",
@@ -435,22 +445,29 @@ def _generate_and_write_adr(
             "research_issue_number": research_issue_number,
             "research_issue_title": research_issue_title,
             "wiki_page_path": wiki_page_path,
-            "adr_sequence_number": f"{adr_number:04d}",
+            "adr_sequence_number": "TBD",
             "foundation_markdown": foundation_markdown,
         },
     )
-    content = _assemble_adr_content(
-        adr_number=adr_number,
-        adr_title=adr_title,
-        payload=result.payload or {},
-        research_issue_number=research_issue_number,
-        wiki_page_path=wiki_page_path,
-    )
-    gateway.write_repo_file(
-        adr_path,
-        content,
-        f"foundation: add ADR {adr_path} for issue #{research_issue_number}",
-    )
+    llm_payload = result.payload or {}
+
+    # --- Claim number + write (serialised) ---
+    with _ADR_WRITE_LOCK:
+        adr_number = _next_adr_number(gateway)
+        slug = _slugify(adr_title)
+        adr_path = f"docs/adr/{adr_number:04d}-{slug}.md"
+        content = _assemble_adr_content(
+            adr_number=adr_number,
+            adr_title=adr_title,
+            payload=llm_payload,
+            research_issue_number=research_issue_number,
+            wiki_page_path=wiki_page_path,
+        )
+        gateway.write_repo_file(
+            adr_path,
+            content,
+            f"foundation: add ADR {adr_path} for issue #{research_issue_number}",
+        )
     logger.info(f"    Research #{research_issue_number}: ADR written → {adr_path}")
     return adr_path
 

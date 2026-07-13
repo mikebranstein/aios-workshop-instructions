@@ -522,6 +522,60 @@ class FoundationRunnerTests(unittest.TestCase):
         self.assertEqual(len(gateway.created), 0, "Must not create a new issue when open approved issue exists")
         pass_mock.assert_not_called()
 
+    def test_concurrent_adr_writes_get_distinct_sequence_numbers(self) -> None:
+        """Multiple threads calling _generate_and_write_adr concurrently must
+        produce ADR files with unique, non-overlapping sequence numbers."""
+        import threading
+
+        gateway = FoundationGitHubGateway(
+            issues={1: FoundationIssue(number=1, title="Foundation", body="", labels={"foundation:in-progress"})},
+        )
+
+        class _QuickAdapter:
+            adapter_source = "stub"
+
+            def invoke_json(self, task_type, context):
+                return type("R", (), {
+                    "payload": {
+                        "context_section": "## Context\nTest.",
+                        "decision_section": "## Decision\nTest.",
+                    },
+                    "model": "stub",
+                })()
+
+        adapter = _QuickAdapter()
+        written_paths: list = []
+        errors: list = []
+
+        def write_one(n: int) -> None:
+            try:
+                path = foundation_runner._generate_and_write_adr(
+                    gateway=gateway,
+                    adapter=adapter,
+                    foundation_issue_number=1,
+                    research_issue_number=100 + n,
+                    research_issue_title=f"Research {n}",
+                    wiki_page_path=f"foundation/page-{n}.md",
+                    adr_title=f"Decision {n}",
+                    adr_summary=f"Summary for decision {n}",
+                    foundation_markdown="# FOUNDATION",
+                )
+                written_paths.append(path)
+            except Exception as exc:
+                errors.append(exc)
+
+        threads = [threading.Thread(target=write_one, args=(i,)) for i in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(errors, [], f"Threads raised errors: {errors}")
+        self.assertEqual(len(written_paths), 5, "Expected 5 ADR files written")
+        # Each path must carry a unique 4-digit prefix.
+        prefixes = [Path(p).stem.split("-", 1)[0] for p in written_paths]
+        self.assertEqual(len(set(prefixes)), 5, f"Duplicate ADR numbers detected: {prefixes}")
+
 
 if __name__ == "__main__":
     unittest.main()
