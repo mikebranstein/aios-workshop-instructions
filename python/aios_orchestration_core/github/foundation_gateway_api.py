@@ -210,6 +210,11 @@ class GitHubApiFoundationGateway:
         for child in self._list_sub_issues(foundation_issue_number):
             if child.get("title") == title and self._has_research_label(child):
                 return int(child["number"])
+        # Fallback path for repos where sub-issues API is unavailable or flaky:
+        # dedupe by the canonical research issue title pattern.
+        fallback = self._find_research_issue_for_parent_by_title(foundation_issue_number, title)
+        if fallback is not None:
+            return fallback
 
         create_labels = list(labels) + ["foundation:research"]
         self._ensure_labels(create_labels)
@@ -226,15 +231,36 @@ class GitHubApiFoundationGateway:
 
     def list_linked_research_issues(self, foundation_issue_number: int) -> List[LinkedFoundationIssue]:
         result: List[LinkedFoundationIssue] = []
-        for child in self._list_sub_issues(foundation_issue_number):
-            if not self._has_research_label(child):
+        sub_issues = self._list_sub_issues(foundation_issue_number)
+        if sub_issues:
+            for child in sub_issues:
+                if not self._has_research_label(child):
+                    continue
+                result.append(
+                    LinkedFoundationIssue(
+                        number=int(child["number"]),
+                        title=child.get("title", ""),
+                        body=child.get("body", "") or "",
+                        open=str(child.get("state", "open")).lower() == "open",
+                    )
+                )
+            return result
+
+        # Fallback if sub-issues are unavailable: infer linkage from
+        # foundation:research issues that follow the canonical title pattern.
+        try:
+            fallback_issues = self.list_open_issues_with_any_label(["foundation:research"])
+        except Exception:
+            fallback_issues = []
+        for issue in fallback_issues:
+            if not self._is_research_title_for_parent(issue.title, foundation_issue_number):
                 continue
             result.append(
                 LinkedFoundationIssue(
-                    number=int(child["number"]),
-                    title=child.get("title", ""),
-                    body=child.get("body", "") or "",
-                    open=str(child.get("state", "open")).lower() == "open",
+                    number=issue.number,
+                    title=issue.title,
+                    body=issue.body or "",
+                    open=issue.open,
                 )
             )
         return result
@@ -271,7 +297,7 @@ class GitHubApiFoundationGateway:
 
     def _link_sub_issue(self, foundation_issue_number: int, child_issue_number: int) -> None:
         child_id = self._issue_db_id(child_issue_number)
-        subprocess.run(
+        completed = subprocess.run(
             [
                 "gh",
                 "api",
@@ -281,10 +307,43 @@ class GitHubApiFoundationGateway:
                 "-F",
                 f"sub_issue_id={child_id}",
             ],
-            check=True,
+            check=False,
             capture_output=True,
             text=True,
         )
+        if completed.returncode == 0:
+            return
+        stderr = (completed.stderr or "").strip()
+        lower = stderr.lower()
+        # Treat duplicate-link and unsupported-link flows as non-fatal. We keep
+        # execution moving and rely on title/label fallback linkage.
+        non_fatal_markers = (
+            "already",
+            "exists",
+            "unprocessable",
+            "validation failed",
+            "not found",
+            "sub_issue",
+        )
+        if any(marker in lower for marker in non_fatal_markers):
+            return
+        raise RuntimeError(
+            f"Failed to link sub-issue #{child_issue_number} to #{foundation_issue_number}: {stderr}"
+        )
+
+    @staticmethod
+    def _is_research_title_for_parent(title: str, foundation_issue_number: int) -> bool:
+        return title.startswith("[foundation-research]") and title.endswith(f" for #{foundation_issue_number}")
+
+    def _find_research_issue_for_parent_by_title(self, foundation_issue_number: int, title: str) -> int | None:
+        try:
+            issues = self.list_open_issues_with_any_label(["foundation:research"])
+        except Exception:
+            return None
+        for issue in issues:
+            if issue.title == title and self._is_research_title_for_parent(issue.title, foundation_issue_number):
+                return issue.number
+        return None
 
     def count_open_linked_research_issues(self, foundation_issue_number: int) -> int:
         return len([i for i in self.list_linked_research_issues(foundation_issue_number) if i.open])
