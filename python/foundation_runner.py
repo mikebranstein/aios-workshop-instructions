@@ -932,7 +932,7 @@ def main():
     try:
         logger.info(f"Foundation Orchestrator: {context}")
 
-        # Check for FOUNDATION.md
+        # Check for FOUNDATION.md first
         logger.info("Checking for FOUNDATION.md at repo root...")
         if not gateway.foundation_markdown_exists():
             print(
@@ -942,6 +942,14 @@ def main():
             )
             return 1
         foundation_markdown = gateway.read_foundation_markdown()
+
+        # Bootstrap wiki if needed (ensures backing repo exists before any wiki operations)
+        logger.info("Ensuring wiki is ready...")
+        try:
+            gateway._ensure_wiki_exists()
+        except Exception as e:
+            print(f"Error: Failed to bootstrap wiki: {e}", file=sys.stderr)
+            return 2
 
         run_registry = FoundationRunRegistry()
 

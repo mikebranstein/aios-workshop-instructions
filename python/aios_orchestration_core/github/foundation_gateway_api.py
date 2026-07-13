@@ -23,6 +23,7 @@ class GitHubApiFoundationGateway:
         self.config = config
         self.comment_formatter: CommentFormatter = comment_formatter or NullCommentFormatter()
         self._wiki = GitHubWikiManager(repo=self.config.repo, temp_prefix="aios-foundation-wiki-")
+        self._wiki_initialized = False
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
@@ -34,6 +35,36 @@ class GitHubApiFoundationGateway:
         if jq is not None:
             cmd += ["--jq", jq]
         return subprocess.run(cmd, check=False, capture_output=True, text=True)
+
+    def _ensure_wiki_exists(self) -> None:
+        """Ensure the wiki backing repo exists; bootstrap with a home page if needed."""
+        if self._wiki_initialized:
+            return
+        self._wiki_initialized = True
+
+        # Check if the wiki backing repo exists via gh api
+        result = self._gh_api(f"repos/{self.config.repo}/contents", jq=".")
+        if result.returncode != 0:
+            # Repo lookup failed; can't proceed
+            return
+
+        # Try to check if the wiki backing repo has been initialized
+        # by attempting a minimal operation. If the wiki has no pages, cloning fails
+        # with exit 128. Bootstrap it with a Home page.
+        try:
+            _ = self._wiki.list_pages()
+        except Exception:
+            # Clone/access failed; bootstrap wiki with a Home page
+            try:
+                self._wiki.write_page(
+                    "Home.md",
+                    "# Wiki\n\nInitialized by Foundation Orchestrator.\n",
+                    "wiki: bootstrap home page",
+                )
+            except Exception:
+                # If bootstrap fails, that's a real error—let it propagate up
+                # so the orchestrator sees it and reports it clearly.
+                raise
 
     def _ensure_labels(self, labels: Sequence[str]) -> None:
         for label in labels:

@@ -18,6 +18,9 @@ class _GatewayMissingFoundation:
     def create_foundation_issue(self, title, body):
         raise AssertionError("Runner should fail before creating issues when FOUNDATION.md is missing")
 
+    def _ensure_wiki_exists(self) -> None:
+        pass  # Won't be called since FOUNDATION.md check happens first
+
 
 class _LoopGatewayStub:
     """Minimal gateway that satisfies main()'s bootstrap so the verification loop runs."""
@@ -40,6 +43,10 @@ class _LoopGatewayStub:
         number = 100 + len(self.created)
         self.created.append(number)
         return number
+
+    def _ensure_wiki_exists(self) -> None:
+        """Stub: do nothing."""
+        pass
 
 
 class _ContextStub:
