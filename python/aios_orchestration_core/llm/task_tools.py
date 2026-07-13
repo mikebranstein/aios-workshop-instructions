@@ -264,6 +264,7 @@ FOUNDATION_RESEARCH_PLAN_TOOL = ToolSpec(
             "research_areas": {
                 "type": "array",
                 "minItems": 1,
+                "maxItems": 10,
                 "items": {"type": "string", "minLength": 1},
             },
             "reason": {"type": "string", "minLength": 1},

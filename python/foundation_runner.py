@@ -330,10 +330,35 @@ def _process_research_issue(
     issue = gateway.get_issue(linked_issue.number)
     comments = gateway.get_issue_comments(linked_issue.number)
 
-    # Skip issues that already have a worker decision this pass to avoid
-    # posting duplicate NEEDS_MORE_RESEARCH comments on every loop.
     worker_decision_marker = "Foundation research worker decision:"
-    if any(worker_decision_marker in c for c in comments):
+    existing_decisions = [c for c in comments if worker_decision_marker in c]
+
+    # Skip if already processed — avoid posting duplicate comments on every loop.
+    if existing_decisions:
+        needs_more_count = sum(1 for c in existing_decisions if "NEEDS_MORE_RESEARCH" in c)
+        # After 2 NEEDS_MORE_RESEARCH passes, force BLOCKED so the issue doesn't
+        # loop forever. The prompt has been updated to lower the COMPLETE bar, so
+        # this is a true last-resort safety valve.
+        _MAX_NEEDS_MORE_RETRIES = 2
+        if needs_more_count >= _MAX_NEEDS_MORE_RETRIES:
+            blocked_comment = (
+                f"{worker_decision_marker} BLOCKED\n\n"
+                "Summary: Automatically escalated to BLOCKED after "
+                f"{needs_more_count} NEEDS_MORE_RESEARCH attempts. "
+                "A human must review and resolve the open gaps before this "
+                "research area can be closed."
+            )
+            gateway.post_issue_comment(linked_issue.number, blocked_comment)
+            gateway.close_issue(linked_issue.number, "not_planned")
+            return {
+                "issue_number": linked_issue.number,
+                "decision": "BLOCKED",
+                "summary": "Auto-escalated to BLOCKED after too many NEEDS_MORE_RESEARCH attempts.",
+                "worker_comment": blocked_comment,
+                "primary_comment": None,
+                "blocked": True,
+                "completed": False,
+            }
         return {
             "issue_number": linked_issue.number,
             "decision": "ALREADY_PROCESSED",
@@ -533,6 +558,9 @@ def _is_supporting_research_issue(issue) -> bool:
     return "foundation:research" in labels
 
 
+MAX_FOUNDATION_RESEARCH_AREAS = 10
+
+
 def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown: str) -> list[str]:
     result = adapter.invoke_json(
         "foundation_research_plan",
@@ -555,7 +583,8 @@ def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown
     deduped = list(dict.fromkeys(areas))
     if not deduped:
         raise ValueError("foundation_research_plan returned no valid research areas")
-    return deduped
+    # Hard cap: take the first N areas so we never spawn runaway sub-issues.
+    return deduped[:MAX_FOUNDATION_RESEARCH_AREAS]
 
 
 def _sync_foundation_research_backlog(
