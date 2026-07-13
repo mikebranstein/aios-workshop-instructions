@@ -10,7 +10,8 @@ _TASK_PROMPT_FILE_MAP = {
     "foundation_gate": _PROMPTS_ROOT / "foundation" / "foundation_gate.md",
     "foundation_research_plan": _PROMPTS_ROOT / "foundation" / "foundation_research_plan.md",
     "foundation_research_worker": _PROMPTS_ROOT / "foundation" / "foundation_research_worker.md",
-    "foundation_wiki_manager": _PROMPTS_ROOT / "foundation" / "foundation_wiki_manager.md",
+    "foundation_wiki_manager": _PROMPTS_ROOT / "wiki" / "wiki_manager.md",
+    "wiki_manager": _PROMPTS_ROOT / "wiki" / "wiki_manager.md",
 }
 
 
@@ -30,4 +31,3 @@ def render_task_prompt(task_type: str, prompt_vars: Dict[str, Any]) -> str:
             prompt_vars_pretty_json,
         )
     ).strip()
-

@@ -91,7 +91,7 @@ class FoundationRunnerTests(unittest.TestCase):
                         "adr_summary": "Tradeoffs documented.",
                         "next_actions": ["Proceed to review"],
                     }
-                elif task_type == "foundation_wiki_manager":
+                elif task_type == "wiki_manager":
                     payload = {
                         "decision": "CREATE_PAGE",
                         "page_path": "foundation/runtime-and-language-baseline.md",

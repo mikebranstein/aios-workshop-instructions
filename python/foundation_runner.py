@@ -81,7 +81,7 @@ class StubLLMAdapter(JudgmentLLMAdapter):
                 "adr_summary": "Documented decision and trade-offs.",
                 "next_actions": ["Link outputs to primary foundation issue"],
             },
-            "foundation_wiki_manager": {
+            "wiki_manager": {
                 "decision": "CREATE_PAGE",
                 "page_path": "foundation/foundation-research-stub.md",
                 "page_content": "# Foundation Research Stub\n\nCaptured alternatives and recommendation.",
@@ -284,7 +284,7 @@ def _apply_wiki_manager_plan(
     return manager.apply_llm_plan(
         gateway=gateway,
         adapter=adapter,
-        task_type="foundation_wiki_manager",
+        task_type="wiki_manager",
         prompt_vars={
             "foundation_issue_number": foundation_issue_number,
             "research_issue_number": research_issue_number,

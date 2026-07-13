@@ -332,6 +332,7 @@ TASK_TOOL_MAP.update(
         "foundation_research_plan": FOUNDATION_RESEARCH_PLAN_TOOL,
         "foundation_research_worker": FOUNDATION_RESEARCH_WORKER_TOOL,
         "foundation_wiki_manager": FOUNDATION_WIKI_MANAGER_TOOL,
+        "wiki_manager": FOUNDATION_WIKI_MANAGER_TOOL,
     }
 )
 

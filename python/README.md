@@ -95,7 +95,7 @@ Reads `FOUNDATION.md` and processes all actionable foundation issues in priority
 During `foundation:in-progress`, linked research issues run through an LLM worker and an LLM-driven wiki manager that writes/updates wiki pages (and `Content-Index.md`) before closing research issues.
 Wiki manager writes are executed via temp wiki clone workspaces (clone -> reorganize/write -> single commit/push -> cleanup).
 Approval requires LLM gate decision plus objective evidence checks (closed linked research issues, wiki/ADR links, at least one ADR link). Supports `--force`.
-Foundation task prompt templates are versioned under `aios_orchestration_core/llm/prompts/foundation/*.md` and injected at runtime with per-issue context.
+Foundation task prompt templates are versioned under `aios_orchestration_core/llm/prompts/foundation/*.md`, and shared wiki-manager prompts are under `aios_orchestration_core/llm/prompts/wiki/*.md`; both are injected at runtime with per-issue context.
 Wiki management services are shared under `aios_orchestration_core/wiki/` for reuse across orchestrators.
 PM strategic-opportunity publish and Discovery run-summary publish are also wired to the shared wiki manager.
 
