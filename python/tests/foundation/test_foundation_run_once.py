@@ -72,7 +72,7 @@ class FoundationRunOnceTests(unittest.TestCase):
     def test_revise_then_approve(self) -> None:
         gw = _gw({"foundation:needed"})
         with tempfile.TemporaryDirectory() as tmp:
-            FoundationRunOnceOrchestrator(
+            orchestrator = FoundationRunOnceOrchestrator(
                 gateway=gw, log_store=TransitionLogStore(f"{tmp}/r.sqlite"),
                 run_registry=FoundationRunRegistry(),
                 research_adapter=_S({"decision": "RECOMMEND", "reason": "ok"}),
@@ -81,7 +81,10 @@ class FoundationRunOnceTests(unittest.TestCase):
                     {"decision": "APPROVE_FOUNDATION", "reason": "ok now"},
                 ),
                 max_cycles=5,
-            ).run_once(1)
+            )
+            orchestrator.run_once(1)
+            self.assertIn("foundation:in-progress", gw.get_issue(1).labels)
+            orchestrator.run_once(1)
         self.assertIn("foundation:approved", gw.get_issue(1).labels)
 
     def test_circuit_breaker_escalates(self) -> None:

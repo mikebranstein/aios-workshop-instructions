@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 import foundation_runner
+from aios_orchestration_core.github.foundation_gateway import FoundationIssue
 
 
 class _GatewayMissingFoundation:
@@ -40,6 +41,24 @@ class FoundationRunnerTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 1)
         self.assertIn("FOUNDATION.md not found", stderr.getvalue())
+
+    def test_supporting_research_issue_detection_true_for_foundation_research_label(self) -> None:
+        issue = FoundationIssue(
+            number=1,
+            title="Research",
+            body="body",
+            labels={"foundation:research", "foundation:in-progress", "foundation-source-2"},
+        )
+        self.assertTrue(foundation_runner._is_supporting_research_issue(issue))
+
+    def test_supporting_research_issue_detection_false_for_primary_foundation_issue(self) -> None:
+        issue = FoundationIssue(
+            number=2,
+            title="Foundation Setup",
+            body="body",
+            labels={"foundation:in-progress"},
+        )
+        self.assertFalse(foundation_runner._is_supporting_research_issue(issue))
 
 
 if __name__ == "__main__":

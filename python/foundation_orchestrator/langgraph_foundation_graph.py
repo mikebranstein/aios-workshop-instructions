@@ -66,7 +66,9 @@ class FoundationGraphOrchestrator:
         Conditional edges consult routing functions that use TransitionTable
         to determine the next node. Nodes focus on business logic only.
         
-        Supports feedback loops: research->research (NEEDS_MORE), gate->research (REVISE)
+        Uses bounded single-pass routing per invocation. Feedback outcomes
+        (e.g. NEEDS_MORE/REVISE) are persisted as state and picked up on the
+        next orchestrator run instead of looping indefinitely in-process.
         
         Nodes:
         - normalize_and_route: Entry point
@@ -186,12 +188,12 @@ class FoundationGraphOrchestrator:
         }
 
     def _route_research(self, state: FoundationRunState) -> str:
-        """Route from research using TransitionTable, supporting feedback loops."""
+        """Route from research using bounded single-pass semantics."""
         current_state = state.get("current_state")
         if current_state in TERMINAL_FOUNDATION_STATES:
             return END
         elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
-            return "research"  # NEEDS_MORE loops back
+            return END
         elif current_state == FoundationState.FOUNDATION_REVIEW:
             return "gate"  # RECOMMEND advances
         else:
@@ -207,12 +209,10 @@ class FoundationGraphOrchestrator:
         }
 
     def _route_gate(self, state: FoundationRunState) -> str:
-        """Route from gate using TransitionTable, supporting feedback loops."""
+        """Route from gate using bounded single-pass semantics."""
         current_state = state.get("current_state")
         if current_state in TERMINAL_FOUNDATION_STATES:
             return END
-        elif current_state == FoundationState.FOUNDATION_IN_PROGRESS:
-            return "research"  # REVISE loops back to research
         else:
             return END
 

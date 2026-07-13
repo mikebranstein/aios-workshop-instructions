@@ -173,8 +173,15 @@ def _ensure_supporting_research_issue(gateway, foundation_issue_number: int) -> 
             "- linked ADR references\n"
             "- recommendation for foundation gate"
         ),
-        labels=["foundation:in-progress"],
+        labels=[],
     )
+
+
+def _is_supporting_research_issue(issue) -> bool:
+    labels = getattr(issue, "labels", set()) or set()
+    if "foundation:research" in labels:
+        return True
+    return any(label.startswith("foundation-source-") for label in labels)
 
 
 def main():
@@ -297,6 +304,8 @@ def main():
 
         actionable = []
         for issue in open_foundation_issues:
+            if _is_supporting_research_issue(issue):
+                continue
             normalized = normalize_foundation_state_from_labels(issue.labels)
             actionable.append((issue, normalized.state))
         actionable.sort(key=lambda item: (_priority(item[1]), item[0].number))
