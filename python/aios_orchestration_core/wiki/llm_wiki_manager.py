@@ -44,6 +44,21 @@ def normalize_wiki_page_path(value: str, default_path: str) -> str:
         return ""
     if not path.lower().endswith(".md"):
         path = f"{path}.md"
+    # Slugify the filename stem so spaces / special chars never end up in links.
+    parts = path.rsplit("/", 1)
+    stem_with_ext = parts[-1]
+    stem, _, _ = stem_with_ext.partition(".")
+    safe_stem = re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-") or slugify(stem)
+    safe_name = f"{safe_stem}.md"
+    path = f"{parts[0]}/{safe_name}" if len(parts) == 2 else safe_name
+    # Redirect to default if the result collides with a system-managed filename.
+    _SYSTEM_NAMES = {"home.md", "content-index.md", "_sidebar.md", "_footer.md"}
+    if safe_name.lower() in _SYSTEM_NAMES:
+        path = default_path
+        if not path:
+            return ""
+        if not path.lower().endswith(".md"):
+            path = f"{path}.md"
     return path
 
 

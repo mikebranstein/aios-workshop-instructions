@@ -23,6 +23,11 @@ class GitHubWikiManager:
     HOME_INDEX_FILE = "Home.md"
     EXCLUDED_INDEX_PAGES = {"Home.md", "_Sidebar.md", "_Footer.md", "Content-Index.md"}
 
+    # Filenames (case-insensitive) that the system owns and that LLM-driven
+    # page_path values must never collide with.  Checked by filename only so
+    # that e.g. "foundation/Content-Index.md" is also blocked.
+    SYSTEM_MANAGED_NAMES = frozenset(name.lower() for name in EXCLUDED_INDEX_PAGES)
+
     def __init__(self, repo: str, temp_prefix: str = "aios-wiki-") -> None:
         self.repo = repo
         self.temp_prefix = temp_prefix
@@ -213,7 +218,11 @@ class GitHubWikiManager:
     def get_snapshot(self, limit: int = 50, excerpt_chars: int = 1200) -> List[dict]:
         workspace, wiki_dir = self._wiki_workspace()
         try:
-            pages = sorted(path.relative_to(wiki_dir).as_posix() for path in wiki_dir.rglob("*.md"))
+            pages = sorted(
+                path.relative_to(wiki_dir).as_posix()
+                for path in wiki_dir.rglob("*.md")
+                if path.name not in self.EXCLUDED_INDEX_PAGES
+            )
             out = []
             for page in pages[:limit]:
                 content = (wiki_dir / Path(page)).read_text(encoding="utf-8")
@@ -278,6 +287,12 @@ class GitHubWikiManager:
         index_summary: str,
         commit_message: str,
     ) -> bool:
+        # Guard: the LLM must never overwrite a system-managed file.
+        if Path(page_path).name.lower() in self.SYSTEM_MANAGED_NAMES:
+            raise ValueError(
+                f"page_path {page_path!r} collides with a system-managed wiki file. "
+                "The caller must redirect it to a non-system path before calling apply_changes."
+            )
         with _WIKI_WRITE_LOCK:
             workspace, wiki_dir = self._wiki_workspace()
             try:
@@ -286,6 +301,9 @@ class GitHubWikiManager:
                     from_path = str(move.get("from_path", ""))
                     to_path = str(move.get("to_path", ""))
                     if not from_path or not to_path or from_path == to_path:
+                        continue
+                    # Never allow a move that would overwrite a system-managed file.
+                    if Path(to_path).name.lower() in self.SYSTEM_MANAGED_NAMES:
                         continue
                     source = wiki_dir / Path(from_path)
                     target = wiki_dir / Path(to_path)
