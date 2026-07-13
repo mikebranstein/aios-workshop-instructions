@@ -254,10 +254,84 @@ FOUNDATION_GATE_TOOL = ToolSpec(
     },
 )
 
+FOUNDATION_RESEARCH_PLAN_TOOL = ToolSpec(
+    name="submit_foundation_research_plan",
+    description="Submit foundation research plan (decision areas to spawn as issues).",
+    parameters_schema={
+        "type": "object",
+        "required": ["research_areas"],
+        "properties": {
+            "research_areas": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+            },
+            "reason": {"type": "string", "minLength": 1},
+        },
+    },
+)
+
+FOUNDATION_RESEARCH_WORKER_TOOL = ToolSpec(
+    name="submit_foundation_research_worker_result",
+    description="Submit foundation research worker result for a linked research issue.",
+    parameters_schema={
+        "type": "object",
+        "required": ["decision", "summary", "next_actions"],
+        "properties": {
+            "decision": {
+                "type": "string",
+                "enum": ["COMPLETE", "NEEDS_MORE_RESEARCH", "BLOCKED"],
+            },
+            "summary": {"type": "string", "minLength": 1},
+            "wiki_page_title": {"type": "string", "minLength": 1},
+            "wiki_summary": {"type": "string", "minLength": 1},
+            "adr_title": {"type": "string", "minLength": 1},
+            "adr_summary": {"type": "string", "minLength": 1},
+            "next_actions": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+            },
+        },
+    },
+)
+
+FOUNDATION_WIKI_MANAGER_TOOL = ToolSpec(
+    name="submit_foundation_wiki_manager_result",
+    description="Submit wiki management decision for foundation research outputs.",
+    parameters_schema={
+        "type": "object",
+        "required": ["decision", "page_path", "page_content", "content_index_summary"],
+        "properties": {
+            "decision": {
+                "type": "string",
+                "enum": ["CREATE_PAGE", "UPDATE_PAGE", "REORGANIZE_AND_WRITE"],
+            },
+            "page_path": {"type": "string", "minLength": 1},
+            "page_content": {"type": "string", "minLength": 1},
+            "content_index_summary": {"type": "string", "minLength": 1},
+            "page_moves": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["from_path", "to_path"],
+                    "properties": {
+                        "from_path": {"type": "string", "minLength": 1},
+                        "to_path": {"type": "string", "minLength": 1},
+                    },
+                },
+            },
+            "reason": {"type": "string", "minLength": 1},
+        },
+    },
+)
+
 TASK_TOOL_MAP.update(
     {
         "foundation_research": FOUNDATION_RESEARCH_TOOL,
         "foundation_gate": FOUNDATION_GATE_TOOL,
+        "foundation_research_plan": FOUNDATION_RESEARCH_PLAN_TOOL,
+        "foundation_research_worker": FOUNDATION_RESEARCH_WORKER_TOOL,
+        "foundation_wiki_manager": FOUNDATION_WIKI_MANAGER_TOOL,
     }
 )
 

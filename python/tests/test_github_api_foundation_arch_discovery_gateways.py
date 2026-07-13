@@ -1,6 +1,7 @@
 import json
 import subprocess
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from aios_orchestration_core.github.arch_review_gateway_api import GitHubApiArchReviewGateway
@@ -65,6 +66,84 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
             issue_number = gateway.create_foundation_issue("Foundation Setup", "Body")
 
         self.assertEqual(issue_number, 44)
+
+    def test_list_wiki_pages_clones_in_temp_and_returns_markdown_paths(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+        seen = []
+
+        def fake_run(cmd, check, capture_output, text, cwd=None):
+            seen.append((cmd, cwd))
+            if cmd[:2] == ["git", "clone"]:
+                target = Path(cmd[3])
+                target.mkdir(parents=True, exist_ok=True)
+                (target / "Home.md").write_text("# Home\n", encoding="utf-8")
+                (target / "foundation").mkdir(parents=True, exist_ok=True)
+                (target / "foundation" / "runtime.md").write_text("# Runtime\n", encoding="utf-8")
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            pages = gateway.list_wiki_pages()
+
+        self.assertEqual(pages, ["Home.md", "foundation/runtime.md"])
+        self.assertTrue(any(cmd[:2] == ["git", "clone"] for cmd, _ in seen))
+
+    def test_write_wiki_page_commits_changes(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+        seen = []
+
+        def fake_run(cmd, check, capture_output, text, cwd=None):
+            seen.append((cmd, cwd))
+            if cmd[:2] == ["git", "clone"]:
+                target = Path(cmd[3])
+                target.mkdir(parents=True, exist_ok=True)
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            changed = gateway.write_wiki_page(
+                "foundation/new-page.md",
+                "# New Page\n\nBody",
+                "foundation: update wiki page",
+            )
+
+        self.assertTrue(changed)
+        commands = [cmd for cmd, _ in seen]
+        self.assertIn(["git", "commit", "-m", "foundation: update wiki page"], commands)
+        self.assertIn(["git", "push"], commands)
+
+    def test_apply_wiki_manager_changes_uses_single_clone_and_commit(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiFoundationGateway(cfg)
+        seen = []
+
+        def fake_run(cmd, check, capture_output, text, cwd=None):
+            seen.append((cmd, cwd))
+            if cmd[:2] == ["git", "clone"]:
+                target = Path(cmd[3])
+                target.mkdir(parents=True, exist_ok=True)
+                (target / "old").mkdir(parents=True, exist_ok=True)
+                (target / "old" / "runtime.md").write_text("# Runtime\n", encoding="utf-8")
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.foundation_gateway_api.subprocess.run", side_effect=fake_run):
+            changed = gateway.apply_wiki_manager_changes(
+                page_path="foundation/runtime.md",
+                page_content="# Runtime\n\nUpdated",
+                page_moves=[{"from_path": "old/runtime.md", "to_path": "foundation/runtime.md"}],
+                index_issue_number=42,
+                index_summary="Runtime baseline selected.",
+                commit_message="foundation: update wiki for issue #42",
+            )
+
+        self.assertTrue(changed)
+        commands = [cmd for cmd, _ in seen]
+        clone_calls = [cmd for cmd in commands if cmd[:2] == ["git", "clone"]]
+        commit_calls = [cmd for cmd in commands if cmd[:2] == ["git", "commit"]]
+        push_calls = [cmd for cmd in commands if cmd[:2] == ["git", "push"]]
+        self.assertEqual(len(clone_calls), 1)
+        self.assertEqual(len(commit_calls), 1)
+        self.assertEqual(len(push_calls), 1)
 
 
 class GitHubApiArchReviewGatewayTests(unittest.TestCase):

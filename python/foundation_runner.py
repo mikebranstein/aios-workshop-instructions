@@ -29,6 +29,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -61,8 +62,33 @@ class StubLLMAdapter(JudgmentLLMAdapter):
 
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
         stubs = {
+            "foundation_research_plan": {
+                "research_areas": [
+                    "Runtime and Language",
+                    "Framework or Engine",
+                    "Architecture Style",
+                ],
+                "reason": "stub planning from FOUNDATION.md",
+            },
             "foundation_research": {"decision": "RECOMMEND", "reason": "stub research"},
             "foundation_gate": {"decision": "REVISE_FOUNDATION", "reason": "stub gate review"},
+            "foundation_research_worker": {
+                "decision": "COMPLETE",
+                "summary": "stub linked research complete",
+                "wiki_page_title": "Foundation Research Stub",
+                "wiki_summary": "Captured alternatives and recommendation.",
+                "adr_title": "Use selected architecture baseline",
+                "adr_summary": "Documented decision and trade-offs.",
+                "next_actions": ["Link outputs to primary foundation issue"],
+            },
+            "foundation_wiki_manager": {
+                "decision": "CREATE_PAGE",
+                "page_path": "foundation/foundation-research-stub.md",
+                "page_content": "# Foundation Research Stub\n\nCaptured alternatives and recommendation.",
+                "content_index_summary": "Baseline foundation recommendation captured.",
+                "page_moves": [],
+                "reason": "stub wiki manager path selection",
+            },
         }
         return type("Result", (), {"payload": stubs.get(task_type, {}), "model": self.model})()
 
@@ -225,6 +251,198 @@ def _post_issue_run_summary(gateway, issue_number: int) -> None:
     gateway.post_comment(issue_number, "\n".join(lines))
 
 
+def _slugify(value: str) -> str:
+    lowered = (value or "").strip().lower()
+    cleaned = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
+    return cleaned or "foundation-research"
+
+
+def _normalize_wiki_page_path(value: str) -> str:
+    path = (value or "").strip().replace("\\", "/")
+    path = re.sub(r"/+", "/", path).strip("/")
+    if not path:
+        return "foundation/research.md"
+    if not path.lower().endswith(".md"):
+        path = f"{path}.md"
+    return path
+
+
+def _apply_wiki_manager_plan(
+    gateway,
+    adapter: JudgmentLLMAdapter,
+    foundation_issue_number: int,
+    research_issue_number: int,
+    research_issue_title: str,
+    summary: str,
+    wiki_title: str,
+    wiki_summary: str,
+    adr_link: str,
+) -> str:
+    preview = gateway.get_wiki_snapshot(limit=50, excerpt_chars=1200)
+
+    desired_slug = _slugify(wiki_title or research_issue_title)
+    desired_path = f"foundation/{desired_slug}.md"
+    result = adapter.invoke_json(
+        "foundation_wiki_manager",
+        {
+            "foundation_issue_number": foundation_issue_number,
+            "research_issue_number": research_issue_number,
+            "research_issue_title": research_issue_title,
+            "research_summary": summary,
+            "wiki_title": wiki_title,
+            "wiki_summary": wiki_summary,
+            "adr_link": adr_link,
+            "existing_wiki_pages": preview,
+            "proposed_default_path": desired_path,
+            "wiki_manager_policy": {
+                "prefer_update_when_overlap_high": True,
+                "target_root": "foundation/",
+                "required_sections": [
+                    "Summary",
+                    "Decision",
+                    "Alternatives Considered",
+                    "Evidence",
+                    "Risks and Mitigations",
+                    "Traceability",
+                ],
+                "content_index_file": "Content-Index.md",
+                "reorganize_when_needed": True,
+            },
+        },
+    )
+    payload = result.payload or {}
+    page_path = _normalize_wiki_page_path(payload.get("page_path", desired_path))
+    page_content = payload.get("page_content")
+    if not isinstance(page_content, str) or not page_content.strip():
+        page_content = (
+            f"# {wiki_title or research_issue_title}\n\n"
+            f"{wiki_summary or summary}\n\n"
+            f"Source issue: #{research_issue_number}\n"
+            f"Related ADR: {adr_link or 'N/A'}\n"
+        )
+    page_moves = payload.get("page_moves") or []
+    normalized_moves = []
+    for move in page_moves:
+        if not isinstance(move, dict):
+            continue
+        from_path = _normalize_wiki_page_path(str(move.get("from_path", "")))
+        to_path = _normalize_wiki_page_path(str(move.get("to_path", "")))
+        if from_path and to_path and from_path != to_path:
+            normalized_moves.append({"from_path": from_path, "to_path": to_path})
+    index_summary = payload.get("content_index_summary")
+    if not isinstance(index_summary, str) or not index_summary.strip():
+        index_summary = summary
+
+    gateway.apply_wiki_manager_changes(
+        page_path=page_path,
+        page_content=page_content,
+        page_moves=normalized_moves,
+        index_issue_number=research_issue_number,
+        index_summary=index_summary,
+        commit_message=f"foundation: update wiki for issue #{research_issue_number}",
+    )
+    return page_path
+
+
+def _run_linked_research_workers(
+    gateway,
+    adapter: JudgmentLLMAdapter,
+    foundation_issue_number: int,
+    foundation_markdown: str,
+) -> dict:
+    completed = 0
+    touched = 0
+    blocked = 0
+    for linked in gateway.list_linked_research_issues(foundation_issue_number):
+        if not linked.open:
+            continue
+        issue = gateway.get_issue(linked.number)
+        comments = gateway.get_issue_comments(linked.number)
+        result = adapter.invoke_json(
+            "foundation_research_worker",
+            {
+                "foundation_issue_number": foundation_issue_number,
+                "research_issue_number": linked.number,
+                "research_issue_title": issue.title,
+                "research_issue_body": issue.body,
+                "research_issue_comments": comments,
+                "foundation_markdown": foundation_markdown,
+            },
+        )
+        payload = result.payload or {}
+        decision = payload.get("decision", "NEEDS_MORE_RESEARCH")
+        summary = payload.get("summary", "No summary provided")
+        wiki_title = payload.get("wiki_page_title", "").strip()
+        wiki_summary = payload.get("wiki_summary", "").strip()
+        adr_title = payload.get("adr_title", "").strip()
+        adr_summary = payload.get("adr_summary", "").strip()
+        next_actions = payload.get("next_actions") or []
+        next_actions_text = "\n".join([f"- {item}" for item in next_actions if isinstance(item, str) and item.strip()])
+        adr_link = f"docs/adr/{_slugify(adr_title)}.md" if adr_title else ""
+        wiki_page_path = ""
+
+        worker_comment_lines = [
+            f"Foundation research worker decision: {decision}",
+            "",
+            f"Summary: {summary}",
+        ]
+        if wiki_title:
+            worker_comment_lines.extend(
+                [
+                    "",
+                    f"Wiki output: {wiki_title}",
+                    f"Proposed wiki link: wiki/foundation/{_slugify(wiki_title)}.md",
+                    f"Wiki summary: {wiki_summary or 'No wiki summary provided.'}",
+                ]
+            )
+        if adr_title:
+            worker_comment_lines.extend(
+                [
+                    "",
+                    f"ADR draft: {adr_title}",
+                    f"ADR link: {adr_link}",
+                    f"ADR summary: {adr_summary or 'No ADR summary provided.'}",
+                ]
+            )
+        if next_actions_text:
+            worker_comment_lines.extend(["", "Next actions:", next_actions_text])
+        gateway.post_comment(linked.number, "\n".join(worker_comment_lines))
+        touched += 1
+
+        if decision == "COMPLETE":
+            if wiki_title or wiki_summary:
+                wiki_page_path = _apply_wiki_manager_plan(
+                    gateway=gateway,
+                    adapter=adapter,
+                    foundation_issue_number=foundation_issue_number,
+                    research_issue_number=linked.number,
+                    research_issue_title=issue.title,
+                    summary=summary,
+                    wiki_title=wiki_title,
+                    wiki_summary=wiki_summary,
+                    adr_link=adr_link,
+                )
+            gateway.close_issue(linked.number, "completed")
+            completed += 1
+            primary_lines = [
+                f"Linked foundation research #{linked.number} completed.",
+                f"Summary: {summary}",
+            ]
+            if wiki_page_path:
+                primary_lines.append(f"Research wiki reference: wiki/{wiki_page_path}")
+            if adr_link:
+                primary_lines.append(f"Research ADR reference: {adr_link}")
+            gateway.post_comment(foundation_issue_number, "\n".join(primary_lines))
+        elif decision == "BLOCKED":
+            blocked += 1
+            gateway.post_comment(
+                foundation_issue_number,
+                f"Linked foundation research #{linked.number} is blocked. Summary: {summary}",
+            )
+
+    return {"completed": completed, "touched": touched, "blocked": blocked}
+
+
 def _ensure_supporting_research_issue(gateway, foundation_issue_number: int) -> None:
     linked = gateway.list_linked_research_issues(foundation_issue_number)
     if linked:
@@ -250,28 +468,41 @@ def _is_supporting_research_issue(issue) -> bool:
     return any(label.startswith("foundation-source-") for label in labels)
 
 
-def _infer_research_areas(foundation_markdown: str) -> list[str]:
-    base = [
-        "Runtime and Language",
-        "Framework or Engine",
-        "Architecture Style",
-        "Data and Storage Strategy",
-        "Testing Strategy",
-        "Deployment and Environments",
-    ]
-    lowered = foundation_markdown.lower()
-    if "game" in lowered or "gaming" in lowered:
-        base.append("Game Engine and Rendering Pipeline")
-    if "security" in lowered or "compliance" in lowered:
-        base.append("Security and Compliance Baseline")
-    return base
+def _plan_research_areas(adapter: JudgmentLLMAdapter, issue, foundation_markdown: str) -> list[str]:
+    result = adapter.invoke_json(
+        "foundation_research_plan",
+        {
+            "issue_number": issue.number,
+            "title": issue.title,
+            "body": issue.body,
+            "foundation_markdown": foundation_markdown,
+        },
+    )
+    raw = result.payload.get("research_areas")
+    if not isinstance(raw, list):
+        raise ValueError("foundation_research_plan must return research_areas as an array")
+    areas = []
+    for item in raw:
+        if isinstance(item, str):
+            trimmed = item.strip()
+            if trimmed:
+                areas.append(trimmed)
+    deduped = list(dict.fromkeys(areas))
+    if not deduped:
+        raise ValueError("foundation_research_plan returned no valid research areas")
+    return deduped
 
 
-def _sync_foundation_research_backlog(gateway, foundation_issue_number: int, foundation_markdown: str) -> None:
+def _sync_foundation_research_backlog(
+    gateway,
+    foundation_issue_number: int,
+    foundation_markdown: str,
+    research_areas: list[str],
+) -> None:
     existing = gateway.list_linked_research_issues(foundation_issue_number)
     existing_titles = {item.title for item in existing}
     context_excerpt = foundation_markdown.strip()[:1600] if foundation_markdown else "(No FOUNDATION.md content captured)"
-    for area in _infer_research_areas(foundation_markdown):
+    for area in research_areas:
         title = f"[foundation-research] {area} for #{foundation_issue_number}"
         if title in existing_titles:
             continue
@@ -487,7 +718,9 @@ def main():
                             ["foundation:in-progress"],
                         )
 
-                _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown)
+                planning_issue = gateway.get_issue(issue_number)
+                planned_areas = _plan_research_areas(adapter, planning_issue, foundation_markdown)
+                _sync_foundation_research_backlog(gateway, issue_number, foundation_markdown, planned_areas)
                 _cleanup_supporting_issue_state_labels(gateway, issue_number)
 
                 normalized_current = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
@@ -510,6 +743,12 @@ def main():
                     continue
 
                 if active_state == FoundationState.FOUNDATION_IN_PROGRESS:
+                    worker_stats = _run_linked_research_workers(
+                        gateway=gateway,
+                        adapter=adapter,
+                        foundation_issue_number=issue_number,
+                        foundation_markdown=foundation_markdown,
+                    )
                     open_research = gateway.count_open_linked_research_issues(issue_number)
                     closed_research = gateway.count_closed_linked_research_issues(issue_number)
                     if open_research > 0:
@@ -520,10 +759,19 @@ def main():
                         progress_tracker.set(
                             issue_number,
                             {
-                                "no_progress_count": 0,
+                                "no_progress_count": (
+                                    0 if worker_stats["completed"] > 0 else progress_tracker.get(issue_number).get("no_progress_count", 0) + 1
+                                ),
                                 "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
                             },
                         )
+                        if progress_tracker.get(issue_number).get("no_progress_count", 0) >= 3:
+                            gateway.set_state_labels(
+                                issue_number,
+                                ["foundation:in-progress", "foundation:review", "foundation:needed"],
+                                ["foundation:needs-human"],
+                            )
+                            gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, _snapshot_issue(gateway, issue_number)))
                         continue
                     if closed_research > 0:
                         _set_primary_foundation_state(

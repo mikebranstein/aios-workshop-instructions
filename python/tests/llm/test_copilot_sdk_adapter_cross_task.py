@@ -170,6 +170,14 @@ class CopilotSDKAdapterCrossTaskTests(unittest.TestCase):
         self.assertEqual(result.payload["tasks"], [])
         self.assertEqual(validate_json_schema(result.payload, tool.parameters_schema), [])
 
+    def test_foundation_wiki_manager_prompt_includes_strict_policy(self):
+        tool = TASK_TOOL_MAP["foundation_wiki_manager"]
+        prompt = CopilotSDKAdapter._build_tool_request_prompt("foundation_wiki_manager", tool, {"topic": "runtime"})
+        self.assertIn("Task prompt template:", prompt)
+        self.assertIn("Strict policy:", prompt)
+        self.assertIn("Prefer updating an existing page", prompt)
+        self.assertIn("required_sections", prompt)
+
 
 if __name__ == "__main__":
     unittest.main()

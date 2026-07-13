@@ -8,6 +8,7 @@ from aios_orchestration_core.llm.exceptions import (
     ToolSchemaValidationError,
 )
 from aios_orchestration_core.llm.schema_validation import validate_json_schema
+from aios_orchestration_core.llm.prompt_library import render_task_prompt
 from aios_orchestration_core.llm.task_tools import TASK_TOOL_MAP, ToolSpec
 
 
@@ -52,7 +53,7 @@ class CopilotSDKAdapter(JudgmentLLMAdapter):
         while True:
             messages = [
                 {"role": "system", "content": self.config.strict_tool_instruction},
-                {"role": "user", "content": self._build_tool_request_prompt(tool, prompt_vars)},
+                {"role": "user", "content": self._build_tool_request_prompt(task_type, tool, prompt_vars)},
             ]
             if corrections > 0:
                 correction_detail = f" Failure type: {last_failure}."
@@ -109,7 +110,7 @@ class CopilotSDKAdapter(JudgmentLLMAdapter):
             )
 
     @staticmethod
-    def _build_tool_request_prompt(tool: ToolSpec, prompt_vars: Dict[str, Any]) -> str:
+    def _build_tool_request_prompt(task_type: str, tool: ToolSpec, prompt_vars: Dict[str, Any]) -> str:
         required = tool.parameters_schema.get("required", [])
         properties = tool.parameters_schema.get("properties", {})
         example: Dict[str, Any] = {}
@@ -127,8 +128,13 @@ class CopilotSDKAdapter(JudgmentLLMAdapter):
             f"Required fields: {required}",
             f"Schema: {json.dumps(tool.parameters_schema, ensure_ascii=True)}",
             f"Valid example arguments: {json.dumps(example, ensure_ascii=True)}",
-            f"Prompt variables: {json.dumps(prompt_vars, ensure_ascii=True)}",
         ]
+        task_prompt = render_task_prompt(task_type, prompt_vars)
+        if task_prompt:
+            lines.append("Task prompt template:")
+            lines.append(task_prompt)
+        else:
+            lines.append(f"Prompt variables: {json.dumps(prompt_vars, ensure_ascii=True)}")
         if "decision" in required and "reason" in required:
             decision_schema = properties.get("decision", {})
             if "enum" in decision_schema and decision_schema["enum"]:

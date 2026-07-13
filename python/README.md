@@ -92,7 +92,10 @@ Finds all `dev:intake` issues and processes them through the full development pi
 python foundation_runner.py owner/my-repo
 ```
 Reads `FOUNDATION.md` and processes all actionable foundation issues in priority order (`review` → `in-progress` → `needs-human` → `needed`).
+During `foundation:in-progress`, linked research issues run through an LLM worker and an LLM-driven wiki manager that writes/updates wiki pages (and `Content-Index.md`) before closing research issues.
+Wiki manager writes are executed via temp wiki clone workspaces (clone -> reorganize/write -> single commit/push -> cleanup).
 Approval requires LLM gate decision plus objective evidence checks (closed linked research issues, wiki/ADR links, at least one ADR link). Supports `--force`.
+Foundation task prompt templates are versioned under `aios_orchestration_core/llm/prompts/foundation/*.md` and injected at runtime with per-issue context.
 
 **Architecture Review Orchestrator** — Audit codebase (runs once):
 ```powershell
