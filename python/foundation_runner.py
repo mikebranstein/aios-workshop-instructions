@@ -52,7 +52,7 @@ DEFAULT_LOG_DIR = default_runlog_dir("foundation")
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub adapter for demonstration."""
 
-    def __init__(self, model: str = "copilot-standard"):
+    def __init__(self, model: str = "auto"):
         self.model = model
 
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
@@ -200,7 +200,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="copilot-standard",
+        default="auto",
         help="LLM model hint",
     )
     parser.add_argument(

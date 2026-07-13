@@ -61,12 +61,12 @@ class MockAdapter(JudgmentLLMAdapter):
         """Return a mock result with forced tool call."""
         if task_type == "pm_phase1":
             return LLMInvocationResult(
-                payload={"decision": "PROVISIONAL_CHAMPION"}, model="copilot-standard", request_id="mock-req-1"
+                payload={"decision": "PROVISIONAL_CHAMPION"}, model="auto", request_id="mock-req-1"
             )
         elif task_type == "pm_research_task_plan":
             return LLMInvocationResult(
                 payload={"tasks": [{"topic": "Test Topic", "persona": "Test Persona"}]},
-                model="copilot-standard",
+                model="auto",
                 request_id="mock-req-2",
             )
         elif task_type == "pm_research_synthesis":
@@ -76,14 +76,14 @@ class MockAdapter(JudgmentLLMAdapter):
                     "confidence_score": 0.9,
                     "closed_linked_research_count": 1,
                 },
-                model="copilot-standard",
+                model="auto",
                 request_id="mock-req-3",
             )
         elif task_type == "pm_phase2_decision":
             return LLMInvocationResult(
-                payload={"decision": "CHAMPION"}, model="copilot-standard", request_id="mock-req-4"
+                payload={"decision": "CHAMPION"}, model="auto", request_id="mock-req-4"
             )
-        return LLMInvocationResult(payload={}, model="copilot-standard", request_id="mock-req-default")
+        return LLMInvocationResult(payload={}, model="auto", request_id="mock-req-default")
 
 
 class LangGraphGraphTests(unittest.TestCase):

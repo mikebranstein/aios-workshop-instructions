@@ -52,7 +52,7 @@ class Phase2ForcedToolAdapterTests(unittest.TestCase):
                 True,
                 {
                     "request_id": "r1",
-                    "model": "copilot-standard",
+                    "model": "auto",
                     "tool_calls": [
                         {
                             "name": "submit_pm_phase1_decision",

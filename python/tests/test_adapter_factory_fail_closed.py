@@ -12,7 +12,7 @@ def test_missing_sdk_raises_error():
         
         # When use_stub=False and SDK is missing, should raise
         with pytest.raises(ImportError):
-            create_adapter(model="copilot-standard", use_stub=False, stub_class=None)
+            create_adapter(model="auto", use_stub=False, stub_class=None)
 
 
 def test_missing_sdk_with_stub_class_fallback_removed():
@@ -24,7 +24,7 @@ def test_missing_sdk_with_stub_class_fallback_removed():
         
         # Even with stub_class provided, should raise (no fallback)
         with pytest.raises(ImportError):
-            create_adapter(model="copilot-standard", use_stub=False, stub_class=StubLLMAdapter)
+            create_adapter(model="auto", use_stub=False, stub_class=StubLLMAdapter)
 
 
 def test_explicit_stub_flag_bypasses_sdk():
@@ -32,7 +32,7 @@ def test_explicit_stub_flag_bypasses_sdk():
     from pm_runner import StubLLMAdapter
     
     # No SDK needed; stub should be returned immediately
-    adapter = create_adapter(model="copilot-standard", use_stub=True, stub_class=StubLLMAdapter)
+    adapter = create_adapter(model="auto", use_stub=True, stub_class=StubLLMAdapter)
     assert isinstance(adapter, StubLLMAdapter)
 
 

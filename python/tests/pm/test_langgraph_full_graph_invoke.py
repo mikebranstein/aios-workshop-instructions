@@ -62,7 +62,7 @@ class MockAdapter(JudgmentLLMAdapter):
         if task_type == "pm_phase1":
             decision = self.decisions.get(task_type, "PROVISIONAL_CHAMPION")
             return LLMInvocationResult(
-                payload={"decision": decision}, model="copilot-standard", request_id="mock-req-1"
+                payload={"decision": decision}, model="auto", request_id="mock-req-1"
             )
         elif task_type == "pm_phase2":
             decision = self.decisions.get(task_type, "CHAMPION")
@@ -72,13 +72,13 @@ class MockAdapter(JudgmentLLMAdapter):
                     "reason": "Test reason",
                     "confidence_score": 0.85,
                 },
-                model="copilot-standard",
+                model="auto",
                 request_id="mock-req-4",
             )
         elif task_type == "pm_research_task_plan":
             return LLMInvocationResult(
                 payload={"tasks": [{"topic": "Topic", "persona": "Persona"}]},
-                model="copilot-standard",
+                model="auto",
                 request_id="mock-req-2",
             )
         elif task_type == "pm_research_synthesis":
@@ -88,10 +88,10 @@ class MockAdapter(JudgmentLLMAdapter):
                     "confidence_score": 0.9,
                     "closed_linked_research_count": 1,
                 },
-                model="copilot-standard",
+                model="auto",
                 request_id="mock-req-3",
             )
-        return LLMInvocationResult(payload={"decision": "PROVISIONAL_CHAMPION"}, model="copilot-standard", request_id="mock-req-default")
+        return LLMInvocationResult(payload={"decision": "PROVISIONAL_CHAMPION"}, model="auto", request_id="mock-req-default")
 
 
 class LangGraphFullGraphInvokeTests(unittest.TestCase):

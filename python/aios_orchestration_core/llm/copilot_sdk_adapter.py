@@ -21,7 +21,7 @@ class CopilotSDKClient(Protocol):
 
 @dataclass
 class CopilotAdapterConfig:
-    model_default: str = "copilot-standard"
+    model_default: str = "auto"
     max_non_tool_retries: int = 2
     strict_tool_instruction: str = (
         "You must call the provided tool exactly once. "

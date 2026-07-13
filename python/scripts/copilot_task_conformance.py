@@ -27,7 +27,7 @@ def build_prompt_vars(task_type: str, trial: int):
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="copilot-standard")
+    parser.add_argument("--model", default="auto")
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--task", action="append", help="Task type to run (repeatable)")
     args = parser.parse_args()

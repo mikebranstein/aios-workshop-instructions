@@ -34,7 +34,7 @@ Usage Examples:
 Environment Variables:
     AIOS_TARGET_REPO      Target GitHub repo (owner/repo format)
     AIOS_PM_LOG_DIR       Directory for runlog output (default: temp/aios-orchestrator-runlogs/pm)
-    AIOS_LLM_MODEL        LLM model hint (default: "copilot-standard")
+    AIOS_LLM_MODEL        LLM model hint (default: "auto")
 
 Exit Codes:
     0   Success
@@ -71,7 +71,7 @@ DEFAULT_LOG_DIR = default_runlog_dir("pm")
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub adapter for demonstration. Replace with real adapter in production."""
 
-    def __init__(self, model: str = "copilot-standard"):
+    def __init__(self, model: str = "auto"):
         self.model = model
 
     @property
@@ -117,7 +117,7 @@ def main():
         help="Run continuously until no more pm:queued issues remain (default mode if no issue number)",
     )
     parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR), help="Directory for runlog output")
-    parser.add_argument("--model", default="copilot-standard", help="LLM model hint")
+    parser.add_argument("--model", default="auto", help="LLM model hint")
     parser.add_argument("--max-retries", type=int, default=3, help="Circuit breaker max retries")
     parser.add_argument("--min-research", type=int, default=1, help="Minimum research count required")
     parser.add_argument("--min-synthesis-conf", type=float, default=0.75, help="Minimum synthesis confidence")

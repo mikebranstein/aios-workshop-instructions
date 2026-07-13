@@ -28,7 +28,7 @@ class PMPhase1Node:
         result = self.adapter.invoke_json(
             "pm_phase1",
             {"issue_number": issue.number, "title": issue.title, "body": issue.body},
-            model_hint="copilot-standard",
+            model_hint="auto",
         )
 
         decision = result.payload["decision"]

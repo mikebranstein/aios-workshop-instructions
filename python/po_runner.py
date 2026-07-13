@@ -22,7 +22,7 @@ DEFAULT_LOG_DIR = default_runlog_dir("po")
 
 
 class StubLLMAdapter(JudgmentLLMAdapter):
-    def __init__(self, model: str = "copilot-standard"):
+    def __init__(self, model: str = "auto"):
         self.model = model
 
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
@@ -39,7 +39,7 @@ def main():
     parser.add_argument("issue_number", nargs="?", type=int)
     parser.add_argument("--continuous", action="store_true")
     parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR), help="Directory for runlog output")
-    parser.add_argument("--model", default="copilot-standard")
+    parser.add_argument("--model", default="auto")
     parser.add_argument("--stub", action="store_true", help="Use stub adapter instead of GitHub Copilot")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()

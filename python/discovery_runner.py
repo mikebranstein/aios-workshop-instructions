@@ -53,7 +53,7 @@ DEFAULT_LOG_DIR = default_runlog_dir("discovery")
 class StubLLMAdapter(JudgmentLLMAdapter):
     """Stub LLM adapter for discovery decisions."""
 
-    def __init__(self, model: str = "copilot-standard"):
+    def __init__(self, model: str = "auto"):
         self.model = model
 
     @property
@@ -144,7 +144,7 @@ def main():
     )
     parser.add_argument(
         "--model",
-        default="copilot-standard",
+        default="auto",
         help="LLM model hint",
     )
     parser.add_argument(

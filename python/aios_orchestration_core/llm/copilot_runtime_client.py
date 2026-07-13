@@ -77,7 +77,7 @@ class CopilotRuntimeClient:
                     skip_custom_instructions=True,
                 )
             except Exception as ex:
-                # Some local runtimes do not expose aliases like "copilot-standard".
+                # Some local runtimes do not expose aliases like "auto".
                 # Retry once using runtime default model selection.
                 if "not available" not in str(ex):
                     raise

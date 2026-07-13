@@ -158,7 +158,7 @@ All runners support these flags:
 | `--dry-run` | Preview without executing (print what would run) |
 | `--force` | Restart from scratch (ignores prior state) |
 | `--log-dir` | Directory for markdown runlogs (default: `<temp>/aios-orchestrator-runlogs/{runner}`) |
-| `--model` | LLM model hint (default: `copilot-standard`) |
+| `--model` | LLM model hint (default: `auto`) |
 
 ### Examples
 
@@ -219,7 +219,7 @@ python discovery_runner.py acme-corp/repo --dry-run
 
 ```powershell
 python pm_runner.py acme-corp/repo --continuous \
-  --model copilot-standard \
+  --model auto \
   --log-dir ./production_logs
 ```
 

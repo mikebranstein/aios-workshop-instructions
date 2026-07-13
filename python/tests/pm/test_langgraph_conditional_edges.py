@@ -51,7 +51,7 @@ class MockGateway(PMGateway):
 
 class MockAdapter(JudgmentLLMAdapter):
     def invoke_json(self, task_type: str, prompt_vars: Dict, model_hint: str = None) -> LLMInvocationResult:
-        return LLMInvocationResult(payload={"decision": "PROVISIONAL_CHAMPION"}, model="copilot-standard", request_id="mock-req")
+        return LLMInvocationResult(payload={"decision": "PROVISIONAL_CHAMPION"}, model="auto", request_id="mock-req")
 
 
 class LangGraphConditionalEdgesTests(unittest.TestCase):
