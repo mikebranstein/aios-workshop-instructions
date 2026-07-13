@@ -2,8 +2,19 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 from pathlib import Path
 from typing import List, Sequence
+
+
+# Module-level lock that serialises all wiki write operations within a process.
+# Because all research workers run inside a single ThreadPoolExecutor they share
+# this lock, which means:
+#   - Only one clone/write/push cycle runs at a time.
+#   - Each writer clones *after* all previous writers have pushed, so the fresh
+#     clone already contains their pages and the Home index is always built from
+#     the complete current state of the wiki.
+_WIKI_WRITE_LOCK = threading.Lock()
 
 
 class GitHubWikiManager:
@@ -222,40 +233,40 @@ class GitHubWikiManager:
             self._cleanup_workspace(workspace)
 
     def write_page(self, page_path: str, content: str, commit_message: str) -> bool:
-        workspace, wiki_dir = self._wiki_workspace()
-        try:
-            target = wiki_dir / Path(page_path)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            original = target.read_text(encoding="utf-8") if target.exists() else None
-            if original == content:
-                return False
-            target.write_text(content, encoding="utf-8")
-            self._rebuild_home_index(wiki_dir)
-            self._run_git(wiki_dir, ["add", "-A"])
-            self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            # Use branch name explicitly (master) to work with newly initialized repos
-            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
-            return True
-        finally:
-            self._cleanup_workspace(workspace)
+        with _WIKI_WRITE_LOCK:
+            workspace, wiki_dir = self._wiki_workspace()
+            try:
+                target = wiki_dir / Path(page_path)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                original = target.read_text(encoding="utf-8") if target.exists() else None
+                if original == content:
+                    return False
+                target.write_text(content, encoding="utf-8")
+                self._rebuild_home_index(wiki_dir)
+                self._run_git(wiki_dir, ["add", "-A"])
+                self._run_git(wiki_dir, ["commit", "-m", commit_message])
+                self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
+                return True
+            finally:
+                self._cleanup_workspace(workspace)
 
     def move_page(self, from_path: str, to_path: str, commit_message: str) -> bool:
-        workspace, wiki_dir = self._wiki_workspace()
-        try:
-            source = wiki_dir / Path(from_path)
-            target = wiki_dir / Path(to_path)
-            if not source.exists():
-                return False
-            target.parent.mkdir(parents=True, exist_ok=True)
-            source.replace(target)
-            self._rebuild_home_index(wiki_dir)
-            self._run_git(wiki_dir, ["add", "-A"])
-            self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            # Use branch name explicitly (master) to work with newly initialized repos
-            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
-            return True
-        finally:
-            self._cleanup_workspace(workspace)
+        with _WIKI_WRITE_LOCK:
+            workspace, wiki_dir = self._wiki_workspace()
+            try:
+                source = wiki_dir / Path(from_path)
+                target = wiki_dir / Path(to_path)
+                if not source.exists():
+                    return False
+                target.parent.mkdir(parents=True, exist_ok=True)
+                source.replace(target)
+                self._rebuild_home_index(wiki_dir)
+                self._run_git(wiki_dir, ["add", "-A"])
+                self._run_git(wiki_dir, ["commit", "-m", commit_message])
+                self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
+                return True
+            finally:
+                self._cleanup_workspace(workspace)
 
     def apply_changes(
         self,
@@ -267,49 +278,49 @@ class GitHubWikiManager:
         index_summary: str,
         commit_message: str,
     ) -> bool:
-        workspace, wiki_dir = self._wiki_workspace()
-        try:
-            changed = False
-            for move in page_moves:
-                from_path = str(move.get("from_path", ""))
-                to_path = str(move.get("to_path", ""))
-                if not from_path or not to_path or from_path == to_path:
-                    continue
-                source = wiki_dir / Path(from_path)
-                target = wiki_dir / Path(to_path)
-                if not source.exists():
-                    continue
+        with _WIKI_WRITE_LOCK:
+            workspace, wiki_dir = self._wiki_workspace()
+            try:
+                changed = False
+                for move in page_moves:
+                    from_path = str(move.get("from_path", ""))
+                    to_path = str(move.get("to_path", ""))
+                    if not from_path or not to_path or from_path == to_path:
+                        continue
+                    source = wiki_dir / Path(from_path)
+                    target = wiki_dir / Path(to_path)
+                    if not source.exists():
+                        continue
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    source.replace(target)
+                    changed = True
+
+                target = wiki_dir / Path(page_path)
                 target.parent.mkdir(parents=True, exist_ok=True)
-                source.replace(target)
-                changed = True
+                original = target.read_text(encoding="utf-8") if target.exists() else None
+                if original != page_content:
+                    target.write_text(page_content, encoding="utf-8")
+                    changed = True
 
-            target = wiki_dir / Path(page_path)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            original = target.read_text(encoding="utf-8") if target.exists() else None
-            if original != page_content:
-                target.write_text(page_content, encoding="utf-8")
-                changed = True
+                index_path = wiki_dir / "Content-Index.md"
+                existing_index = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
+                rendered_index = self._render_content_index(existing_index, page_path, index_issue_number, index_summary)
+                if existing_index != rendered_index:
+                    index_path.write_text(rendered_index, encoding="utf-8")
+                    changed = True
 
-            index_path = wiki_dir / "Content-Index.md"
-            existing_index = index_path.read_text(encoding="utf-8") if index_path.exists() else ""
-            rendered_index = self._render_content_index(existing_index, page_path, index_issue_number, index_summary)
-            if existing_index != rendered_index:
-                index_path.write_text(rendered_index, encoding="utf-8")
-                changed = True
+                if self._rebuild_home_index(wiki_dir):
+                    changed = True
 
-            if self._rebuild_home_index(wiki_dir):
-                changed = True
+                if not changed:
+                    return False
 
-            if not changed:
-                return False
-
-            self._run_git(wiki_dir, ["add", "-A"])
-            self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            # Use branch name explicitly (master) to work with newly initialized repos
-            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
-            return True
-        finally:
-            self._cleanup_workspace(workspace)
+                self._run_git(wiki_dir, ["add", "-A"])
+                self._run_git(wiki_dir, ["commit", "-m", commit_message])
+                self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
+                return True
+            finally:
+                self._cleanup_workspace(workspace)
 
     def rebuild_index(self, commit_message: str = "wiki: rebuild Home index") -> bool:
         """Regenerate the Home index from the current wiki pages and push it.
@@ -317,15 +328,16 @@ class GitHubWikiManager:
         Useful for repairing an existing wiki whose Home index is missing or
         stale. Returns True if the index changed and was pushed.
         """
-        workspace, wiki_dir = self._wiki_workspace()
-        try:
-            if not self._rebuild_home_index(wiki_dir):
-                return False
-            self._run_git(wiki_dir, ["add", "-A"])
-            self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            # Use branch name explicitly (master) to work with newly initialized repos
-            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
-            return True
-        finally:
-            self._cleanup_workspace(workspace)
+        with _WIKI_WRITE_LOCK:
+            workspace, wiki_dir = self._wiki_workspace()
+            try:
+                if not self._rebuild_home_index(wiki_dir):
+                    return False
+                self._run_git(wiki_dir, ["add", "-A"])
+                self._run_git(wiki_dir, ["commit", "-m", commit_message])
+                self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
+                return True
+            finally:
+                self._cleanup_workspace(workspace)
+
 

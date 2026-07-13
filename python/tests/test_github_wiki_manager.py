@@ -134,5 +134,51 @@ class SlugifyTests(unittest.TestCase):
         self.assertFalse(result.endswith("-"))
 
 
+class WikiWriteLockTests(unittest.TestCase):
+    """Tests that the module-level write lock serialises concurrent apply_changes calls."""
+
+    def setUp(self) -> None:
+        self._root = Path(tempfile.mkdtemp(prefix="wiki-lock-test-"))
+        self._bare = self._root / "remote.wiki.git"
+        subprocess.run(["git", "init", "--bare", "-q", str(self._bare)], check=True)
+
+    def _manager(self) -> "_LocalWikiManager":
+        return _LocalWikiManager(str(self._bare))
+
+    def test_concurrent_writers_both_land_with_complete_home_index(self) -> None:
+        """Two threads calling apply_changes at the same time must both succeed and
+        the final Home index must list both pages."""
+        import threading
+
+        mgr = self._manager()
+        errors: list = []
+
+        def write_page(page_path: str, title: str, issue: int) -> None:
+            try:
+                mgr.apply_changes(
+                    page_path=page_path,
+                    page_content=f"# {title}\n\n## Summary\nContent for {title}.\n",
+                    page_moves=[],
+                    index_issue_number=issue,
+                    index_summary=f"Summary of {title}",
+                    commit_message=f"foundation: add {title}",
+                )
+            except Exception as exc:
+                errors.append(exc)
+
+        t1 = threading.Thread(target=write_page, args=("foundation/Page-A.md", "Page A", 1))
+        t2 = threading.Thread(target=write_page, args=("foundation/Page-B.md", "Page B", 2))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        self.assertEqual(errors, [], f"Writer threads raised errors: {errors}")
+
+        home = self._manager().read_page("Home.md")
+        self.assertIn("[Page A](foundation/Page-A)", home, "Page A missing from index")
+        self.assertIn("[Page B](foundation/Page-B)", home, "Page B missing from index")
+
+
 if __name__ == "__main__":
     unittest.main()
