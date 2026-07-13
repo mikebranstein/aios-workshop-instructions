@@ -157,7 +157,7 @@ All runners support these flags:
 |------|---------|
 | `--dry-run` | Preview without executing (print what would run) |
 | `--force` | Restart from scratch (ignores prior state) |
-| `--log-dir` | Directory for runlog SQLite databases (default: `./{runner}_runs`) |
+| `--log-dir` | Directory for markdown runlogs (default: `<temp>/aios-orchestrator-runlogs/{runner}`) |
 | `--model` | LLM model hint (default: `copilot-standard`) |
 
 ### Examples
@@ -203,7 +203,7 @@ Each phase processes all matching issues sequentially, then hands off to the nex
 python pm_runner.py acme-corp/product-ideas 123
 ```
 
-Executes the PM loop on issue #123 only. After completion, runlog saved to `./pm_runs/pm_issue_123.sqlite`.
+Executes the PM loop on issue #123 only. After completion, runlog saved to `<temp>/aios-orchestrator-runlogs/pm/pm_issue_123.runlog.md`.
 
 #### Example 4: Dry-Run Preview
 
@@ -1037,7 +1037,7 @@ class _StubAdapter:
 def test_phase1_node_applies_transition(self) -> None:
     gateway = PMGitHubGateway({1: PMIssue(1, "Title", "Body", labels={"pm:phase1-validating"})})
     with tempfile.TemporaryDirectory() as tmp:
-        node = PMPhase1Node(_StubAdapter(), gateway, TransitionLogStore(f"{tmp}/runlog.sqlite"))
+        node = PMPhase1Node(_StubAdapter(), gateway, TransitionLogStore(f"{tmp}/runlog.md"))
         state = node.run("run-1", 1)
     
     self.assertEqual(state, PMState.PM_RESEARCH_PLANNING)
@@ -1433,7 +1433,7 @@ The PM loop currently supports real GitHub interaction via `GitHubApiPMGateway`:
 - **State lookup:** O(1) via hash table
 - **Label normalization:** O(1) per label via registry
 - **Transition validation:** O(1) per transition (table lookup)
-- **Runlog persistence:** Append-only SQLite (fast, scalable)
+- **Runlog persistence:** Append-only markdown output (human-readable, easy to inspect)
 - **Memory footprint:** Minimal (immutable tables, deterministic)
 
 All loops run in <10ms per issue (excluding LLM latency).

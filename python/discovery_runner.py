@@ -36,6 +36,7 @@ from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from aios_orchestration_core.runlog.paths import default_runlog_dir
 from discovery_orchestrator.idea_scout_adapter import (
     IdeaCandidate,
     IdeaScoutAdapter,
@@ -45,6 +46,8 @@ from discovery_orchestrator.run_once import DiscoveryRunOnceOrchestrator, Discov
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+DEFAULT_LOG_DIR = default_runlog_dir("discovery")
 
 
 class StubLLMAdapter(JudgmentLLMAdapter):
@@ -136,8 +139,8 @@ def main():
     )
     parser.add_argument(
         "--log-dir",
-        default="./discovery_runs",
-        help="Directory for runlog database",
+        default=str(DEFAULT_LOG_DIR),
+        help="Directory for runlog output",
     )
     parser.add_argument(
         "--model",
@@ -199,7 +202,7 @@ def main():
             logger.info("--force specified. Re-running discovery from scratch.")
 
         # Create orchestrator
-        log_db = f"{args.log_dir}/discovery_run.sqlite"
+        log_db = f"{args.log_dir}/discovery_run.runlog.md"
         adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
         idea_scout_adapter = DiscoveryIdeaScoutAdapter(adapter)
         orchestrator = DiscoveryRunOnceOrchestrator(

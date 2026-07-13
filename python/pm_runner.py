@@ -33,7 +33,7 @@ Usage Examples:
 
 Environment Variables:
     AIOS_TARGET_REPO      Target GitHub repo (owner/repo format)
-    AIOS_PM_LOG_DIR       Directory for runlog database (default: ./pm_runs)
+    AIOS_PM_LOG_DIR       Directory for runlog output (default: temp/aios-orchestrator-runlogs/pm)
     AIOS_LLM_MODEL        LLM model hint (default: "copilot-standard")
 
 Exit Codes:
@@ -54,6 +54,7 @@ from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from aios_orchestration_core.runlog.paths import default_runlog_dir
 from pm_orchestrator.run_once import PMRunOnceOrchestrator, PMRunRegistry
 from pm_orchestrator.continuous import PMContinuousOrchestrator
 
@@ -63,6 +64,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+DEFAULT_LOG_DIR = default_runlog_dir("pm")
 
 
 class StubLLMAdapter(JudgmentLLMAdapter):
@@ -113,7 +116,7 @@ def main():
         action="store_true",
         help="Run continuously until no more pm:queued issues remain (default mode if no issue number)",
     )
-    parser.add_argument("--log-dir", default="./pm_runs", help="Directory for runlog database")
+    parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR), help="Directory for runlog output")
     parser.add_argument("--model", default="copilot-standard", help="LLM model hint")
     parser.add_argument("--max-retries", type=int, default=3, help="Circuit breaker max retries")
     parser.add_argument("--min-research", type=int, default=1, help="Minimum research count required")
@@ -210,7 +213,7 @@ def _run_single_issue(gateway, args, issue_number: int) -> int:
     print(f"  Issue: {issue_number}")
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
 
-    log_db = f"{args.log_dir}/pm_issue_{issue_number}.sqlite"
+    log_db = f"{args.log_dir}/pm_issue_{issue_number}.runlog.md"
     
     # Create adapter using factory
     adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
@@ -240,7 +243,7 @@ def _run_continuous(gateway, args) -> int:
     print(f"  Processing all pm:queued issues until none remain")
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
 
-    log_db = f"{args.log_dir}/pm_continuous.sqlite"
+    log_db = f"{args.log_dir}/pm_continuous.runlog.md"
     
     # Startup preflight: validate adapter availability before batch begins.
     try:

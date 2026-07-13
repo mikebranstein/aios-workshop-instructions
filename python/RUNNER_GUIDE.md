@@ -184,12 +184,12 @@ All runners support:
 
 Default log directories:
 
-- PM: `./pm_runs`
-- PO: `./po_runs`
-- Dev: `./dev_runs`
-- Foundation: `./foundation_runs`
-- Discovery: `./discovery_runs`
-- ArchReview: `./arch_review_runs`
+- PM: `<temp>/aios-orchestrator-runlogs/pm`
+- PO: `<temp>/aios-orchestrator-runlogs/po`
+- Dev: `<temp>/aios-orchestrator-runlogs/dev`
+- Foundation: `<temp>/aios-orchestrator-runlogs/foundation`
+- Discovery: `<temp>/aios-orchestrator-runlogs/discovery`
+- ArchReview: `<temp>/aios-orchestrator-runlogs/arch-review`
 
 ---
 
@@ -250,7 +250,7 @@ Use this before running Foundation against a real repository:
    - labels move through foundation states
    - comments are posted with transition details
 6. **Verify local runlog artifact**
-   - default: `./foundation_runs/foundation_run.sqlite`
+   - default: `<temp>/aios-orchestrator-runlogs/foundation/foundation_run.runlog.md`
 7. **Recovery check**
    - rerun command once and confirm it resumes correctly (or cleanly finishes)
 

@@ -11,11 +11,14 @@ from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from aios_orchestration_core.runlog.paths import default_runlog_dir
 from dev_orchestrator.run_once import DevRunOnceOrchestrator, DevRunRegistry
 from dev_orchestrator.continuous import DevContinuousOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+DEFAULT_LOG_DIR = default_runlog_dir("dev")
 
 
 class StubLLMAdapter(JudgmentLLMAdapter):
@@ -38,7 +41,7 @@ def main():
     parser.add_argument("repo_or_issue", nargs="?", help="'owner/repo' or issue number")
     parser.add_argument("issue_number", nargs="?", type=int)
     parser.add_argument("--continuous", action="store_true")
-    parser.add_argument("--log-dir", default="./dev_runs")
+    parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR), help="Directory for runlog output")
     parser.add_argument("--model", default="copilot-standard")
     parser.add_argument("--stub", action="store_true", help="Use stub adapter instead of GitHub Copilot")
     parser.add_argument("--dry-run", action="store_true")
@@ -105,7 +108,7 @@ def main():
 def _run_single(gateway, args, issue_number: int) -> int:
     print(f"Running Dev orchestrator on issue {issue_number}")
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
-    log_db = f"{args.log_dir}/dev_issue_{issue_number}.sqlite"
+    log_db = f"{args.log_dir}/dev_issue_{issue_number}.runlog.md"
     adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
     orchestrator = DevRunOnceOrchestrator(
         gateway=gateway,
@@ -125,7 +128,7 @@ def _run_single(gateway, args, issue_number: int) -> int:
 def _run_continuous(gateway, args) -> int:
     print(f"Running Dev orchestrator in CONTINUOUS mode")
     print(f"  Adapter: {'stub' if args.stub else 'GitHub Copilot'}")
-    log_db = f"{args.log_dir}/dev_continuous.sqlite"
+    log_db = f"{args.log_dir}/dev_continuous.runlog.md"
     # Startup preflight: validate adapter availability before batch begins.
     try:
         adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)

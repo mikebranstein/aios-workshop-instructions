@@ -36,10 +36,13 @@ from aios_orchestration_core.llm.adapter_factory import create_adapter
 from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from aios_orchestration_core.runlog.paths import default_runlog_dir
 from arch_review_orchestrator.run_once import ArchReviewRunOnceOrchestrator, ArchReviewRunRegistry
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+DEFAULT_LOG_DIR = default_runlog_dir("arch-review")
 
 
 class StubLLMAdapter(JudgmentLLMAdapter):
@@ -74,8 +77,8 @@ def main():
     )
     parser.add_argument(
         "--log-dir",
-        default="./arch_review_runs",
-        help="Directory for runlog database",
+        default=str(DEFAULT_LOG_DIR),
+        help="Directory for runlog output",
     )
     parser.add_argument(
         "--model",
@@ -151,7 +154,7 @@ def main():
             issue_number = None
 
         # Create orchestrator
-        log_db = f"{args.log_dir}/arch_review_run.sqlite"
+        log_db = f"{args.log_dir}/arch_review_run.runlog.md"
         adapter = create_adapter(model=args.model, use_stub=args.stub, stub_class=StubLLMAdapter)
         orchestrator = ArchReviewRunOnceOrchestrator(
             gateway=gateway,
