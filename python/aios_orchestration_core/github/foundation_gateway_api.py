@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 import base64
+from pathlib import Path
 from typing import List, Optional, Sequence
 
 from aios_orchestration_core.github.comment_formatter import (
@@ -384,6 +385,40 @@ class GitHubApiFoundationGateway:
             index_summary=index_summary,
             commit_message=commit_message,
         )
+
+    def list_adr_files(self) -> List[str]:
+        result = self._gh_api(f"repos/{self.config.repo}/contents/docs/adr")
+        if result.returncode != 0 or not result.stdout.strip():
+            return []
+        try:
+            entries = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return []
+        if not isinstance(entries, list):
+            return []
+        return sorted(
+            e["path"]
+            for e in entries
+            if isinstance(e, dict) and e.get("type") == "file" and e.get("name", "").endswith(".md")
+        )
+
+    def write_repo_file(self, path: str, content: str, commit_message: str) -> bool:
+        encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
+        # Fetch the current SHA if the file already exists (needed for updates).
+        sha_result = self._gh_api(f"repos/{self.config.repo}/contents/{path}", jq=".sha")
+        existing_sha = sha_result.stdout.strip().strip('"') if sha_result.returncode == 0 else ""
+        data: List[str] = [
+            "-f", f"message={commit_message}",
+            "-f", f"content={encoded}",
+        ]
+        if existing_sha:
+            data += ["-f", f"sha={existing_sha}"]
+        cmd = [
+            "gh", "api", "--method", "PUT",
+            f"repos/{self.config.repo}/contents/{path}",
+        ] + data
+        completed = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        return completed.returncode == 0
 
     def create_foundation_issue(self, title: str, body: str) -> int:
         self._ensure_labels(["foundation:needed"])

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional, Protocol, Sequence, Set
 
 from aios_orchestration_core.core.gateway import BaseGateway
@@ -47,6 +48,8 @@ class FoundationGateway(BaseGateway, Protocol):
         index_summary: str,
         commit_message: str,
     ) -> bool: ...
+    def list_adr_files(self) -> List[str]: ...
+    def write_repo_file(self, path: str, content: str, commit_message: str) -> bool: ...
     def create_foundation_issue(self, title: str, body: str) -> int: ...
 
 
@@ -56,9 +59,11 @@ class FoundationGitHubGateway:
         issues: Optional[Dict[int, FoundationIssue]] = None,
         wiki_pages: Optional[Dict[str, str]] = None,
         sub_issues: Optional[Dict[int, List[int]]] = None,
+        repo_files: Optional[Dict[str, str]] = None,
     ) -> None:
         self.issues: Dict[int, FoundationIssue] = issues or {}
         self.wiki_pages: Dict[str, str] = dict(wiki_pages or {})
+        self._repo_files: Dict[str, str] = dict(repo_files or {})
         self._next = max(self.issues.keys(), default=0) + 100
         self._research_issue_cache: Dict[int, int] = {}
         self._sub_issues: Dict[int, List[int]] = {
@@ -204,6 +209,16 @@ class FoundationGitHubGateway:
             content = ("\n".join(lines).strip() + f"\n{marker} {index_summary} |\n")
         changed = self.write_wiki_page("Content-Index.md", content, commit_message) or changed
         return changed
+
+    def list_adr_files(self) -> List[str]:
+        return sorted(k for k in self._repo_files if k.startswith("docs/adr/") and k.endswith(".md"))
+
+    def write_repo_file(self, path: str, content: str, commit_message: str) -> bool:
+        current = self._repo_files.get(path)
+        if current == content:
+            return False
+        self._repo_files[path] = content
+        return True
 
     def create_foundation_issue(self, title: str, body: str) -> int:
         self._next += 1

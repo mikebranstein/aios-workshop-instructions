@@ -326,6 +326,36 @@ FOUNDATION_WIKI_MANAGER_TOOL = ToolSpec(
     },
 )
 
+FOUNDATION_ADR_GENERATOR_TOOL = ToolSpec(
+    name="submit_foundation_adr",
+    description="Submit a generated Foundation ADR for writing to docs/adr/.",
+    parameters_schema={
+        "type": "object",
+        "required": [
+            "adr_title",
+            "context_section",
+            "decision_section",
+            "alternatives_section",
+            "rationale_section",
+            "consequences_section",
+            "validation_strategy_section",
+            "rollback_section",
+            "related_decisions_section",
+        ],
+        "properties": {
+            "adr_title": {"type": "string", "minLength": 1},
+            "context_section": {"type": "string", "minLength": 1},
+            "decision_section": {"type": "string", "minLength": 1},
+            "alternatives_section": {"type": "string", "minLength": 1},
+            "rationale_section": {"type": "string", "minLength": 1},
+            "consequences_section": {"type": "string", "minLength": 1},
+            "validation_strategy_section": {"type": "string", "minLength": 1},
+            "rollback_section": {"type": "string", "minLength": 1},
+            "related_decisions_section": {"type": "string", "minLength": 1},
+        },
+    },
+)
+
 TASK_TOOL_MAP.update(
     {
         "foundation_research": FOUNDATION_RESEARCH_TOOL,
@@ -334,6 +364,7 @@ TASK_TOOL_MAP.update(
         "foundation_research_worker": FOUNDATION_RESEARCH_WORKER_TOOL,
         "foundation_wiki_manager": FOUNDATION_WIKI_MANAGER_TOOL,
         "wiki_manager": FOUNDATION_WIKI_MANAGER_TOOL,
+        "adr_generator": FOUNDATION_ADR_GENERATOR_TOOL,
     }
 )
 
