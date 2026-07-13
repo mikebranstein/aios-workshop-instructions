@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from aios_orchestration_core.github.pm_gateway import PMIssue
+from aios_orchestration_core.wiki.github_wiki_manager import GitHubWikiManager
 
 
 @dataclass
@@ -19,6 +20,7 @@ class GitHubApiPMGateway:
         self.config = config
         self.published_artifacts: Dict[int, Dict[str, object]] = {}
         self._research_issue_cache: Dict[Tuple[int, str], int] = {}
+        self._wiki = GitHubWikiManager(repo=self.config.repo, temp_prefix="aios-pm-wiki-")
 
     def _gh(self, args: List[str]) -> str:
         cmd = ["gh", "-R", self.config.repo] + args
@@ -116,6 +118,29 @@ class GitHubApiPMGateway:
 
     def publish_strategic_opportunity_artifact(self, issue_number: int, artifact: Dict[str, object]) -> None:
         self.published_artifacts[issue_number] = artifact
+        artifact_id = str(artifact.get("artifact_id", f"so-{issue_number}"))
+        page_path = f"pm/strategic-opportunities/{artifact_id}.md"
+        title = str(artifact.get("title", f"Strategic Opportunity #{issue_number}"))
+        thesis = str(artifact.get("strategic_thesis", ""))
+        decision = str(artifact.get("decision", ""))
+        confidence = artifact.get("confidence_score", "")
+        content = (
+            f"# {title}\n\n"
+            f"## Summary\n\n{thesis}\n\n"
+            f"## Decision\n\n{decision}\n\n"
+            f"## Confidence\n\n{confidence}\n\n"
+            f"## Traceability\n\n"
+            f"- Source issue: #{issue_number}\n"
+            f"- Artifact ID: {artifact_id}\n"
+        )
+        self._wiki.apply_changes(
+            page_path=page_path,
+            page_content=content,
+            page_moves=[],
+            index_issue_number=issue_number,
+            index_summary="PM strategic opportunity artifact",
+            commit_message=f"pm: publish strategic opportunity artifact #{issue_number}",
+        )
         self.post_comment(issue_number, f"Strategic Opportunity Artifact Published: {artifact.get('artifact_id', 'unknown')}")
 
     def ensure_research_issue(self, pm_issue_number: int, title: str, body: str, labels: Sequence[str]) -> int:

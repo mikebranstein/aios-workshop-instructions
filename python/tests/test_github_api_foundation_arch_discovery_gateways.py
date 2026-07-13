@@ -7,7 +7,7 @@ from unittest.mock import patch
 from aios_orchestration_core.github.arch_review_gateway_api import GitHubApiArchReviewGateway
 from aios_orchestration_core.github.discovery_gateway_api import GitHubApiDiscoveryGateway
 from aios_orchestration_core.github.foundation_gateway_api import GitHubApiFoundationGateway
-from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
+from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig, GitHubApiPMGateway
 
 
 def _cp(stdout: str, returncode: int = 0) -> subprocess.CompletedProcess:
@@ -66,6 +66,42 @@ class GitHubApiFoundationGatewayTests(unittest.TestCase):
             issue_number = gateway.create_foundation_issue("Foundation Setup", "Body")
 
         self.assertEqual(issue_number, 44)
+
+    def test_pm_publish_strategic_artifact_writes_wiki(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiPMGateway(cfg)
+        seen = []
+
+        def fake_run(cmd, check, capture_output, text, cwd=None):
+            seen.append((cmd, cwd))
+            gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
+            if gh_args[:2] == ["issue", "comment"]:
+                return _cp("")
+            if cmd[:2] == ["git", "clone"]:
+                target = Path(cmd[3])
+                target.mkdir(parents=True, exist_ok=True)
+                return _cp("")
+            if cmd[:1] == ["git"]:
+                return _cp("")
+            return _cp("")
+
+        with patch("aios_orchestration_core.github.pm_gateway_api.subprocess.run", side_effect=fake_run), patch(
+            "aios_orchestration_core.wiki.github_wiki_manager.subprocess.run", side_effect=fake_run
+        ):
+            gateway.publish_strategic_opportunity_artifact(
+                issue_number=42,
+                artifact={
+                    "artifact_id": "so-42",
+                    "title": "Strategic Opportunity",
+                    "strategic_thesis": "Thesis",
+                    "decision": "CHAMPION",
+                    "confidence_score": 0.9,
+                },
+            )
+
+        commands = [cmd for cmd, _ in seen]
+        self.assertIn(["git", "commit", "-m", "pm: publish strategic opportunity artifact #42"], commands)
+        self.assertIn(["git", "push"], commands)
 
     def test_list_wiki_pages_clones_in_temp_and_returns_markdown_paths(self) -> None:
         cfg = GitHubApiConfig(repo="owner/repo")
@@ -220,6 +256,30 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
         self.assertTrue(context.focus_file_exists)
         self.assertTrue(context.focus_file_populated)
         self.assertEqual(issue_number, 123)
+
+    def test_publish_discovery_run_artifact_writes_wiki(self) -> None:
+        cfg = GitHubApiConfig(repo="owner/repo")
+        gateway = GitHubApiDiscoveryGateway(cfg)
+        seen = []
+
+        def fake_run(cmd, check, capture_output, text, cwd=None):
+            seen.append((cmd, cwd))
+            if cmd[:2] == ["git", "clone"]:
+                target = Path(cmd[3])
+                target.mkdir(parents=True, exist_ok=True)
+            return _cp("")
+
+        with patch("aios_orchestration_core.wiki.github_wiki_manager.subprocess.run", side_effect=fake_run):
+            gateway.publish_discovery_run_artifact(
+                state="DISCOVERY_COMPLETE",
+                created_pm_idea_numbers=[11, 12],
+                deferred_count=1,
+                dropped_count=0,
+            )
+
+        commands = [cmd for cmd, _ in seen]
+        self.assertIn(["git", "commit", "-m", "discovery: publish run summary"], commands)
+        self.assertIn(["git", "push"], commands)
 
 
 if __name__ == "__main__":

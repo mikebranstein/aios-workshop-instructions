@@ -97,6 +97,7 @@ Wiki manager writes are executed via temp wiki clone workspaces (clone -> reorga
 Approval requires LLM gate decision plus objective evidence checks (closed linked research issues, wiki/ADR links, at least one ADR link). Supports `--force`.
 Foundation task prompt templates are versioned under `aios_orchestration_core/llm/prompts/foundation/*.md` and injected at runtime with per-issue context.
 Wiki management services are shared under `aios_orchestration_core/wiki/` for reuse across orchestrators.
+PM strategic-opportunity publish and Discovery run-summary publish are also wired to the shared wiki manager.
 
 **Architecture Review Orchestrator** — Audit codebase (runs once):
 ```powershell

@@ -221,6 +221,14 @@ def main():
         logger.info(f"✓ Discovery complete. Final state: {result.state}")
         logger.info(f"  Created {opportunities_created} pm-idea issue(s)")
         logger.info(f"  Runlog: {log_db}")
+        if hasattr(gateway, "publish_discovery_run_artifact"):
+            gateway.publish_discovery_run_artifact(
+                state=result.state,
+                created_pm_idea_numbers=result.created_pm_idea_numbers,
+                deferred_count=result.deferred_count,
+                dropped_count=result.dropped_count,
+            )
+            logger.info("  Published discovery run summary to wiki")
         if result.created_pm_idea_numbers:
             logger.info(f"  Issues: {', '.join(f'#{n}' for n in result.created_pm_idea_numbers)}")
         return 0

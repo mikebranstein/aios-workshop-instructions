@@ -37,6 +37,8 @@ class Phase8Phase2PublishTests(unittest.TestCase):
         self.assertFalse(gateway.get_issue(9).open)
         self.assertIn(9, gateway.published_artifacts)
         self.assertIn("pm:output-published", gateway.get_issue(9).labels)
+        self.assertTrue(any(path.startswith("pm/strategic-opportunities/") for path in gateway.wiki_pages.keys()))
+        self.assertIn("Content-Index.md", gateway.wiki_pages)
 
 
 if __name__ == "__main__":

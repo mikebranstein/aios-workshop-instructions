@@ -58,6 +58,26 @@ class PMGitHubGateway:
     def __init__(self, issues: Optional[Dict[int, PMIssue]] = None):
         self.issues: Dict[int, PMIssue] = issues or {}
         self.published_artifacts: Dict[int, Dict[str, object]] = {}
+        self.wiki_pages: Dict[str, str] = {}
+
+    @staticmethod
+    def _render_content_index(existing: str, page_path: str, issue_number: int, summary: str) -> str:
+        marker = f"| `{page_path}` | #{issue_number} |"
+        header = (
+            "# Content-Index\n\n"
+            "| Wiki Page | Source Issue | Summary |\n"
+            "|---|---|---|"
+        )
+        lines = existing.strip().splitlines() if existing.strip() else header.splitlines()
+        if marker in "\n".join(lines):
+            updated = []
+            for line in lines:
+                if line.startswith(marker):
+                    updated.append(f"{marker} {summary} |")
+                else:
+                    updated.append(line)
+            return "\n".join(updated).strip() + "\n"
+        return ("\n".join(lines).strip() + f"\n{marker} {summary} |\n")
 
     def get_issue(self, issue_number: int) -> PMIssue:
         return self.issues[issue_number]
@@ -106,6 +126,29 @@ class PMGitHubGateway:
 
     def publish_strategic_opportunity_artifact(self, issue_number: int, artifact: Dict[str, object]) -> None:
         self.published_artifacts[issue_number] = artifact
+        artifact_id = str(artifact.get("artifact_id", f"so-{issue_number}"))
+        page_path = f"pm/strategic-opportunities/{artifact_id}.md"
+        title = str(artifact.get("title", f"Strategic Opportunity #{issue_number}"))
+        thesis = str(artifact.get("strategic_thesis", ""))
+        decision = str(artifact.get("decision", ""))
+        confidence = artifact.get("confidence_score", "")
+        content = (
+            f"# {title}\n\n"
+            f"## Summary\n\n{thesis}\n\n"
+            f"## Decision\n\n{decision}\n\n"
+            f"## Confidence\n\n{confidence}\n\n"
+            f"## Traceability\n\n"
+            f"- Source issue: #{issue_number}\n"
+            f"- Artifact ID: {artifact_id}\n"
+        )
+        self.wiki_pages[page_path] = content
+        existing = self.wiki_pages.get("Content-Index.md", "")
+        self.wiki_pages["Content-Index.md"] = self._render_content_index(
+            existing,
+            page_path,
+            issue_number,
+            "PM strategic opportunity artifact",
+        )
         self.post_comment(issue_number, f"Strategic Opportunity Artifact Published: {artifact.get('artifact_id', 'unknown')}")
 
     def ensure_research_issue(self, pm_issue_number: int, title: str, body: str, labels: Sequence[str]) -> int:
