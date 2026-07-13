@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import foundation_runner
 from aios_orchestration_core.github.foundation_gateway import FoundationGitHubGateway, FoundationIssue
+from foundation_orchestrator.evidence import extract_links, classify_wiki_links, classify_adr_links
 
 
 class _GatewayMissingFoundation:
@@ -506,6 +507,77 @@ class FoundationRunnerTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(len(gateway.created), 0, "Must not create a new issue when one is already approved")
         pass_mock.assert_not_called()
+
+
+class EvidenceLinkExtractionTests(unittest.TestCase):
+    """extract_links must pick up wiki/ relative paths in addition to https:// and docs/adr/ paths."""
+
+    def test_extracts_https_url(self) -> None:
+        links = extract_links(["See https://github.com/org/repo/wiki/Home for details."])
+        self.assertIn("https://github.com/org/repo/wiki/Home", links)
+
+    def test_extracts_docs_adr_path(self) -> None:
+        links = extract_links(["ADR link: docs/adr/0001-use-postgres.md"])
+        self.assertIn("docs/adr/0001-use-postgres.md", links)
+
+    def test_extracts_wiki_relative_path(self) -> None:
+        """wiki/foundation/... relative paths must be extracted so classify_wiki_links sees them."""
+        links = extract_links(["Research wiki reference: wiki/foundation/my-topic.md"])
+        self.assertTrue(
+            any(lnk.startswith("wiki/") for lnk in links),
+            f"Expected a wiki/ link but got: {links}",
+        )
+
+    def test_wiki_relative_path_classified_as_wiki_link(self) -> None:
+        """A wiki/ relative path must survive extract_links → classify_wiki_links pipeline."""
+        text = "Research wiki reference: wiki/foundation/auth-decisions.md"
+        links = extract_links([text])
+        wiki_links = classify_wiki_links(links)
+        self.assertTrue(
+            len(wiki_links) > 0,
+            "wiki/foundation/auth-decisions.md should be classified as a wiki link",
+        )
+
+    def test_adr_relative_path_classified_as_adr_link(self) -> None:
+        links = extract_links(["Research ADR reference: docs/adr/0002-service-mesh.md"])
+        adr_links = classify_adr_links(links)
+        self.assertGreater(len(adr_links), 0)
+
+    def test_wiki_zero_when_only_adr_present(self) -> None:
+        """When only ADR links exist the wiki count must be 0 (regression guard)."""
+        links = extract_links(["docs/adr/0003-cache-strategy.md"])
+        wiki_links = classify_wiki_links(links)
+        self.assertEqual(len(wiki_links), 0)
+
+
+class NextActionsForStateTests(unittest.TestCase):
+    """_next_actions_for_state must not say 'close research' when all research is already closed."""
+
+    def _run(self, state: str, blockers: list[str], open_research: int) -> list[str]:
+        from aios_orchestration_core.states.foundation import FoundationState
+        fs = FoundationState[state] if state else None
+        return foundation_runner._next_actions_for_state(fs, blockers, open_research)
+
+    def test_in_progress_open_research_says_complete_issues(self) -> None:
+        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=[], open_research=3)
+        self.assertTrue(any("close" in a or "complete" in a for a in actions))
+
+    def test_in_progress_all_closed_no_blockers_says_advancing(self) -> None:
+        """When open_research==0 and no blockers the message should reflect readiness."""
+        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=[], open_research=0)
+        joined = " ".join(actions).lower()
+        # Must NOT say "close at least one" (the old misleading message)
+        self.assertNotIn("close at least one", joined)
+        # Must convey forward progress / advancing
+        self.assertTrue(
+            any(word in joined for word in ("advancing", "evidence", "gate", "closed")),
+            f"Expected an advancing/ready message but got: {actions}",
+        )
+
+    def test_in_progress_all_closed_with_blockers_surfaces_blockers(self) -> None:
+        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=["at least one ADR link is required"], open_research=0)
+        joined = " ".join(actions).lower()
+        self.assertIn("adr", joined)
 
     def test_main_returns_0_without_creating_issue_when_open_approved_issue_exists(self) -> None:
         """An open issue with foundation:approved (stuck) must also block re-creation."""

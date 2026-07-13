@@ -5,6 +5,7 @@ from typing import Iterable, Set
 
 _URL_RE = re.compile(r"https?://[^\s)>\"]+")
 _DOC_LINK_RE = re.compile(r"docs/adr/[^\s)>\"]+\.md", re.IGNORECASE)
+_WIKI_LINK_RE = re.compile(r"wiki/[^\s)>\"]+", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,8 @@ def extract_links(texts: Iterable[str]) -> Set[str]:
         for match in _URL_RE.findall(text or ""):
             links.add(match.strip())
         for match in _DOC_LINK_RE.findall(text or ""):
+            links.add(match.strip())
+        for match in _WIKI_LINK_RE.findall(text or ""):
             links.add(match.strip())
     return links
 

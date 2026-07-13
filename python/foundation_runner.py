@@ -242,7 +242,9 @@ def _next_actions_for_state(state: FoundationState | None, blockers: list[str], 
     if state == FoundationState.FOUNDATION_IN_PROGRESS:
         if open_research > 0:
             return ["complete and close all linked foundation research issues"]
-        return ["close at least one linked research issue with concrete evidence links"]
+        if blockers:
+            return [f"address: {b}" for b in blockers]
+        return ["all research closed with evidence — advancing to gate review"]
     if state == FoundationState.FOUNDATION_REVIEW:
         if blockers:
             return ["address approval blockers listed below, then rerun gate review"]
