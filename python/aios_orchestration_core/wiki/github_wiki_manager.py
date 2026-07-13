@@ -217,7 +217,8 @@ class GitHubWikiManager:
             self._rebuild_home_index(wiki_dir)
             self._run_git(wiki_dir, ["add", "-A"])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
+            # Use branch name explicitly (master) to work with newly initialized repos
+            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
             return True
         finally:
             self._cleanup_workspace(workspace)
@@ -234,7 +235,8 @@ class GitHubWikiManager:
             self._rebuild_home_index(wiki_dir)
             self._run_git(wiki_dir, ["add", "-A"])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
+            # Use branch name explicitly (master) to work with newly initialized repos
+            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
             return True
         finally:
             self._cleanup_workspace(workspace)
@@ -287,7 +289,8 @@ class GitHubWikiManager:
 
             self._run_git(wiki_dir, ["add", "-A"])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
+            # Use branch name explicitly (master) to work with newly initialized repos
+            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
             return True
         finally:
             self._cleanup_workspace(workspace)
@@ -304,7 +307,8 @@ class GitHubWikiManager:
                 return False
             self._run_git(wiki_dir, ["add", "-A"])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
+            # Use branch name explicitly (master) to work with newly initialized repos
+            self._run_git(wiki_dir, ["push", "-u", "origin", "master"])
             return True
         finally:
             self._cleanup_workspace(workspace)
