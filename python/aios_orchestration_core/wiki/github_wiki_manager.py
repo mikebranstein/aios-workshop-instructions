@@ -10,6 +10,10 @@ class GitHubWikiManager:
         self.repo = repo
         self.temp_prefix = temp_prefix
 
+    @property
+    def _remote_url(self) -> str:
+        return f"https://github.com/{self.repo}.wiki.git"
+
     def _run_git(self, cwd: Path, args: List[str]) -> subprocess.CompletedProcess:
         return subprocess.run(
             ["git", *args],
@@ -22,7 +26,20 @@ class GitHubWikiManager:
     def _wiki_workspace(self) -> tuple[Path, Path]:
         workspace = Path(tempfile.mkdtemp(prefix=self.temp_prefix, dir=tempfile.gettempdir()))
         wiki_dir = workspace / "wiki"
-        self._run_git(workspace, ["clone", f"https://github.com/{self.repo}.wiki.git", str(wiki_dir)])
+        clone = subprocess.run(
+            ["git", "clone", self._remote_url, str(wiki_dir)],
+            capture_output=True,
+            text=True,
+            cwd=str(workspace),
+        )
+        if clone.returncode != 0:
+            # A GitHub wiki has no backing .wiki.git repository until it is
+            # initialized with a first page, so cloning an empty/uninitialized
+            # wiki fails with exit 128. Bootstrap a local repo instead: reads
+            # return empty, and the first push creates the wiki remotely.
+            wiki_dir.mkdir(parents=True, exist_ok=True)
+            self._run_git(wiki_dir, ["init", "-q", "-b", "master"])
+            self._run_git(wiki_dir, ["remote", "add", "origin", self._remote_url])
         return workspace, wiki_dir
 
     def _cleanup_workspace(self, workspace: Path) -> None:
@@ -90,7 +107,7 @@ class GitHubWikiManager:
             target.write_text(content, encoding="utf-8")
             self._run_git(wiki_dir, ["add", page_path])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push"])
+            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
             return True
         finally:
             self._cleanup_workspace(workspace)
@@ -106,7 +123,7 @@ class GitHubWikiManager:
             source.replace(target)
             self._run_git(wiki_dir, ["add", from_path, to_path])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push"])
+            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
             return True
         finally:
             self._cleanup_workspace(workspace)
@@ -156,7 +173,7 @@ class GitHubWikiManager:
 
             self._run_git(wiki_dir, ["add", "-A"])
             self._run_git(wiki_dir, ["commit", "-m", commit_message])
-            self._run_git(wiki_dir, ["push"])
+            self._run_git(wiki_dir, ["push", "-u", "origin", "HEAD"])
             return True
         finally:
             self._cleanup_workspace(workspace)
