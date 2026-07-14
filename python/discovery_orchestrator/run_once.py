@@ -1,8 +1,7 @@
 """Discovery run_once orchestrator using LangGraph.
 
-Refactored to use DiscoveryGraphOrchestrator (LangGraph implementation) instead
-of inline orchestration logic. Maintains bounded discovery semantics with
-circuit breaker and run registry support.
+Uses DiscoveryGraphOrchestrator (LangGraph implementation) for bounded discovery
+semantics. Circuit breaker handles exception escalation to DISCOVERY_HALTED_NEEDS_HUMAN.
 """
 
 from dataclasses import dataclass, field
@@ -10,36 +9,20 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from uuid import uuid4
 
+from aios_orchestration_core.core.circuit_breaker import BlockContext
 from aios_orchestration_core.events.discovery import DiscoveryEvent
+from aios_orchestration_core.github.discovery_gateway import DiscoveryGateway
+from aios_orchestration_core.llm.base import JudgmentLLMAdapter
 from aios_orchestration_core.runlog.models import TransitionLogEntry
 from aios_orchestration_core.states.discovery import DiscoveryState
 from aios_orchestration_core.policies.retry import RetryPolicy, RetryState
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
+from discovery_orchestrator.circuit_breaker import DiscoveryCircuitBreaker
 from discovery_orchestrator.context import DiscoveryContext, DiscoveryRunResult
-from discovery_orchestrator.idea_scout_adapter import IdeaScoutAdapter
 from discovery_orchestrator.langgraph_discovery_graph import (
     DiscoveryGraphOrchestrator,
     DiscoveryRunState,
 )
-
-
-@dataclass
-class PMIdeaIssueStore:
-    """Simple in-memory store for created pm-idea issues (used in tests)."""
-
-    issues: Dict[int, Dict] = field(default_factory=dict)
-    _next: int = 1000
-
-    def create(self, title: str, body: str) -> int:
-        """Create a new pm-idea issue and return its number."""
-        self._next += 1
-        self.issues[self._next] = {
-            "title": title,
-            "body": body,
-            "labels": {"pm-idea", "pm-idea-auto"},
-        }
-        return self._next
-
 
 
 @dataclass
@@ -75,33 +58,38 @@ class DiscoveryRunRegistry:
 class DiscoveryRunOnceOrchestrator:
     """Bounded discovery orchestrator using LangGraph.
 
-    Checks preconditions (foundation gate, focus file), invokes idea-scout,
-    and creates pm-idea issues up to creation_cap. Orchestration is managed
-    by LangGraph StateGraph via DiscoveryGraphOrchestrator.
+    Checks preconditions (foundation gate, focus file), invokes idea-scout LLM,
+    and creates pm-idea issues up to creation_cap. Orchestration is managed by
+    LangGraph StateGraph via DiscoveryGraphOrchestrator.
+
+    Mirrors the structure of FoundationRunOnceOrchestrator.
     """
 
     def __init__(
         self,
-        context: DiscoveryContext,
-        idea_scout: IdeaScoutAdapter,
-        pm_idea_store: PMIdeaIssueStore,
+        gateway: DiscoveryGateway,
+        llm_adapter: JudgmentLLMAdapter,
         run_registry: Optional[DiscoveryRunRegistry] = None,
         log_store: Optional[TransitionLogStore] = None,
         retry_policy: Optional[RetryPolicy] = None,
+        creation_cap: int = 3,
+        batch_cap: int = 5,
     ) -> None:
-        self.context = context
-        self.idea_scout = idea_scout
-        self.pm_idea_store = pm_idea_store
+        self.gateway = gateway
+        self.llm_adapter = llm_adapter
         self.run_registry = run_registry or DiscoveryRunRegistry()
-        self.log_store = log_store
-        self.retry_policy = retry_policy or RetryPolicy(max_attempts=3)
+        self.log_store = log_store or TransitionLogStore()
 
-        # Create LangGraph orchestrator
         self.graph_orchestrator = DiscoveryGraphOrchestrator(
-            context=context,
-            idea_scout_adapter=idea_scout,
-            pm_idea_store=pm_idea_store,
-            log_store=log_store,
+            gateway=gateway,
+            llm_adapter=llm_adapter,
+            log_store=self.log_store,
+            creation_cap=creation_cap,
+            batch_cap=batch_cap,
+        )
+        self.circuit_breaker = DiscoveryCircuitBreaker(
+            retry_policy or RetryPolicy(max_attempts=3),
+            self.log_store,
         )
 
     def run(self) -> DiscoveryRunResult:
@@ -110,10 +98,11 @@ class DiscoveryRunOnceOrchestrator:
         Returns:
             DiscoveryRunResult with final state and outcome metrics.
         """
-        # Create run record
         run_record = self.run_registry.start_new_run()
+        retry_state = self.run_registry.retry_state_by_run.setdefault(
+            run_record.run_id, RetryState()
+        )
 
-        # Prepare initial state for graph
         initial_state: DiscoveryRunState = {
             "run_id": run_record.run_id,
             "current_state": None,
@@ -124,19 +113,15 @@ class DiscoveryRunOnceOrchestrator:
         }
 
         try:
-            # Invoke graph orchestrator
             final_state = self.graph_orchestrator.invoke(initial_state)
+            retry_state.attempts = 0
 
-            # Update run record with results
             run_record.ended_at_utc = datetime.now(timezone.utc).isoformat()
-            run_record.created_pm_idea_numbers = final_state.get(
-                "created_pm_idea_numbers", []
-            )
+            run_record.created_pm_idea_numbers = final_state.get("created_pm_idea_numbers", [])
             run_record.deferred_count = final_state.get("deferred_count", 0)
             run_record.dropped_count = final_state.get("dropped_count", 0)
-            run_record.halted_reason = final_state.get("halted_reason", None)
+            run_record.halted_reason = final_state.get("halted_reason")
 
-            # Return result
             return DiscoveryRunResult(
                 state=final_state["current_state"].value,
                 created_pm_idea_numbers=run_record.created_pm_idea_numbers,
@@ -146,31 +131,28 @@ class DiscoveryRunOnceOrchestrator:
             )
 
         except Exception as ex:
-            # Mark run as ended with error
             run_record.ended_at_utc = datetime.now(timezone.utc).isoformat()
 
-            if self.log_store is not None:
-                self.log_store.append(
-                    TransitionLogEntry(
-                        loop_id="discovery",
-                        run_id=run_record.run_id,
-                        issue_number=0,
-                        from_state=DiscoveryState.DISCOVERY_RUNNING.value,
-                        to_state=DiscoveryState.DISCOVERY_HALTED_NO_GATE.value,
-                        trigger_event=DiscoveryEvent.GATE_MISSING.value,
-                        blocked_stage=DiscoveryState.DISCOVERY_RUNNING.value,
-                        reason_code="RUN_ONCE_NODE_FAILURE",
-                        reason_detail=(
-                            f"{str(ex)}; "
-                            f"last_error_class={type(ex).__name__}"
-                        ),
-                        timestamp_utc=datetime.now(timezone.utc).isoformat(),
-                        adapter_source="system",
-                    )
-                )
+            resulting = self.circuit_breaker.handle_failure(
+                run_id=run_record.run_id,
+                issue_number=0,
+                from_state=DiscoveryState.DISCOVERY_RUNNING,
+                retry_state=retry_state,
+                context=BlockContext(
+                    blocked_stage=DiscoveryState.DISCOVERY_RUNNING.value,
+                    reason_code="RUN_ONCE_NODE_FAILURE",
+                    reason_detail=str(ex),
+                    last_error_class=type(ex).__name__,
+                ),
+            )
 
-            # Return halted result
+            halted_state = (
+                DiscoveryState.DISCOVERY_HALTED_NEEDS_HUMAN
+                if resulting == DiscoveryState.DISCOVERY_HALTED_NEEDS_HUMAN
+                else DiscoveryState.DISCOVERY_HALTED_NO_GATE
+            )
+
             return DiscoveryRunResult(
-                state="DISCOVERY_HALTED_NO_GATE",  # Safe default on error
-                halted_reason=f"Discovery run failed: {str(ex)}",
+                state=halted_state.value,
+                halted_reason=f"Discovery run failed: {ex}",
             )

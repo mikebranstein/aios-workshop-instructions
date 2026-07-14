@@ -457,3 +457,39 @@ TASK_TOOL_MAP.update(
         "format_issue_comment": FORMAT_ISSUE_COMMENT_TOOL,
     }
 )
+
+# ---------------------------------------------------------------------------
+# Discovery tools
+# ---------------------------------------------------------------------------
+
+DISCOVERY_IDEA_SCOUT_TOOL = ToolSpec(
+    name="submit_discovery_idea_scout_result",
+    description="Submit discovered pm-idea candidates from Idea Scout.",
+    parameters_schema={
+        "type": "object",
+        "required": ["candidates"],
+        "properties": {
+            "candidates": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["title", "body", "decision"],
+                    "properties": {
+                        "title": {"type": "string", "minLength": 1},
+                        "body": {"type": "string", "minLength": 1},
+                        "decision": {
+                            "type": "string",
+                            "enum": ["CREATE_PM_IDEA", "DEFER", "DROP"],
+                        },
+                    },
+                },
+            }
+        },
+    },
+)
+
+TASK_TOOL_MAP.update(
+    {
+        "discovery_idea_scout": DISCOVERY_IDEA_SCOUT_TOOL,
+    }
+)

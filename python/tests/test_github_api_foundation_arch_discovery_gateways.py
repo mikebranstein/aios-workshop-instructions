@@ -328,7 +328,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
 
         with patch("aios_orchestration_core.github.discovery_gateway_api.subprocess.run", side_effect=fake_run):
             context = gateway.get_context()
-            issue_number = gateway.create("New strategic idea", "Details")
+            issue_number = gateway.create_pm_idea_issue("New strategic idea", "Details")
 
         self.assertTrue(context.foundation_gate_passed)
         self.assertTrue(context.focus_file_exists)

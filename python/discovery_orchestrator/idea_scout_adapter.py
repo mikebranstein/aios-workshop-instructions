@@ -1,31 +1,7 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Protocol
+"""Discovery idea-scout adapter definitions.
 
-
-@dataclass
-class IdeaCandidate:
-    title: str
-    body: str
-    decision: str  # CREATE_PM_IDEA | DEFER | DROP
-
-
-@dataclass
-class IdeaScoutResult:
-    candidates: List[IdeaCandidate] = field(default_factory=list)
-
-
-class IdeaScoutAdapter(Protocol):
-    """Abstraction for the idea-scout agent invocation."""
-
-    def run(self, context_summary: str, creation_cap: int) -> IdeaScoutResult:
-        ...
-
-
-class StaticIdeaScoutAdapter:
-    """In-memory adapter for testing: returns a fixed set of candidates."""
-
-    def __init__(self, candidates: List[IdeaCandidate]) -> None:
-        self._candidates = candidates
-
-    def run(self, context_summary: str, creation_cap: int) -> IdeaScoutResult:
-        return IdeaScoutResult(candidates=self._candidates[:creation_cap])
+The IdeaScoutAdapter abstraction has been removed in favour of calling the
+JudgmentLLMAdapter directly from IdeaScoutNode (matching the foundation
+orchestrator pattern). This file is retained only for backward compatibility
+and test utilities.
+"""

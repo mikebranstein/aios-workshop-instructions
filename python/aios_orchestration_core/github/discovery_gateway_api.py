@@ -1,3 +1,4 @@
+import base64
 import json
 import re
 import subprocess
@@ -84,7 +85,20 @@ class GitHubApiDiscoveryGateway:
             focus_file_populated=self._file_is_populated(focus_path),
         )
 
-    def create(self, title: str, body: str) -> int:
+    def read_focus_file(self) -> str:
+        """Return the decoded content of docs/discovery-focus.md."""
+        result = self._gh_api("repos/{repo}/contents/docs/discovery-focus.md".format(repo=self.config.repo))
+        if result.returncode != 0:
+            return ""
+        try:
+            data = json.loads(result.stdout or "{}")
+            raw = data.get("content", "")
+            # GitHub API returns base64-encoded content with newlines
+            return base64.b64decode(raw.replace("\n", "")).decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+
+    def create_pm_idea_issue(self, title: str, body: str) -> int:
         labels = ["pm-idea", "pm-idea-auto"]
         self._ensure_labels(labels)
         output = self._gh(
@@ -105,6 +119,34 @@ class GitHubApiDiscoveryGateway:
         if not match:
             raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
         return int(match.group(1))
+
+    def append_deferred_candidates(self, candidates: List[dict]) -> bool:
+        """Append deferred candidates to the Discovery-Deferred-Candidates wiki page."""
+        if not candidates:
+            return True
+        stamp = datetime.now(timezone.utc).isoformat()
+        lines = [f"\n## Deferred — {stamp}\n"]
+        for c in candidates:
+            title = c.get("title", "(no title)")
+            body = c.get("body", "")
+            lines.append(f"### {title}\n\n{body}\n")
+        new_content = "\n".join(lines)
+
+        try:
+            existing = self._wiki.read_page("Discovery-Deferred-Candidates.md") or ""
+        except Exception:
+            existing = ""
+
+        combined = (existing.rstrip() + "\n" + new_content).strip() + "\n"
+        self._wiki.apply_changes(
+            page_path="Discovery-Deferred-Candidates.md",
+            page_content=combined,
+            page_moves=[],
+            index_issue_number=0,
+            index_summary="Discovery deferred candidates",
+            commit_message="discovery: append deferred candidates",
+        )
+        return True
 
     def publish_discovery_run_artifact(
         self,

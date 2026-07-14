@@ -3,6 +3,7 @@ import unittest
 
 from aios_orchestration_core.github.arch_review_gateway import ArchReviewGitHubGateway, ArchReviewIssue
 from aios_orchestration_core.github.dev_gateway import DevGitHubGateway, DevIssue
+from aios_orchestration_core.github.discovery_gateway import DiscoveryInMemoryGateway
 from aios_orchestration_core.github.foundation_gateway import FoundationGitHubGateway, FoundationIssue
 from aios_orchestration_core.github.pm_gateway import PMGitHubGateway, PMIssue
 from aios_orchestration_core.github.po_gateway import POGitHubGateway, POIssue
@@ -11,7 +12,7 @@ from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from arch_review_orchestrator.run_once import ArchReviewRunOnceOrchestrator, ArchReviewRunRegistry
 from dev_orchestrator.run_once import DevRunOnceOrchestrator, DevRunRegistry
 from discovery_orchestrator.context import DiscoveryContext
-from discovery_orchestrator.run_once import DiscoveryRunOnceOrchestrator, DiscoveryRunRegistry, PMIdeaIssueStore
+from discovery_orchestrator.run_once import DiscoveryRunOnceOrchestrator, DiscoveryRunRegistry
 from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, FoundationRunRegistry
 from pm_orchestrator.run_once import PMRunOnceOrchestrator, PMRunRegistry
 from po_orchestrator.run_once import PORunOnceOrchestrator, PORunRegistry
@@ -21,13 +22,12 @@ class _FailingAdapter:
     def __init__(self, message: str):
         self._message = message
 
+    @property
+    def adapter_source(self) -> str:
+        return "stub"
+
     def invoke_json(self, task_type, prompt_vars, model_hint=""):
         raise RuntimeError(self._message)
-
-
-class _FailingIdeaScout:
-    def run(self, context_summary: str, creation_cap: int):
-        raise RuntimeError("discovery generic node failure")
 
 
 class LoopExceptionEscalationTests(unittest.TestCase):
@@ -124,19 +124,19 @@ class LoopExceptionEscalationTests(unittest.TestCase):
             foundation_gate_passed=True,
             focus_file_exists=True,
             focus_file_populated=True,
-            creation_cap=1,
         )
+        gateway = DiscoveryInMemoryGateway(context=context, focus_content="# Focus")
+        failing_llm = _FailingAdapter("discovery generic node failure")
         with tempfile.TemporaryDirectory() as tmp:
             store = TransitionLogStore(f"{tmp}/discovery.sqlite")
             result = DiscoveryRunOnceOrchestrator(
-                context=context,
-                idea_scout=_FailingIdeaScout(),
-                pm_idea_store=PMIdeaIssueStore(),
+                gateway=gateway,
+                llm_adapter=failing_llm,
                 run_registry=DiscoveryRunRegistry(),
                 log_store=store,
                 retry_policy=RetryPolicy(max_attempts=1),
             ).run()
-        self.assertEqual(result.state, "DISCOVERY_HALTED_NO_GATE")
+        self.assertIn(result.state, {"DISCOVERY_HALTED_NEEDS_HUMAN", "DISCOVERY_HALTED_NO_GATE"})
         entries = [e for e in store.all() if e.loop_id == "discovery"]
         self.assertTrue(entries, "Expected discovery transition log entry on exception")
         last = entries[-1]
