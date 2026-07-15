@@ -66,6 +66,15 @@ class _LoopGatewayStub:
             labels={"discovery-focus:approved"},
         )
 
+    def list_adr_files(self):
+        return []
+
+    def read_repo_file(self, path: str) -> str:
+        return ""
+
+    def get_wiki_snapshot(self, limit: int = 50, excerpt_chars: int = 1200):
+        return []
+
 
 class _ContextStub:
     def __init__(self, gateway):
@@ -682,7 +691,7 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
     def test_creates_file_and_issue_when_missing(self) -> None:
         gw = FoundationGitHubGateway()
         adapter = self._StubLLMAdapter()
-        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "just-created")
         self.assertTrue(gw.discovery_focus_exists())
         self.assertIsNotNone(gw.get_discovery_focus_issue())
@@ -695,7 +704,7 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         num = gw.create_discovery_focus_issue("Body")
         gw.set_discovery_focus_label(num, "discovery-focus:approved")
         adapter = self._StubLLMAdapter()
-        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "approved")
 
     def test_returns_draft_when_awaiting_review(self) -> None:
@@ -703,7 +712,7 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
         gw.create_discovery_focus_issue("Body")
         adapter = self._StubLLMAdapter()
-        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "draft")
 
     def test_resynthesize_on_needs_revision(self) -> None:
@@ -712,7 +721,7 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         num = gw.create_discovery_focus_issue("Body")
         gw.set_discovery_focus_label(num, "discovery-focus:needs-revision")
         adapter = self._StubLLMAdapter()
-        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "needs-revision-updated")
         # File should now contain the re-synthesized content
         self.assertIn("DISCOVERY-FOCUS", gw.read_discovery_focus())
@@ -728,7 +737,7 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         gw.write_discovery_focus("# Content", "test: create")
         # No tracking issue created
         adapter = self._StubLLMAdapter()
-        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "missing-review")
 
 

@@ -9,21 +9,34 @@ that will guide the discovery orchestrator in identifying valuable product ideas
 {{PROMPT_VARS_PRETTY_JSON}}
 ```
 
+The inputs contain:
+- `foundation_markdown` — the project's FOUNDATION.md (strategic intent, constraints, locked decisions)
+- `existing_discovery_focus` — the current DISCOVERY-FOCUS.md content if one exists (empty string if not)
+- `existing_adrs` — a dict of `{path: content}` for every ADR written during foundation research; these record concrete settled decisions (technology choices, architecture, integrations)
+- `wiki_snapshot` — a list of `{path, content_excerpt}` objects from the foundation wiki; these capture research findings, evidence, and unresolved questions
+
 ## Process (follow in order)
 
 1. **Read** `foundation_markdown` in full. Note which of the 9 sections below it gives you
    explicit content for, which it only implies, and which it says nothing about.
-2. **Read** `existing_discovery_focus` if non-empty. This is a human-edited draft. Treat every
-   sentence in it as intentional and higher-priority than anything you'd infer from
-   `foundation_markdown`. Only replace existing content if `foundation_markdown` directly
-   contradicts it — and if you do, keep the human's original wording visible in a short
-   `<!-- previous: "..." -->` comment above your replacement.
-3. **Draft** all 9 sections using the Content Rules below.
-4. **Self-check** before submitting: for every section marked `<!-- TODO -->` or containing
+2. **Read** `existing_adrs`. For each ADR, extract: the decision made, any technologies or
+   approaches ruled out, and constraints it places on future work. These are the highest-quality
+   inputs for sections 3 (In Scope / Out of Scope), 4 (Technical Constraints), and 9
+   (Definition of a Useful Idea).
+3. **Read** `wiki_snapshot`. Scan for recurring problems, unresolved questions, user pain points,
+   and strategic themes. These are your primary inputs for sections 5 (Priority Problems) and
+   6 (Strategic Pillars).
+4. **Read** `existing_discovery_focus` if non-empty. This is a human-edited draft. Treat every
+   sentence in it as intentional and higher-priority than anything you'd infer from the other
+   inputs. Only replace existing content if another input directly contradicts it — and if you
+   do, keep the human's original wording visible in a short `<!-- previous: "..." -->` comment
+   above your replacement.
+5. **Draft** all 9 sections using the Content Rules below.
+6. **Self-check** before submitting: for every section marked `<!-- TODO -->` or containing
    "(inferred)", confirm it appears in `placeholder_fields` (TODOs only — inferred content
    that's still substantive doesn't need to go in `placeholder_fields`). Confirm `confidence`
    matches the actual ratio of stated vs. inferred vs. placeholder content you just wrote.
-5. **Submit** via the tool call. Do not output the Markdown as chat text — it must go in the
+7. **Submit** via the tool call. Do not output the Markdown as chat text — it must go in the
    `focus_content` argument.
 
 ## Content Rules (apply to every section)

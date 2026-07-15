@@ -409,6 +409,17 @@ class GitHubApiFoundationGateway:
             if isinstance(e, dict) and e.get("type") == "file" and e.get("name", "").endswith(".md")
         )
 
+    def read_repo_file(self, path: str) -> str:
+        result = self._gh_api(f"repos/{self.config.repo}/contents/{path}")
+        if result.returncode != 0:
+            return ""
+        try:
+            data = json.loads(result.stdout or "{}")
+            raw = data.get("content", "")
+            return base64.b64decode(raw.replace("\n", "")).decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+
     def write_repo_file(self, path: str, content: str, commit_message: str) -> bool:
         encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
         # Fetch the current SHA if the file already exists (needed for updates).

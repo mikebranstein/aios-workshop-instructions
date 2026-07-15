@@ -922,8 +922,17 @@ def _build_discovery_focus_issue_body(focus_content: str, confidence: str, place
     )
 
 
-def _ensure_discovery_focus(gateway, adapter: JudgmentLLMAdapter, foundation_markdown: str) -> str:
+def _ensure_discovery_focus(
+    gateway,
+    adapter: JudgmentLLMAdapter,
+    foundation_markdown: str,
+    adrs: dict,
+    wiki_snapshot: list,
+) -> str:
     """Ensure DISCOVERY-FOCUS.md exists at repo root and is tracked with a GitHub issue.
+
+    Should be called after foundation research is complete so the synthesis LLM has
+    full context: FOUNDATION.md + all ADRs + wiki snapshot.
 
     Creates or re-synthesizes DISCOVERY-FOCUS.md as needed, then creates or updates
     the tracking issue. Does not block the foundation orchestrator from proceeding —
@@ -934,14 +943,22 @@ def _ensure_discovery_focus(gateway, adapter: JudgmentLLMAdapter, foundation_mar
     focus_exists = gateway.discovery_focus_exists()
     focus_issue = gateway.get_discovery_focus_issue()
 
+    def _prompt_vars(existing_focus: str) -> dict:
+        return {
+            "foundation_markdown": foundation_markdown,
+            "existing_discovery_focus": existing_focus,
+            "existing_adrs": adrs,
+            "wiki_snapshot": wiki_snapshot,
+        }
+
     if not focus_exists:
-        logger.info("DISCOVERY-FOCUS.md not found at repo root — synthesizing from FOUNDATION.md...")
+        logger.info(
+            "DISCOVERY-FOCUS.md not found at repo root — "
+            f"synthesizing from FOUNDATION.md + {len(adrs)} ADR(s) + {len(wiki_snapshot)} wiki page(s)..."
+        )
         result = adapter.invoke_json(
             "foundation_discovery_focus_synthesis",
-            {
-                "foundation_markdown": foundation_markdown,
-                "existing_discovery_focus": "",
-            },
+            _prompt_vars(""),
         )
         focus_content = result.payload.get("focus_content", "")
         confidence = result.payload.get("confidence", "low")
@@ -971,15 +988,12 @@ def _ensure_discovery_focus(gateway, adapter: JudgmentLLMAdapter, foundation_mar
     if "discovery-focus:needs-revision" in focus_issue.labels:
         logger.info(
             f"Issue #{focus_issue.number} is marked needs-revision — "
-            "re-synthesizing DISCOVERY-FOCUS.md from latest FOUNDATION.md..."
+            f"re-synthesizing from FOUNDATION.md + {len(adrs)} ADR(s) + {len(wiki_snapshot)} wiki page(s)..."
         )
         existing_focus = gateway.read_discovery_focus()
         result = adapter.invoke_json(
             "foundation_discovery_focus_synthesis",
-            {
-                "foundation_markdown": foundation_markdown,
-                "existing_discovery_focus": existing_focus,
-            },
+            _prompt_vars(existing_focus),
         )
         focus_content = result.payload.get("focus_content", "")
         confidence = result.payload.get("confidence", "low")
@@ -1393,17 +1407,6 @@ def main():
         metrics = MetricsService()
         adapter = InstrumentedLLMAdapter(raw_adapter, metrics)
         gateway.comment_formatter = build_comment_formatter(adapter)
-
-        # Ensure DISCOVERY-FOCUS.md exists and is tracked. Runs once per orchestrator
-        # invocation; the foundation main loop is not gated on approval — that check
-        # lives in the discovery orchestrator. Log the result for visibility.
-        logger.info("Checking DISCOVERY-FOCUS.md status...")
-        try:
-            df_status = _ensure_discovery_focus(gateway, adapter, foundation_markdown)
-            logger.info(f"DISCOVERY-FOCUS.md status: {df_status}")
-        except Exception as e:
-            # Non-fatal: log and continue — foundation research must not be blocked by this.
-            logger.warning(f"Failed to ensure DISCOVERY-FOCUS.md (non-fatal): {e}", exc_info=True)
         orchestrator = FoundationRunOnceOrchestrator(
             gateway=gateway,
             log_store=TransitionLogStore(log_db),
@@ -1418,6 +1421,7 @@ def main():
         # so repeated passes re-pull issues without spawning duplicates.
         open_foundation_issues = gateway.list_open_issues_with_any_label(_ACTIONABLE_LABELS)
         _foundation_issue_body = _render_template("foundation-issue-body.md")
+        _skip_verification_loop = False
         if args.force:
             logger.info("--force specified. Creating a fresh foundation issue for this run.")
             created_issue = gateway.create_foundation_issue(
@@ -1429,82 +1433,110 @@ def main():
             if gateway.has_approved_foundation_issue():
                 logger.info(
                     "Foundation work already complete — a closed foundation:approved issue exists. "
-                    "Nothing to do. Re-run with --force to start a new foundation cycle."
+                    "Running DISCOVERY-FOCUS.md synthesis with full ADR/wiki context."
                 )
-                return 0
-            logger.info("No open foundation issues. Creating a new foundation issue.")
-            created_issue = gateway.create_foundation_issue(
-                title="Foundation Setup",
-                body=_foundation_issue_body,
-            )
-            logger.info(f"Created new foundation issue #{created_issue}")
-
-        # Verification loop: keep running full, fresh passes (re-pulling issues each
-        # time) as long as any pass changes foundation state. Once a pass makes no
-        # changes, run a few more confirming passes before concluding there is
-        # genuinely nothing to do. This guards against races where research issues
-        # close (or new work appears) between passes.
-        verify_passes = max(1, args.verify_passes)
-        max_passes = max(verify_passes, args.max_passes)
-        failed_by_issue: dict = {}
-        pass_index = 0
-        consecutive_idle = 0
-        last_actionable_count = 0
-
-        while True:
-            pass_index += 1
-            logger.info(f"Foundation pass {pass_index} (re-pulling issues fresh)...")
-            before_signature = _world_signature(gateway)
-            actionable, failed_issues = _process_foundation_pass(
-                gateway=gateway,
-                adapter=adapter,
-                orchestrator=orchestrator,
-                foundation_markdown=foundation_markdown,
-                progress_tracker=progress_tracker,
-                max_research_workers=args.research_workers,
-                metrics=metrics,
-                pass_index=pass_index,
-            )
-            last_actionable_count = len(actionable)
-            for issue_number, reason in failed_issues:
-                failed_by_issue[issue_number] = reason
-            after_signature = _world_signature(gateway)
-
-            if after_signature != before_signature:
-                consecutive_idle = 0
-                logger.info(f"Pass {pass_index} changed foundation state; continuing.")
+                # Skip the verification loop entirely; jump straight to post-loop synthesis.
+                _skip_verification_loop = True
             else:
-                consecutive_idle += 1
-                logger.info(
-                    f"Pass {pass_index} made no changes "
-                    f"({consecutive_idle}/{verify_passes} confirming passes with nothing to do)."
+                logger.info("No open foundation issues. Creating a new foundation issue.")
+                created_issue = gateway.create_foundation_issue(
+                    title="Foundation Setup",
+                    body=_foundation_issue_body,
                 )
+                logger.info(f"Created new foundation issue #{created_issue}")
+        else:
+            _skip_verification_loop = False
 
-            if consecutive_idle >= verify_passes:
-                logger.info(
-                    f"No actionable foundation work across {verify_passes} consecutive pass(es); run settled."
+        if not _skip_verification_loop:
+            # Verification loop: keep running full, fresh passes (re-pulling issues each
+            # time) as long as any pass changes foundation state. Once a pass makes no
+            # changes, run a few more confirming passes before concluding there is
+            # genuinely nothing to do. This guards against races where research issues
+            # close (or new work appears) between passes.
+            verify_passes = max(1, args.verify_passes)
+            max_passes = max(verify_passes, args.max_passes)
+            failed_by_issue: dict = {}
+            pass_index = 0
+            consecutive_idle = 0
+            last_actionable_count = 0
+
+            while True:
+                pass_index += 1
+                logger.info(f"Foundation pass {pass_index} (re-pulling issues fresh)...")
+                before_signature = _world_signature(gateway)
+                actionable, failed_issues = _process_foundation_pass(
+                    gateway=gateway,
+                    adapter=adapter,
+                    orchestrator=orchestrator,
+                    foundation_markdown=foundation_markdown,
+                    progress_tracker=progress_tracker,
+                    max_research_workers=args.research_workers,
+                    metrics=metrics,
+                    pass_index=pass_index,
                 )
-                break
-            if pass_index >= max_passes:
-                logger.warning(
-                    f"Reached max passes ({max_passes}) before the run settled; stopping."
+                last_actionable_count = len(actionable)
+                for issue_number, reason in failed_issues:
+                    failed_by_issue[issue_number] = reason
+                after_signature = _world_signature(gateway)
+
+                if after_signature != before_signature:
+                    consecutive_idle = 0
+                    logger.info(f"Pass {pass_index} changed foundation state; continuing.")
+                else:
+                    consecutive_idle += 1
+                    logger.info(
+                        f"Pass {pass_index} made no changes "
+                        f"({consecutive_idle}/{verify_passes} confirming passes with nothing to do)."
+                    )
+
+                if consecutive_idle >= verify_passes:
+                    logger.info(
+                        f"No actionable foundation work across {verify_passes} consecutive pass(es); run settled."
+                    )
+                    break
+                if pass_index >= max_passes:
+                    logger.warning(
+                        f"Reached max passes ({max_passes}) before the run settled; stopping."
+                    )
+                    break
+
+            progress_tracker.save()
+            if failed_by_issue:
+                for issue_number, reason in sorted(failed_by_issue.items()):
+                    logger.error(f"Issue #{issue_number} failed this run: {reason}")
+                # Still log run-level metrics before returning
+                metrics.log_summary("Run total (with failures)", tag_filter={"type": "issue"})
+                return 3
+
+            logger.info(
+                f"✓ Foundation run complete after {pass_index} pass(es); "
+                f"last pass processed {last_actionable_count} issue(s)"
+            )
+            logger.info(f"  Runlog: {log_db}")
+            metrics.log_summary("Run total", tag_filter={"type": "issue"})
+
+        # Synthesize DISCOVERY-FOCUS.md after foundation research is complete so the
+        # LLM has the full context: FOUNDATION.md + settled ADRs + wiki knowledge base.
+        # Runs on every invocation once foundation is approved; safe to repeat (idempotent
+        # when file is already approved, re-synthesizes on needs-revision).
+        if gateway.has_approved_foundation_issue():
+            logger.info(
+                "Foundation approved — synthesizing DISCOVERY-FOCUS.md "
+                "with full ADR/wiki context..."
+            )
+            try:
+                adr_paths = gateway.list_adr_files()
+                adrs = {path: gateway.read_repo_file(path) for path in adr_paths}
+                wiki_snapshot = gateway.get_wiki_snapshot()
+                df_status = _ensure_discovery_focus(
+                    gateway, adapter, foundation_markdown,
+                    adrs=adrs,
+                    wiki_snapshot=wiki_snapshot,
                 )
-                break
+                logger.info(f"DISCOVERY-FOCUS.md status: {df_status}")
+            except Exception as e:
+                logger.warning(f"Failed to ensure DISCOVERY-FOCUS.md (non-fatal): {e}", exc_info=True)
 
-        progress_tracker.save()
-        if failed_by_issue:
-            for issue_number, reason in sorted(failed_by_issue.items()):
-                logger.error(f"Issue #{issue_number} failed this run: {reason}")
-            # Still log run-level metrics before returning
-            metrics.log_summary("Run total (with failures)", tag_filter={"type": "issue"})
-            return 3
-
-        logger.info(
-            f"✓ Foundation run complete after {pass_index} pass(es); "
-            f"last pass processed {last_actionable_count} issue(s)"
-        )
-        logger.info(f"  Runlog: {log_db}")
-        metrics.log_summary("Run total", tag_filter={"type": "issue"})
         return 0
 
     except Exception as e:
