@@ -46,9 +46,9 @@ The inputs contain:
   the end of that bullet/line — not the whole section.
 - **Not stated and not reasonably inferable:** write `<!-- TODO: fill in this section -->` as
   the entire section body, and add the section name to `placeholder_fields`.
-- Sections 7 (Success Metrics) and 8 (Signal Sources) almost always fall in the third bucket —
-  don't force an inference here even if you could stretch one from context. A wrong invented
-  metric is worse than an honest placeholder.
+- Sections 7 (Success Metrics) and 8 (Signal Sources) are **optional**. If you cannot
+  reasonably infer content from the inputs, omit the section entirely — do not emit a
+  TODO placeholder for it. Only include it if you have concrete signal from the inputs.
 - Be concise and direct. No filler text, no marketing language, no restating the section
   heading as a sentence.
 
@@ -71,8 +71,8 @@ The inputs contain:
    ideas must not contradict these.
 5. **Priority Problems** — 3–7 highest-priority unsolved problems.
 6. **Strategic Pillars** — 2–4 pillars any good idea must align with.
-7. **Success Metrics** — placeholder-biased (see Content Rules). Format: `[ ] <metric name>: <how it will be measured>`
-8. **Signal Sources** — placeholder-biased (see Content Rules). Format: `- <source type>: <where to look, how to interpret>`
+7. **Success Metrics** *(optional)* — only include if concrete signals exist in the inputs. Format: `[ ] <metric name>: <how it will be measured>`
+8. **Signal Sources** *(optional)* — only include if concrete signals exist in the inputs. Format: `- <source type>: <where to look, how to interpret>`
 9. **Definition of a Useful Idea** — specific criteria for when a discovered idea is worth
    creating as a pm-idea issue. Derive from the quality bar and out-of-scope constraints —
    this section should let someone reject a bad idea in one read.

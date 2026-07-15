@@ -740,6 +740,21 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "missing-review")
 
+    def test_reuses_existing_issue_when_file_missing_but_issue_exists(self) -> None:
+        """Re-run after file deleted should reuse the existing tracking issue, not create a new one."""
+        gw = FoundationGitHubGateway()
+        # Issue exists from a prior run, but the file is gone
+        existing_num = gw.create_discovery_focus_issue("Prior body")
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
+        self.assertEqual(status, "just-created")
+        self.assertTrue(gw.discovery_focus_exists())
+        # Must reuse the existing issue number — no new issue created
+        issue = gw.get_discovery_focus_issue()
+        self.assertEqual(issue.number, existing_num)
+        self.assertIn("discovery-focus:draft", issue.labels)
+        self.assertTrue(issue.comments, "Should have posted a comment on reuse")
+
 
 if __name__ == "__main__":
     unittest.main()

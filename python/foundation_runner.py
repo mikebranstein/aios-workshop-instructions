@@ -970,11 +970,29 @@ def _ensure_discovery_focus(
         )
 
         issue_body = _build_discovery_focus_issue_body(focus_content, confidence, placeholder_fields)
-        issue_number = gateway.create_discovery_focus_issue(issue_body)
-        logger.info(
-            f"Created DISCOVERY-FOCUS.md (confidence={confidence}) and tracking issue #{issue_number}. "
-            "Awaiting human review before discovery can run."
-        )
+        if focus_issue is not None:
+            # Reuse existing tracking issue — update its body and reset to draft.
+            gateway.post_comment(
+                focus_issue.number,
+                f"Re-synthesized DISCOVERY-FOCUS.md from latest FOUNDATION.md (confidence: {confidence}). "
+                + (
+                    f"Placeholder fields remaining: {', '.join(placeholder_fields)}. "
+                    if placeholder_fields else "All sections are populated. "
+                )
+                + "Please review and re-apply `discovery-focus:approved` when satisfied.",
+            )
+            gateway.set_discovery_focus_label(focus_issue.number, "discovery-focus:draft")
+            issue_number = focus_issue.number
+            logger.info(
+                f"Re-created DISCOVERY-FOCUS.md (confidence={confidence}); "
+                f"reusing existing tracking issue #{issue_number}."
+            )
+        else:
+            issue_number = gateway.create_discovery_focus_issue(issue_body)
+            logger.info(
+                f"Created DISCOVERY-FOCUS.md (confidence={confidence}) and tracking issue #{issue_number}. "
+                "Awaiting human review before discovery can run."
+            )
         return "just-created"
 
     if focus_issue is None:
