@@ -75,7 +75,8 @@ class IdeaScoutNode:
 
         for candidate in raw_candidates:
             decision = str(candidate.get("decision", "DROP")).upper()
-            title = str(candidate.get("title", "Untitled opportunity"))
+            raw_title = str(candidate.get("title", "Untitled opportunity"))
+            title = raw_title if raw_title.startswith("[PM Idea]:") else f"[PM Idea]: {raw_title}"
             body = str(candidate.get("body", ""))
 
             if decision == "CREATE_PM_IDEA" and len(created) < creation_cap:

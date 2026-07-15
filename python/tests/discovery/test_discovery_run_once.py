@@ -157,7 +157,7 @@ class DiscoveryRunOnceTests(unittest.TestCase):
         result = orch.run()
         self.assertEqual(result.deferred_count, 1)
         self.assertEqual(len(gateway.deferred_candidates), 1)
-        self.assertEqual(gateway.deferred_candidates[0]["title"], "Keep A")
+        self.assertEqual(gateway.deferred_candidates[0]["title"], "[PM Idea]: Keep A")
 
     def test_issues_written_to_gateway(self) -> None:
         gateway = _make_gateway()
@@ -171,7 +171,7 @@ class DiscoveryRunOnceTests(unittest.TestCase):
         # Verify issue was written into the in-memory gateway
         number = result.created_pm_idea_numbers[0]
         self.assertIn(number, gateway._issues)
-        self.assertEqual(gateway._issues[number]["title"], "New Feature")
+        self.assertEqual(gateway._issues[number]["title"], "[PM Idea]: New Feature")
 
 
 if __name__ == "__main__":
