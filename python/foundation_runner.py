@@ -934,9 +934,10 @@ def _ensure_discovery_focus(
     Should be called after foundation research is complete so the synthesis LLM has
     full context: FOUNDATION.md + all ADRs + wiki snapshot.
 
-    Creates or re-synthesizes DISCOVERY-FOCUS.md as needed, then creates or updates
-    the tracking issue. Does not block the foundation orchestrator from proceeding —
-    foundation research continues in parallel while the human reviews the draft.
+    After synthesis, runs a verification LLM call to check the document has all required
+    sections with substantive content. If verification passes, the tracking issue is
+    approved and closed automatically. If it fails, the issue stays draft with a comment
+    listing what's missing.
 
     Returns one of: "approved", "draft", "just-created", "needs-revision-updated", "missing-review".
     """
@@ -950,6 +951,45 @@ def _ensure_discovery_focus(
             "existing_adrs": adrs,
             "wiki_snapshot": wiki_snapshot,
         }
+
+    def _verify_and_approve(issue_number: int, focus_content: str) -> str:
+        """Run the verification LLM call. Approve+close on pass, leave draft on fail."""
+        verify_result = adapter.invoke_json(
+            "foundation_discovery_focus_verify",
+            {"focus_content": focus_content},
+        )
+        passed = verify_result.payload.get("passed", False)
+        verdict = verify_result.payload.get("verdict", "")
+        failing_sections = verify_result.payload.get("failing_sections", [])
+
+        if passed:
+            gateway.set_discovery_focus_label(issue_number, "discovery-focus:approved")
+            gateway.post_comment(
+                issue_number,
+                f"✅ Verification passed — {verdict}\n\n"
+                "DISCOVERY-FOCUS.md has been automatically approved. "
+                "Discovery orchestrator is cleared to run.",
+            )
+            gateway.close_issue(issue_number, "completed")
+            logger.info(
+                f"DISCOVERY-FOCUS.md verification passed — "
+                f"issue #{issue_number} approved and closed."
+            )
+            return "approved"
+        else:
+            sections_list = ", ".join(failing_sections) if failing_sections else "(unknown)"
+            gateway.post_comment(
+                issue_number,
+                f"❌ Verification failed — {verdict}\n\n"
+                f"Sections requiring attention: **{sections_list}**\n\n"
+                "Please update DISCOVERY-FOCUS.md and re-run the foundation orchestrator "
+                "to trigger re-verification.",
+            )
+            logger.warning(
+                f"DISCOVERY-FOCUS.md verification failed (issue #{issue_number}). "
+                f"Failing sections: {sections_list}"
+            )
+            return "draft"
 
     if not focus_exists:
         logger.info(
@@ -978,8 +1018,7 @@ def _ensure_discovery_focus(
                 + (
                     f"Placeholder fields remaining: {', '.join(placeholder_fields)}. "
                     if placeholder_fields else "All sections are populated. "
-                )
-                + "Please review and re-apply `discovery-focus:approved` when satisfied.",
+                ),
             )
             gateway.set_discovery_focus_label(focus_issue.number, "discovery-focus:draft")
             issue_number = focus_issue.number
@@ -990,10 +1029,11 @@ def _ensure_discovery_focus(
         else:
             issue_number = gateway.create_discovery_focus_issue(issue_body)
             logger.info(
-                f"Created DISCOVERY-FOCUS.md (confidence={confidence}) and tracking issue #{issue_number}. "
-                "Awaiting human review before discovery can run."
+                f"Created DISCOVERY-FOCUS.md (confidence={confidence}) and tracking issue #{issue_number}."
             )
-        return "just-created"
+
+        verify_status = _verify_and_approve(issue_number, focus_content)
+        return verify_status if verify_status == "approved" else "just-created"
 
     if focus_issue is None:
         # File exists but no tracking issue — likely manually created; leave it alone
@@ -1028,13 +1068,13 @@ def _ensure_discovery_focus(
             + (
                 f"Placeholder fields remaining: {', '.join(placeholder_fields)}. "
                 if placeholder_fields else "All sections are populated. "
-            )
-            + "Please review and re-apply `discovery-focus:approved` when satisfied.",
+            ),
         )
         logger.info(
-            f"Re-synthesized DISCOVERY-FOCUS.md — issue #{focus_issue.number} moved back to draft."
+            f"Re-synthesized DISCOVERY-FOCUS.md — issue #{focus_issue.number} moved back to draft for verification."
         )
-        return "needs-revision-updated"
+        verify_status = _verify_and_approve(focus_issue.number, focus_content)
+        return verify_status if verify_status == "approved" else "needs-revision-updated"
 
     if "discovery-focus:approved" in focus_issue.labels:
         logger.info(
@@ -1042,11 +1082,16 @@ def _ensure_discovery_focus(
         )
         return "approved"
 
+    # File and issue both exist in draft state — re-run verification on existing content
+    # so a transient LLM failure or a mid-run interruption doesn't permanently stall the
+    # workflow without manual label intervention.
     logger.info(
-        f"DISCOVERY-FOCUS.md is in draft state (issue #{focus_issue.number}) — awaiting human review. "
-        "Foundation research will continue; discovery cannot run until approved."
+        f"DISCOVERY-FOCUS.md is in draft state (issue #{focus_issue.number}) — "
+        "re-running verification on existing content..."
     )
-    return "draft"
+    existing_focus = gateway.read_discovery_focus()
+    verify_status = _verify_and_approve(focus_issue.number, existing_focus)
+    return verify_status if verify_status == "approved" else "draft"
 
 
 def _process_foundation_pass(

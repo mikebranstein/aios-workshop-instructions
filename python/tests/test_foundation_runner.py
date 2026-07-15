@@ -676,27 +676,64 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
     """Tests for foundation_runner._ensure_discovery_focus helper."""
 
     class _StubLLMAdapter:
+        """Stub that returns synthesis + passing verification by default."""
         adapter_source = "stub"
+        verify_passes = True
 
         def invoke_json(self, task_type, prompt_vars, model_hint=""):
-            return type("R", (), {
-                "payload": {
-                    "focus_content": "# DISCOVERY-FOCUS\n\nSynthesized content.",
-                    "confidence": "medium",
-                    "placeholder_fields": ["Success Metrics"],
-                },
-                "model": "stub",
-            })()
+            if task_type == "foundation_discovery_focus_synthesis":
+                return type("R", (), {
+                    "payload": {
+                        "focus_content": "# DISCOVERY-FOCUS\n\nSynthesized content.",
+                        "confidence": "medium",
+                        "placeholder_fields": [],
+                    },
+                    "model": "stub",
+                })()
+            if task_type == "foundation_discovery_focus_verify":
+                if self.verify_passes:
+                    return type("R", (), {
+                        "payload": {
+                            "passed": True,
+                            "verdict": "All required sections present.",
+                            "failing_sections": [],
+                        },
+                        "model": "stub",
+                    })()
+                else:
+                    return type("R", (), {
+                        "payload": {
+                            "passed": False,
+                            "verdict": "Missing sections detected.",
+                            "failing_sections": ["Priority Problems", "Definition of a Useful Idea"],
+                        },
+                        "model": "stub",
+                    })()
+            return type("R", (), {"payload": {}, "model": "stub"})()
 
-    def test_creates_file_and_issue_when_missing(self) -> None:
+    def test_creates_synthesizes_verifies_and_approves_when_missing(self) -> None:
+        """Full happy path: no file, no issue → synthesize → verify passes → approved + closed."""
         gw = FoundationGitHubGateway()
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
-        self.assertEqual(status, "just-created")
+        self.assertEqual(status, "approved")
         self.assertTrue(gw.discovery_focus_exists())
-        self.assertIsNotNone(gw.get_discovery_focus_issue())
         issue = gw.get_discovery_focus_issue()
-        self.assertIn("discovery-focus:draft", issue.labels)
+        self.assertIsNotNone(issue)
+        self.assertIn("discovery-focus:approved", issue.labels)
+
+    def test_stays_draft_when_verification_fails(self) -> None:
+        """Synthesis succeeds but verification fails → issue stays draft with comment."""
+        gw = FoundationGitHubGateway()
+        adapter = self._StubLLMAdapter()
+        adapter.verify_passes = False
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
+        self.assertEqual(status, "just-created")
+        issue = gw.get_discovery_focus_issue()
+        self.assertIsNotNone(issue)
+        self.assertNotIn("discovery-focus:approved", issue.labels)
+        self.assertTrue(issue.comments, "Should have posted a failure comment")
+        self.assertTrue(any("Priority Problems" in c for c in issue.comments))
 
     def test_returns_approved_when_already_approved(self) -> None:
         gw = FoundationGitHubGateway()
@@ -707,35 +744,46 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "approved")
 
-    def test_returns_draft_when_awaiting_review(self) -> None:
+    def test_reverifies_draft_and_approves_on_next_run(self) -> None:
+        """File + issue exist in draft state → re-run verify → passes → approved."""
         gw = FoundationGitHubGateway()
         gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
         gw.create_discovery_focus_issue("Body")
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
-        self.assertEqual(status, "draft")
+        self.assertEqual(status, "approved")
+        issue = gw.get_discovery_focus_issue()
+        self.assertIn("discovery-focus:approved", issue.labels)
 
-    def test_resynthesize_on_needs_revision(self) -> None:
+    def test_stays_draft_when_reverification_fails(self) -> None:
+        """File + issue exist in draft state → re-run verify → fails → stays draft."""
+        gw = FoundationGitHubGateway()
+        gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
+        gw.create_discovery_focus_issue("Body")
+        adapter = self._StubLLMAdapter()
+        adapter.verify_passes = False
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
+        self.assertEqual(status, "draft")
+        issue = gw.get_discovery_focus_issue()
+        self.assertNotIn("discovery-focus:approved", issue.labels)
+
+    def test_resynthesize_on_needs_revision_then_verify(self) -> None:
+        """needs-revision → re-synthesize → verify passes → approved + closed."""
         gw = FoundationGitHubGateway()
         gw.write_discovery_focus("# OLD CONTENT", "test: create")
         num = gw.create_discovery_focus_issue("Body")
         gw.set_discovery_focus_label(num, "discovery-focus:needs-revision")
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
-        self.assertEqual(status, "needs-revision-updated")
-        # File should now contain the re-synthesized content
+        self.assertEqual(status, "approved")
         self.assertIn("DISCOVERY-FOCUS", gw.read_discovery_focus())
-        # Issue should be back to draft
         issue = gw.get_discovery_focus_issue()
-        self.assertIn("discovery-focus:draft", issue.labels)
+        self.assertIn("discovery-focus:approved", issue.labels)
         self.assertNotIn("discovery-focus:needs-revision", issue.labels)
-        # A comment should have been posted
-        self.assertTrue(issue.comments)
 
     def test_returns_missing_review_when_file_exists_no_issue(self) -> None:
         gw = FoundationGitHubGateway()
         gw.write_discovery_focus("# Content", "test: create")
-        # No tracking issue created
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
         self.assertEqual(status, "missing-review")
@@ -743,17 +791,15 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
     def test_reuses_existing_issue_when_file_missing_but_issue_exists(self) -> None:
         """Re-run after file deleted should reuse the existing tracking issue, not create a new one."""
         gw = FoundationGitHubGateway()
-        # Issue exists from a prior run, but the file is gone
         existing_num = gw.create_discovery_focus_issue("Prior body")
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
-        self.assertEqual(status, "just-created")
+        self.assertEqual(status, "approved")
         self.assertTrue(gw.discovery_focus_exists())
-        # Must reuse the existing issue number — no new issue created
         issue = gw.get_discovery_focus_issue()
         self.assertEqual(issue.number, existing_num)
-        self.assertIn("discovery-focus:draft", issue.labels)
-        self.assertTrue(issue.comments, "Should have posted a comment on reuse")
+        self.assertIn("discovery-focus:approved", issue.labels)
+
 
 
 if __name__ == "__main__":

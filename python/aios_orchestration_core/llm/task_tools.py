@@ -535,5 +535,38 @@ FOUNDATION_DISCOVERY_FOCUS_SYNTHESIS_TOOL = ToolSpec(
 TASK_TOOL_MAP.update(
     {
         "foundation_discovery_focus_synthesis": FOUNDATION_DISCOVERY_FOCUS_SYNTHESIS_TOOL,
+        "foundation_discovery_focus_verify": ToolSpec(
+            name="submit_discovery_focus_verification",
+            description=(
+                "Submit the result of verifying DISCOVERY-FOCUS.md has the required sections "
+                "populated with substantive content (not TODO placeholders or empty bodies)."
+            ),
+            parameters_schema={
+                "type": "object",
+                "required": ["passed", "verdict", "failing_sections"],
+                "properties": {
+                    "passed": {
+                        "type": "boolean",
+                        "description": (
+                            "True if every required section contains substantive content. "
+                            "False if one or more required sections are empty, TODO-only, or missing."
+                        ),
+                    },
+                    "verdict": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "One-paragraph summary of the verification result.",
+                    },
+                    "failing_sections": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": (
+                            "Names of required sections that are empty, contain only a TODO placeholder, "
+                            "or are missing entirely. Empty list if passed=true."
+                        ),
+                    },
+                },
+            },
+        ),
     }
 )

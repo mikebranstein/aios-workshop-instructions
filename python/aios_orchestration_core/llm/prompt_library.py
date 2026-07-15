@@ -16,6 +16,7 @@ _TASK_PROMPT_FILE_MAP = {
     "format_issue_comment": _PROMPTS_ROOT / "github" / "format_issue_comment.md",
     "discovery_idea_scout": _PROMPTS_ROOT / "discovery" / "discovery_idea_scout.md",
     "foundation_discovery_focus_synthesis": _PROMPTS_ROOT / "foundation" / "foundation_discovery_focus_synthesis.md",
+    "foundation_discovery_focus_verify": _PROMPTS_ROOT / "foundation" / "foundation_discovery_focus_verify.md",
 }
 
 
