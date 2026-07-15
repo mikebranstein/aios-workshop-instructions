@@ -3,11 +3,25 @@ import json
 import re
 import subprocess
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List
 
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
 from aios_orchestration_core.wiki.github_wiki_manager import GitHubWikiManager
 from discovery_orchestrator.context import DiscoveryContext
+
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "templates" / "discovery"
+
+
+def _render_template(name: str, **vars: str) -> str:
+    """Load a Markdown template from templates/discovery/ and render it.
+
+    Variable placeholders use the ``{{VARIABLE_NAME}}`` convention.
+    """
+    content = (_TEMPLATES_DIR / name).read_text(encoding="utf-8")
+    for key, value in vars.items():
+        content = content.replace("{{" + key + "}}", value)
+    return content.rstrip("\n")
 
 
 class GitHubApiDiscoveryGateway:
@@ -143,11 +157,12 @@ class GitHubApiDiscoveryGateway:
         if not candidates:
             return True
         stamp = datetime.now(timezone.utc).isoformat()
-        lines = [f"\n## Deferred — {stamp}\n"]
+        section_header = _render_template("deferred-candidates-section.md", TIMESTAMP=stamp)
+        lines = [f"\n{section_header}\n"]
         for c in candidates:
             title = c.get("title", "(no title)")
             body = c.get("body", "")
-            lines.append(f"### {title}\n\n{body}\n")
+            lines.append(_render_template("deferred-candidate-entry.md", TITLE=title, BODY=body) + "\n")
         new_content = "\n".join(lines)
 
         try:
@@ -176,15 +191,14 @@ class GitHubApiDiscoveryGateway:
     ) -> None:
         stamp = datetime.now(timezone.utc).isoformat()
         created_list = ", ".join([f"#{n}" for n in created_pm_idea_numbers]) if created_pm_idea_numbers else "(none)"
-        content = (
-            "# Discovery Run Summary\n\n"
-            f"## Run State\n\n{state}\n\n"
-            f"## Created PM Ideas\n\n{created_list}\n\n"
-            f"## Deferred Count\n\n{deferred_count}\n\n"
-            f"## Dropped Count\n\n{dropped_count}\n\n"
-            "## Traceability\n\n"
-            f"- Generated at: {stamp}\n"
-        )
+        content = _render_template(
+            "discovery-run-summary.md",
+            STATE=state,
+            CREATED_LIST=created_list,
+            DEFERRED_COUNT=str(deferred_count),
+            DROPPED_COUNT=str(dropped_count),
+            TIMESTAMP=stamp,
+        ) + "\n"
         self._wiki.apply_changes(
             page_path="discovery/discovery-run-summary.md",
             page_content=content,
