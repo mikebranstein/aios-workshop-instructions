@@ -1,0 +1,11 @@
+{
+  "adr_title": "Use selected architecture baseline",
+  "context_section": "## Context\n\nStub context.",
+  "decision_section": "## Decision\n\nWe will use the selected baseline.",
+  "alternatives_section": "## Alternatives Considered\n\n### Alternative 1: Option A\n\n**Pros:**\n- Simple\n\n**Cons:**\n- Limited",
+  "rationale_section": "## Rationale\n\n### 1. Fit\n\nFits constraints.",
+  "consequences_section": "## Consequences\n\n### Positive\n\n- Established baseline\n\n### Negative / Risks\n\n- ⚠️ **Stub** (Severity: LOW)\n  Stub risk.",
+  "validation_strategy_section": "## Validation Strategy\n\n**Metrics:**\n- Delivery velocity: Success = on track\n\n**Review Schedule:**\n- Cadence: quarterly",
+  "rollback_section": "## Rollback / Exit Strategy\n\n**Conditions:** Stub.\n\n**Rollback steps:**\n1. Revert.\n\n**Cost of rollback:**\n- Effort: minimal",
+  "related_decisions_section": "## Related Decisions\n\n**References:**\n- Stub"
+}

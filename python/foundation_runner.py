@@ -76,55 +76,51 @@ logging.getLogger("copilot.client").setLevel(logging.WARNING)
 
 DEFAULT_LOG_DIR = default_runlog_dir("foundation")
 
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "foundation_orchestrator" / "templates"
+
+
+def _render_template(name: str, **vars: str) -> str:
+    """Load a Markdown template from foundation_orchestrator/templates/ and render it.
+
+    Variable placeholders use the ``{{VARIABLE_NAME}}`` convention (matching the
+    LLM prompt library pattern).  Any key/value pair passed as a keyword argument
+    replaces ``{{KEY}}`` in the template.
+    """
+    path = _TEMPLATES_DIR / name
+    content = path.read_text(encoding="utf-8")
+    for key, value in vars.items():
+        content = content.replace("{{" + key + "}}", value)
+    return content.rstrip("\n")
+
+
+_STUBS_DIR = Path(__file__).resolve().parent / "foundation_orchestrator" / "stubs"
+
 
 class StubLLMAdapter(JudgmentLLMAdapter):
-    """Stub adapter for demonstration."""
+    """Stub adapter for demonstration — payloads loaded from foundation_orchestrator/stubs/."""
 
     def __init__(self, model: str = "auto"):
         self.model = model
+        self._cache: dict = {}
+
+    def _load(self, task_type: str) -> dict:
+        if task_type in self._cache:
+            return self._cache[task_type]
+        json_path = _STUBS_DIR / f"{task_type}.json"
+        if not json_path.exists():
+            self._cache[task_type] = {}
+            return {}
+        payload = json.loads(json_path.read_text(encoding="utf-8"))
+        # Special case: focus_content is stored in a companion .md file to keep
+        # the JSON file free of escaped markdown.
+        md_path = _STUBS_DIR / f"{task_type}_content.md"
+        if md_path.exists():
+            payload["focus_content"] = md_path.read_text(encoding="utf-8")
+        self._cache[task_type] = payload
+        return payload
 
     def invoke_json(self, task_type: str, prompt_vars: dict, model_hint: str = ""):
-        stubs = {
-            "foundation_research_plan": {
-                "research_areas": [
-                    "Runtime and Language",
-                    "Framework or Engine",
-                    "Architecture Style",
-                ],
-                "reason": "stub planning from FOUNDATION.md",
-            },
-            "foundation_research": {"decision": "RECOMMEND", "reason": "stub research"},
-            "foundation_gate": {"decision": "REVISE_FOUNDATION", "reason": "stub gate review"},
-            "foundation_research_worker": {
-                "decision": "COMPLETE",
-                "summary": "stub linked research complete",
-                "wiki_page_title": "Foundation Research Stub",
-                "wiki_summary": "Captured alternatives and recommendation.",
-                "adr_title": "Use selected architecture baseline",
-                "adr_summary": "Documented decision and trade-offs.",
-                "next_actions": ["Link outputs to primary foundation issue"],
-            },
-            "wiki_manager": {
-                "decision": "CREATE_PAGE",
-                "page_path": "foundation/foundation-research-stub.md",
-                "page_content": "# Foundation Research Stub\n\nCaptured alternatives and recommendation.",
-                "content_index_summary": "Baseline foundation recommendation captured.",
-                "page_moves": [],
-                "reason": "stub wiki manager path selection",
-            },
-            "adr_generator": {
-                "adr_title": "Use selected architecture baseline",
-                "context_section": "## Context\n\nStub context.",
-                "decision_section": "## Decision\n\nWe will use the selected baseline.",
-                "alternatives_section": "## Alternatives Considered\n\n### Alternative 1: Option A\n\n**Pros:**\n- Simple\n\n**Cons:**\n- Limited",
-                "rationale_section": "## Rationale\n\n### 1. Fit\n\nFits constraints.",
-                "consequences_section": "## Consequences\n\n### Positive\n\n- Established baseline\n\n### Negative / Risks\n\n- ⚠️ **Stub** (Severity: LOW)\n  Stub risk.",
-                "validation_strategy_section": "## Validation Strategy\n\n**Metrics:**\n- Delivery velocity: Success = on track\n\n**Review Schedule:**\n- Cadence: quarterly",
-                "rollback_section": "## Rollback / Exit Strategy\n\n**Conditions:** Stub.\n\n**Rollback steps:**\n1. Revert.\n\n**Cost of rollback:**\n- Effort: minimal",
-                "related_decisions_section": "## Related Decisions\n\n**References:**\n- Stub",
-            },
-        }
-        return type("Result", (), {"payload": stubs.get(task_type, {}), "model": self.model})()
+        return type("Result", (), {"payload": self._load(task_type), "model": self.model})()
 
 
 class ProgressTracker:
@@ -377,23 +373,14 @@ def _assemble_adr_content(
     from datetime import date
     slug = _slugify(adr_title)
     today = date.today().isoformat()
-    frontmatter = (
-        "---\n"
-        "status: Proposed\n"
-        f"date: {today}\n"
-        "author: Generated by Foundation Orchestrator\n"
-        "decision_area: other\n"
-        f"relates_to: [#{research_issue_number}]\n"
-        "---\n"
-    )
-    header = (
-        f"# ADR-{adr_number:04d}: {adr_title}\n\n"
-        f"**Status:** Proposed  \n"
-        f"**Date:** {today}  \n"
-        f"**Author:** Generated by Foundation Orchestrator  \n"
-        f"**Relates To:** #{research_issue_number}"
-        + (f", wiki/{wiki_page_path}" if wiki_page_path else "")
-        + "\n"
+    wiki_link = f", wiki/{wiki_page_path}" if wiki_page_path else ""
+    header = _render_template(
+        "adr-header.md",
+        TODAY=today,
+        ADR_NUMBER=f"{adr_number:04d}",
+        ADR_TITLE=adr_title,
+        RESEARCH_ISSUE_NUMBER=str(research_issue_number),
+        WIKI_LINK=wiki_link,
     )
     sections = [
         payload.get("context_section", "## Context\n\nNo context provided."),
@@ -405,7 +392,7 @@ def _assemble_adr_content(
         payload.get("rollback_section", "## Rollback / Exit Strategy\n\nNone defined."),
         payload.get("related_decisions_section", "## Related Decisions\n\nNone."),
     ]
-    return frontmatter + "\n" + header + "\n" + "\n\n".join(sections) + "\n"
+    return header + "\n\n" + "\n\n".join(sections) + "\n"
 
 
 def _generate_and_write_adr(
@@ -797,13 +784,7 @@ def _ensure_supporting_research_issue(gateway, foundation_issue_number: int) -> 
     gateway.ensure_research_issue(
         foundation_issue_number=foundation_issue_number,
         title=f"[foundation-research] Evidence collection for #{foundation_issue_number}",
-        body=(
-            "Collect and publish foundational research outcomes.\n\n"
-            "Required outcomes:\n"
-            "- linked wiki evidence references\n"
-            "- linked ADR references\n"
-            "- recommendation for foundation gate"
-        ),
+        body=_render_template("foundation-research-evidence-body.md"),
         labels=[],
     )
 
@@ -860,19 +841,7 @@ def _sync_foundation_research_backlog(
         gateway.ensure_research_issue(
             foundation_issue_number=foundation_issue_number,
             title=title,
-            body=(
-                f"Research decision area: {area}\n\n"
-                "Before researching, read the following files from the repository to inform your work:\n"
-                "- `FOUNDATION.md` — project context, constraints, and locked decisions\n"
-                "- `docs/foundation-decision-pack.md` — decisions already made in other areas\n"
-                "- `docs/adr/` — existing ADRs; do not re-open settled decisions\n"
-                "- `docs/discovery-focus.md` — target audience and priority problems (if present)\n\n"
-                "Required outputs:\n"
-                "- Decision recommendation with rationale and alternatives considered\n"
-                "- Risks and mitigations\n"
-                "- Links to supporting evidence (wiki pages, references)\n"
-                "- ADR link(s) for accepted major decisions\n"
-            ),
+            body=_render_template("foundation-research-area-body.md", AREA=area),
             labels=[],
         )
         created += 1
@@ -942,6 +911,110 @@ def _world_signature(gateway) -> tuple:
         closed_research = gateway.count_closed_linked_research_issues(issue.number)
         entries.append((issue.number, state_labels, open_research, closed_research))
     return tuple(entries)
+
+
+def _build_discovery_focus_issue_body(focus_content: str, confidence: str, placeholder_fields: list) -> str:
+    placeholder_str = "\n".join(f"- {f}" for f in placeholder_fields) if placeholder_fields else "- None"
+    return _render_template(
+        "discovery-focus-issue-body.md",
+        CONFIDENCE=confidence,
+        PLACEHOLDER_FIELDS=placeholder_str,
+    )
+
+
+def _ensure_discovery_focus(gateway, adapter: JudgmentLLMAdapter, foundation_markdown: str) -> str:
+    """Ensure DISCOVERY-FOCUS.md exists at repo root and is tracked with a GitHub issue.
+
+    Creates or re-synthesizes DISCOVERY-FOCUS.md as needed, then creates or updates
+    the tracking issue. Does not block the foundation orchestrator from proceeding —
+    foundation research continues in parallel while the human reviews the draft.
+
+    Returns one of: "approved", "draft", "just-created", "needs-revision-updated", "missing-review".
+    """
+    focus_exists = gateway.discovery_focus_exists()
+    focus_issue = gateway.get_discovery_focus_issue()
+
+    if not focus_exists:
+        logger.info("DISCOVERY-FOCUS.md not found at repo root — synthesizing from FOUNDATION.md...")
+        result = adapter.invoke_json(
+            "foundation_discovery_focus_synthesis",
+            {
+                "foundation_markdown": foundation_markdown,
+                "existing_discovery_focus": "",
+            },
+        )
+        focus_content = result.payload.get("focus_content", "")
+        confidence = result.payload.get("confidence", "low")
+        placeholder_fields = result.payload.get("placeholder_fields", [])
+
+        gateway.write_discovery_focus(
+            focus_content,
+            "foundation: synthesize DISCOVERY-FOCUS.md from FOUNDATION.md",
+        )
+
+        issue_body = _build_discovery_focus_issue_body(focus_content, confidence, placeholder_fields)
+        issue_number = gateway.create_discovery_focus_issue(issue_body)
+        logger.info(
+            f"Created DISCOVERY-FOCUS.md (confidence={confidence}) and tracking issue #{issue_number}. "
+            "Awaiting human review before discovery can run."
+        )
+        return "just-created"
+
+    if focus_issue is None:
+        # File exists but no tracking issue — likely manually created; leave it alone
+        logger.info(
+            "DISCOVERY-FOCUS.md exists at repo root but no tracking issue found. "
+            "Create a tracking issue and apply discovery-focus:approved when ready."
+        )
+        return "missing-review"
+
+    if "discovery-focus:needs-revision" in focus_issue.labels:
+        logger.info(
+            f"Issue #{focus_issue.number} is marked needs-revision — "
+            "re-synthesizing DISCOVERY-FOCUS.md from latest FOUNDATION.md..."
+        )
+        existing_focus = gateway.read_discovery_focus()
+        result = adapter.invoke_json(
+            "foundation_discovery_focus_synthesis",
+            {
+                "foundation_markdown": foundation_markdown,
+                "existing_discovery_focus": existing_focus,
+            },
+        )
+        focus_content = result.payload.get("focus_content", "")
+        confidence = result.payload.get("confidence", "low")
+        placeholder_fields = result.payload.get("placeholder_fields", [])
+
+        gateway.write_discovery_focus(
+            focus_content,
+            "foundation: re-synthesize DISCOVERY-FOCUS.md (needs-revision)",
+        )
+        gateway.set_discovery_focus_label(focus_issue.number, "discovery-focus:draft")
+        gateway.post_comment(
+            focus_issue.number,
+            f"Re-synthesized DISCOVERY-FOCUS.md from latest FOUNDATION.md (confidence: {confidence}). "
+            + (
+                f"Placeholder fields remaining: {', '.join(placeholder_fields)}. "
+                if placeholder_fields else "All sections are populated. "
+            )
+            + "Please review and re-apply `discovery-focus:approved` when satisfied.",
+        )
+        logger.info(
+            f"Re-synthesized DISCOVERY-FOCUS.md — issue #{focus_issue.number} moved back to draft."
+        )
+        return "needs-revision-updated"
+
+    if "discovery-focus:approved" in focus_issue.labels:
+        logger.info(
+            f"DISCOVERY-FOCUS.md approved (issue #{focus_issue.number}) — discovery cleared to run."
+        )
+        return "approved"
+
+    logger.info(
+        f"DISCOVERY-FOCUS.md is in draft state (issue #{focus_issue.number}) — awaiting human review. "
+        "Foundation research will continue; discovery cannot run until approved."
+    )
+    return "draft"
 
 
 def _process_foundation_pass(
@@ -1320,6 +1393,17 @@ def main():
         metrics = MetricsService()
         adapter = InstrumentedLLMAdapter(raw_adapter, metrics)
         gateway.comment_formatter = build_comment_formatter(adapter)
+
+        # Ensure DISCOVERY-FOCUS.md exists and is tracked. Runs once per orchestrator
+        # invocation; the foundation main loop is not gated on approval — that check
+        # lives in the discovery orchestrator. Log the result for visibility.
+        logger.info("Checking DISCOVERY-FOCUS.md status...")
+        try:
+            df_status = _ensure_discovery_focus(gateway, adapter, foundation_markdown)
+            logger.info(f"DISCOVERY-FOCUS.md status: {df_status}")
+        except Exception as e:
+            # Non-fatal: log and continue — foundation research must not be blocked by this.
+            logger.warning(f"Failed to ensure DISCOVERY-FOCUS.md (non-fatal): {e}", exc_info=True)
         orchestrator = FoundationRunOnceOrchestrator(
             gateway=gateway,
             log_store=TransitionLogStore(log_db),
@@ -1333,11 +1417,12 @@ def main():
         # work on. Creation only happens here (never inside a verification pass),
         # so repeated passes re-pull issues without spawning duplicates.
         open_foundation_issues = gateway.list_open_issues_with_any_label(_ACTIONABLE_LABELS)
+        _foundation_issue_body = _render_template("foundation-issue-body.md")
         if args.force:
             logger.info("--force specified. Creating a fresh foundation issue for this run.")
             created_issue = gateway.create_foundation_issue(
                 title="Foundation Setup",
-                body="Establish foundational norms and standards for this repository.",
+                body=_foundation_issue_body,
             )
             logger.info(f"Created new foundation issue #{created_issue}")
         elif not open_foundation_issues:
@@ -1350,7 +1435,7 @@ def main():
             logger.info("No open foundation issues. Creating a new foundation issue.")
             created_issue = gateway.create_foundation_issue(
                 title="Foundation Setup",
-                body="Establish foundational norms and standards for this repository.",
+                body=_foundation_issue_body,
             )
             logger.info(f"Created new foundation issue #{created_issue}")
 

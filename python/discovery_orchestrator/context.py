@@ -8,6 +8,7 @@ class DiscoveryContext:
     foundation_gate_passed: bool = False
     focus_file_exists: bool = False
     focus_file_populated: bool = False
+    discovery_focus_approved: bool = False
     batch_cap: int = 5
     creation_cap: int = 3
 

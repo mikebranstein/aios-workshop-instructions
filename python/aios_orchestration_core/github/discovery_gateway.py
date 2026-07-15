@@ -8,11 +8,11 @@ class DiscoveryGateway(Protocol):
     """Abstract gateway for all Discovery orchestrator external interactions."""
 
     def get_context(self) -> DiscoveryContext:
-        """Load precondition context: foundation gate, focus file status."""
+        """Load precondition context: foundation gate, focus file status, approval status."""
         ...
 
     def read_focus_file(self) -> str:
-        """Return the full content of docs/discovery-focus.md."""
+        """Return the full content of DISCOVERY-FOCUS.md."""
         ...
 
     def create_pm_idea_issue(self, title: str, body: str) -> int:

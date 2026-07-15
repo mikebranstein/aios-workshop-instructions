@@ -1,0 +1,9 @@
+{
+  "decision": "COMPLETE",
+  "summary": "stub linked research complete",
+  "wiki_page_title": "Foundation Research Stub",
+  "wiki_summary": "Captured alternatives and recommendation.",
+  "adr_title": "Use selected architecture baseline",
+  "adr_summary": "Documented decision and trade-offs.",
+  "next_actions": ["Link outputs to primary foundation issue"]
+}

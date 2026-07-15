@@ -52,6 +52,20 @@ class _LoopGatewayStub:
     def has_approved_foundation_issue(self) -> bool:
         return False
 
+    # DISCOVERY-FOCUS.md stubs — return "file already exists and is approved" so
+    # _ensure_discovery_focus is a no-op in the loop tests that don't target it.
+    def discovery_focus_exists(self) -> bool:
+        return True
+
+    def get_discovery_focus_issue(self):
+        from aios_orchestration_core.github.foundation_gateway import FoundationIssue
+        return FoundationIssue(
+            number=999,
+            title="[discovery-focus]: Synthesize DISCOVERY-FOCUS.md from FOUNDATION.md",
+            body="",
+            labels={"discovery-focus:approved"},
+        )
+
 
 class _ContextStub:
     def __init__(self, gateway):
@@ -647,6 +661,75 @@ class NextActionsForStateTests(unittest.TestCase):
         # Each path must carry a unique 4-digit prefix.
         prefixes = [Path(p).stem.split("-", 1)[0] for p in written_paths]
         self.assertEqual(len(set(prefixes)), 5, f"Duplicate ADR numbers detected: {prefixes}")
+
+
+class EnsureDiscoveryFocusTests(unittest.TestCase):
+    """Tests for foundation_runner._ensure_discovery_focus helper."""
+
+    class _StubLLMAdapter:
+        adapter_source = "stub"
+
+        def invoke_json(self, task_type, prompt_vars, model_hint=""):
+            return type("R", (), {
+                "payload": {
+                    "focus_content": "# DISCOVERY-FOCUS\n\nSynthesized content.",
+                    "confidence": "medium",
+                    "placeholder_fields": ["Success Metrics"],
+                },
+                "model": "stub",
+            })()
+
+    def test_creates_file_and_issue_when_missing(self) -> None:
+        gw = FoundationGitHubGateway()
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        self.assertEqual(status, "just-created")
+        self.assertTrue(gw.discovery_focus_exists())
+        self.assertIsNotNone(gw.get_discovery_focus_issue())
+        issue = gw.get_discovery_focus_issue()
+        self.assertIn("discovery-focus:draft", issue.labels)
+
+    def test_returns_approved_when_already_approved(self) -> None:
+        gw = FoundationGitHubGateway()
+        gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
+        num = gw.create_discovery_focus_issue("Body")
+        gw.set_discovery_focus_label(num, "discovery-focus:approved")
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        self.assertEqual(status, "approved")
+
+    def test_returns_draft_when_awaiting_review(self) -> None:
+        gw = FoundationGitHubGateway()
+        gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
+        gw.create_discovery_focus_issue("Body")
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        self.assertEqual(status, "draft")
+
+    def test_resynthesize_on_needs_revision(self) -> None:
+        gw = FoundationGitHubGateway()
+        gw.write_discovery_focus("# OLD CONTENT", "test: create")
+        num = gw.create_discovery_focus_issue("Body")
+        gw.set_discovery_focus_label(num, "discovery-focus:needs-revision")
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        self.assertEqual(status, "needs-revision-updated")
+        # File should now contain the re-synthesized content
+        self.assertIn("DISCOVERY-FOCUS", gw.read_discovery_focus())
+        # Issue should be back to draft
+        issue = gw.get_discovery_focus_issue()
+        self.assertIn("discovery-focus:draft", issue.labels)
+        self.assertNotIn("discovery-focus:needs-revision", issue.labels)
+        # A comment should have been posted
+        self.assertTrue(issue.comments)
+
+    def test_returns_missing_review_when_file_exists_no_issue(self) -> None:
+        gw = FoundationGitHubGateway()
+        gw.write_discovery_focus("# Content", "test: create")
+        # No tracking issue created
+        adapter = self._StubLLMAdapter()
+        status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION")
+        self.assertEqual(status, "missing-review")
 
 
 if __name__ == "__main__":

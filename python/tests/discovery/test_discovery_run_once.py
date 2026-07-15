@@ -38,17 +38,18 @@ class StubDiscoveryLLMAdapter(JudgmentLLMAdapter):
         return LLMInvocationResult(payload={}, model="stub", request_id="stub")
 
 
-def _make_gateway(*, gate: bool = True, focus: bool = True, focus_content: str = "# Focus") -> DiscoveryInMemoryGateway:
+def _make_gateway(*, gate: bool = True, focus: bool = True, focus_approved: bool = True, focus_content: str = "# Focus") -> DiscoveryInMemoryGateway:
     ctx = DiscoveryContext(
         foundation_gate_passed=gate,
         focus_file_exists=focus,
         focus_file_populated=focus,
+        discovery_focus_approved=focus_approved,
     )
     return DiscoveryInMemoryGateway(context=ctx, focus_content=focus_content if focus else "")
 
 
-def _make_orchestrator(candidates: list, *, gate: bool = True, focus: bool = True, cap: int = 3) -> DiscoveryRunOnceOrchestrator:
-    gateway = _make_gateway(gate=gate, focus=focus)
+def _make_orchestrator(candidates: list, *, gate: bool = True, focus: bool = True, focus_approved: bool = True, cap: int = 3) -> DiscoveryRunOnceOrchestrator:
+    gateway = _make_gateway(gate=gate, focus=focus, focus_approved=focus_approved)
     adapter = StubDiscoveryLLMAdapter(candidates)
     return DiscoveryRunOnceOrchestrator(gateway=gateway, llm_adapter=adapter, creation_cap=cap)
 
@@ -129,6 +130,22 @@ class DiscoveryRunOnceTests(unittest.TestCase):
         self.assertEqual(len(result.created_pm_idea_numbers), 1)
         self.assertEqual(result.deferred_count, 1)
         self.assertEqual(result.dropped_count, 1)
+
+    def test_focus_not_approved_halts(self) -> None:
+        """File exists and is populated but discovery-focus:approved label is absent → halt."""
+        orch = _make_orchestrator([], focus=True, focus_approved=False)
+        result = orch.run()
+        self.assertEqual(result.state, "DISCOVERY_HALTED_NO_FOCUS")
+        self.assertIsNotNone(result.halted_reason)
+        self.assertIn("approved", result.halted_reason.lower())
+
+    def test_focus_approved_allows_run(self) -> None:
+        """File exists, is populated, and discovery-focus:approved is present → run proceeds."""
+        candidates = [{"title": "Idea X", "body": "body x", "decision": "CREATE_PM_IDEA"}]
+        orch = _make_orchestrator(candidates, focus=True, focus_approved=True)
+        result = orch.run()
+        self.assertEqual(result.state, "DISCOVERY_COMPLETE")
+        self.assertEqual(len(result.created_pm_idea_numbers), 1)
 
     def test_deferred_candidates_persisted_to_gateway(self) -> None:
         gateway = _make_gateway()

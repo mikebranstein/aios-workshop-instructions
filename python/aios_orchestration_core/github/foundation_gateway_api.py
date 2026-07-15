@@ -12,6 +12,9 @@ from aios_orchestration_core.github.comment_formatter import (
 from aios_orchestration_core.github.foundation_gateway import (
     FoundationIssue,
     LinkedFoundationIssue,
+    _DISCOVERY_FOCUS_PATH,
+    _DISCOVERY_FOCUS_ISSUE_TITLE,
+    _DISCOVERY_FOCUS_LABELS,
 )
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig
 from aios_orchestration_core.wiki.github_wiki_manager import GitHubWikiManager
@@ -466,3 +469,86 @@ class GitHubApiFoundationGateway:
             if items:
                 return True
         return False
+
+    # ------------------------------------------------------------------
+    # DISCOVERY-FOCUS.md lifecycle
+    # ------------------------------------------------------------------
+
+    def discovery_focus_exists(self) -> bool:
+        result = self._gh_api(f"repos/{self.config.repo}/contents/{_DISCOVERY_FOCUS_PATH}", jq=".type")
+        return result.returncode == 0
+
+    def read_discovery_focus(self) -> str:
+        result = self._gh_api(f"repos/{self.config.repo}/contents/{_DISCOVERY_FOCUS_PATH}")
+        if result.returncode != 0:
+            return ""
+        try:
+            data = json.loads(result.stdout or "{}")
+            raw = data.get("content", "")
+            return base64.b64decode(raw.replace("\n", "")).decode("utf-8", errors="replace")
+        except Exception:
+            return ""
+
+    def write_discovery_focus(self, content: str, commit_message: str) -> bool:
+        return self.write_repo_file(_DISCOVERY_FOCUS_PATH, content, commit_message)
+
+    def get_discovery_focus_issue(self) -> Optional[FoundationIssue]:
+        for state in ("open", "closed"):
+            raw = self._gh(
+                [
+                    "issue",
+                    "list",
+                    "--state",
+                    state,
+                    "--search",
+                    "[discovery-focus]",
+                    "--limit",
+                    "5",
+                    "--json",
+                    "number,title,labels,state",
+                ]
+            )
+            try:
+                items = json.loads(raw) if raw else []
+            except json.JSONDecodeError:
+                items = []
+            for item in items:
+                if item.get("title") == _DISCOVERY_FOCUS_ISSUE_TITLE:
+                    label_names = {lbl.get("name", "") for lbl in item.get("labels", [])}
+                    return FoundationIssue(
+                        number=item["number"],
+                        title=item["title"],
+                        body="",
+                        labels=label_names,
+                        open=item.get("state", "open") == "open",
+                    )
+        return None
+
+    def create_discovery_focus_issue(self, body: str) -> int:
+        self._ensure_labels(["discovery-focus:draft"])
+        output = self._gh(
+            [
+                "issue",
+                "create",
+                "--title",
+                _DISCOVERY_FOCUS_ISSUE_TITLE,
+                "--body",
+                body,
+                "--label",
+                "discovery-focus:draft",
+            ]
+        )
+        match = re.search(r"/issues/(\d+)", output)
+        if not match:
+            raise RuntimeError(f"Unable to parse issue number from gh output: {output}")
+        return int(match.group(1))
+
+    def set_discovery_focus_label(self, issue_number: int, label_to_add: str) -> None:
+        self._ensure_labels([label_to_add])
+        labels_to_remove = list(_DISCOVERY_FOCUS_LABELS - {label_to_add})
+        for label in labels_to_remove:
+            subprocess.run(
+                ["gh", "-R", self.config.repo, "issue", "edit", str(issue_number), "--remove-label", label],
+                check=False, capture_output=True, text=True, encoding="utf-8", errors="replace",
+            )
+        self._gh(["issue", "edit", str(issue_number), "--add-label", label_to_add])

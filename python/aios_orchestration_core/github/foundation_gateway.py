@@ -23,6 +23,15 @@ class LinkedFoundationIssue:
     open: bool = True
 
 
+_DISCOVERY_FOCUS_PATH = "DISCOVERY-FOCUS.md"
+_DISCOVERY_FOCUS_ISSUE_TITLE = "[discovery-focus]: Synthesize DISCOVERY-FOCUS.md from FOUNDATION.md"
+_DISCOVERY_FOCUS_LABELS = frozenset({
+    "discovery-focus:draft",
+    "discovery-focus:approved",
+    "discovery-focus:needs-revision",
+})
+
+
 class FoundationGateway(BaseGateway, Protocol):
     def get_issue(self, issue_number: int) -> FoundationIssue: ...
     def list_open_issues_with_any_label(self, labels: Sequence[str]) -> List[FoundationIssue]: ...
@@ -52,6 +61,13 @@ class FoundationGateway(BaseGateway, Protocol):
     def write_repo_file(self, path: str, content: str, commit_message: str) -> bool: ...
     def create_foundation_issue(self, title: str, body: str) -> int: ...
     def has_approved_foundation_issue(self) -> bool: ...
+    # DISCOVERY-FOCUS.md lifecycle
+    def discovery_focus_exists(self) -> bool: ...
+    def read_discovery_focus(self) -> str: ...
+    def write_discovery_focus(self, content: str, commit_message: str) -> bool: ...
+    def get_discovery_focus_issue(self) -> Optional[FoundationIssue]: ...
+    def create_discovery_focus_issue(self, body: str) -> int: ...
+    def set_discovery_focus_label(self, issue_number: int, label_to_add: str) -> None: ...
 
 
 class FoundationGitHubGateway:
@@ -236,3 +252,37 @@ class FoundationGitHubGateway:
             "foundation:approved" in i.labels
             for i in self.issues.values()
         )
+
+    # ------------------------------------------------------------------
+    # DISCOVERY-FOCUS.md lifecycle
+    # ------------------------------------------------------------------
+
+    def discovery_focus_exists(self) -> bool:
+        return _DISCOVERY_FOCUS_PATH in self._repo_files
+
+    def read_discovery_focus(self) -> str:
+        return self._repo_files.get(_DISCOVERY_FOCUS_PATH, "")
+
+    def write_discovery_focus(self, content: str, commit_message: str) -> bool:
+        return self.write_repo_file(_DISCOVERY_FOCUS_PATH, content, commit_message)
+
+    def get_discovery_focus_issue(self) -> Optional[FoundationIssue]:
+        for issue in self.issues.values():
+            if issue.title == _DISCOVERY_FOCUS_ISSUE_TITLE:
+                return issue
+        return None
+
+    def create_discovery_focus_issue(self, body: str) -> int:
+        self._next += 1
+        self.issues[self._next] = FoundationIssue(
+            number=self._next,
+            title=_DISCOVERY_FOCUS_ISSUE_TITLE,
+            body=body,
+            labels={"discovery-focus:draft"},
+        )
+        return self._next
+
+    def set_discovery_focus_label(self, issue_number: int, label_to_add: str) -> None:
+        issue = self.issues[issue_number]
+        issue.labels -= _DISCOVERY_FOCUS_LABELS
+        issue.labels.add(label_to_add)

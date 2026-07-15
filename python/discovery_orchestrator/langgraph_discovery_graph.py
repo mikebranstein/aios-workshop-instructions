@@ -111,15 +111,37 @@ class DiscoveryGraphOrchestrator:
         # G4 preconditions: focus file must exist and be populated
         if not context.focus_file_exists or not context.focus_file_populated:
             terminal_state = get_next_discovery_state(next_state, DiscoveryEvent.FOCUS_MISSING)
-            self._logger.warning("check_preconditions: docs/discovery-focus.md missing or empty — halting")
+            self._logger.warning("check_preconditions: DISCOVERY-FOCUS.md missing or empty — halting")
             self._log_transition(
                 state, next_state, terminal_state,
-                DiscoveryEvent.FOCUS_MISSING, "FOCUS_MISSING", "docs/discovery-focus.md missing or empty",
+                DiscoveryEvent.FOCUS_MISSING, "FOCUS_MISSING", "DISCOVERY-FOCUS.md missing or empty",
             )
             return {
                 **state,
                 "current_state": terminal_state,
-                "halted_reason": "docs/discovery-focus.md missing or empty",
+                "halted_reason": "DISCOVERY-FOCUS.md missing or empty",
+            }
+
+        # G4 preconditions: discovery-focus:approved label must exist
+        if not context.discovery_focus_approved:
+            terminal_state = get_next_discovery_state(next_state, DiscoveryEvent.FOCUS_MISSING)
+            self._logger.warning(
+                "check_preconditions: DISCOVERY-FOCUS.md not yet approved — halting. "
+                "Review DISCOVERY-FOCUS.md and apply discovery-focus:approved label."
+            )
+            self._log_transition(
+                state, next_state, terminal_state,
+                DiscoveryEvent.FOCUS_MISSING, "FOCUS_NOT_APPROVED",
+                "DISCOVERY-FOCUS.md exists but discovery-focus:approved label not found",
+            )
+            return {
+                **state,
+                "current_state": terminal_state,
+                "halted_reason": (
+                    "DISCOVERY-FOCUS.md has not been approved. "
+                    "Review DISCOVERY-FOCUS.md, complete any placeholder sections, "
+                    "then apply the discovery-focus:approved label to the tracking issue."
+                ),
             }
 
         self._logger.info("check_preconditions: preconditions passed — routing to idea_scout")

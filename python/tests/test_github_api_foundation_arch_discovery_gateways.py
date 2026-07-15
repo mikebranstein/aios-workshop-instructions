@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from aios_orchestration_core.github.arch_review_gateway_api import GitHubApiArchReviewGateway
 from aios_orchestration_core.github.discovery_gateway_api import GitHubApiDiscoveryGateway
+from aios_orchestration_core.github.foundation_gateway import FoundationGitHubGateway, FoundationIssue
 from aios_orchestration_core.github.foundation_gateway_api import GitHubApiFoundationGateway
 from aios_orchestration_core.github.pm_gateway_api import GitHubApiConfig, GitHubApiPMGateway
 
@@ -309,14 +310,15 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
             if cmd[:2] == ["gh", "api"]:
                 path = cmd[2]
                 jq = cmd[4] if len(cmd) >= 5 and cmd[3] == "--jq" else ""
-                if path.endswith("/docs/discovery-focus.md") and jq == ".type":
+                if path.endswith("/DISCOVERY-FOCUS.md") and jq == ".type":
                     return _cp("file")
-                if path.endswith("/docs/discovery-focus.md") and jq == ".size":
+                if path.endswith("/DISCOVERY-FOCUS.md") and jq == ".size":
                     return _cp("256")
                 return _cp("", returncode=1)
 
             gh_args = cmd[3:] if cmd[:2] == ["gh", "-R"] else []
             if gh_args[:2] == ["issue", "list"]:
+                # Both foundation:approved and discovery-focus:approved queries return one result
                 return _cp(json.dumps([{"number": 9}]))
             if gh_args[:3] == ["label", "create", "pm-idea"]:
                 return _cp("")
@@ -333,6 +335,7 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
         self.assertTrue(context.foundation_gate_passed)
         self.assertTrue(context.focus_file_exists)
         self.assertTrue(context.focus_file_populated)
+        self.assertTrue(context.discovery_focus_approved)
         self.assertEqual(issue_number, 123)
 
     def test_publish_discovery_run_artifact_writes_wiki(self) -> None:
@@ -358,6 +361,58 @@ class GitHubApiDiscoveryGatewayTests(unittest.TestCase):
         commands = [cmd for cmd, _ in seen]
         self.assertIn(["git", "commit", "-m", "discovery: publish run summary"], commands)
         self.assertIn(["git", "push", "-u", "origin", "master"], commands)
+
+
+class FoundationGitHubGatewayDiscoveryFocusTests(unittest.TestCase):
+    """Tests for DISCOVERY-FOCUS.md lifecycle on the in-memory gateway."""
+
+    def _gw(self) -> FoundationGitHubGateway:
+        return FoundationGitHubGateway()
+
+    def test_discovery_focus_does_not_exist_initially(self) -> None:
+        gw = self._gw()
+        self.assertFalse(gw.discovery_focus_exists())
+
+    def test_write_and_read_discovery_focus(self) -> None:
+        gw = self._gw()
+        gw.write_discovery_focus("# DISCOVERY-FOCUS\n\nContent.", "test: create")
+        self.assertTrue(gw.discovery_focus_exists())
+        self.assertIn("DISCOVERY-FOCUS", gw.read_discovery_focus())
+
+    def test_write_discovery_focus_idempotent_same_content(self) -> None:
+        gw = self._gw()
+        changed_first = gw.write_discovery_focus("# Content", "test: create")
+        changed_second = gw.write_discovery_focus("# Content", "test: no-op")
+        self.assertTrue(changed_first)
+        self.assertFalse(changed_second)
+
+    def test_get_discovery_focus_issue_returns_none_when_absent(self) -> None:
+        gw = self._gw()
+        self.assertIsNone(gw.get_discovery_focus_issue())
+
+    def test_create_discovery_focus_issue_returns_number(self) -> None:
+        gw = self._gw()
+        number = gw.create_discovery_focus_issue("Issue body.")
+        self.assertIsInstance(number, int)
+        issue = gw.get_discovery_focus_issue()
+        self.assertIsNotNone(issue)
+        self.assertIn("discovery-focus:draft", issue.labels)
+
+    def test_set_discovery_focus_label_transitions_to_approved(self) -> None:
+        gw = self._gw()
+        number = gw.create_discovery_focus_issue("Body")
+        gw.set_discovery_focus_label(number, "discovery-focus:approved")
+        issue = gw.get_discovery_focus_issue()
+        self.assertIn("discovery-focus:approved", issue.labels)
+        self.assertNotIn("discovery-focus:draft", issue.labels)
+
+    def test_set_discovery_focus_label_transitions_to_needs_revision(self) -> None:
+        gw = self._gw()
+        number = gw.create_discovery_focus_issue("Body")
+        gw.set_discovery_focus_label(number, "discovery-focus:needs-revision")
+        issue = gw.get_discovery_focus_issue()
+        self.assertIn("discovery-focus:needs-revision", issue.labels)
+        self.assertNotIn("discovery-focus:draft", issue.labels)
 
 
 if __name__ == "__main__":

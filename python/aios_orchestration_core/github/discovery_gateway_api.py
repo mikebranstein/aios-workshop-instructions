@@ -77,17 +77,35 @@ class GitHubApiDiscoveryGateway:
         )
         return len(json.loads(raw)) > 0
 
+    def _is_discovery_focus_approved(self) -> bool:
+        raw = self._gh(
+            [
+                "issue",
+                "list",
+                "--state",
+                "all",
+                "--label",
+                "discovery-focus:approved",
+                "--limit",
+                "1",
+                "--json",
+                "number",
+            ]
+        )
+        return len(json.loads(raw)) > 0
+
     def get_context(self) -> DiscoveryContext:
-        focus_path = "docs/discovery-focus.md"
+        focus_path = "DISCOVERY-FOCUS.md"
         return DiscoveryContext(
             foundation_gate_passed=self._is_foundation_approved(),
             focus_file_exists=self._file_exists(focus_path),
             focus_file_populated=self._file_is_populated(focus_path),
+            discovery_focus_approved=self._is_discovery_focus_approved(),
         )
 
     def read_focus_file(self) -> str:
-        """Return the decoded content of docs/discovery-focus.md."""
-        result = self._gh_api("repos/{repo}/contents/docs/discovery-focus.md".format(repo=self.config.repo))
+        """Return the decoded content of DISCOVERY-FOCUS.md."""
+        result = self._gh_api("repos/{repo}/contents/DISCOVERY-FOCUS.md".format(repo=self.config.repo))
         if result.returncode != 0:
             return ""
         try:

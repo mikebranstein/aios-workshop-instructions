@@ -124,6 +124,7 @@ class LoopExceptionEscalationTests(unittest.TestCase):
             foundation_gate_passed=True,
             focus_file_exists=True,
             focus_file_populated=True,
+            discovery_focus_approved=True,
         )
         gateway = DiscoveryInMemoryGateway(context=context, focus_content="# Focus")
         failing_llm = _FailingAdapter("discovery generic node failure")

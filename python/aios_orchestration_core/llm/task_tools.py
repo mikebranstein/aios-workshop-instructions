@@ -493,3 +493,47 @@ TASK_TOOL_MAP.update(
         "discovery_idea_scout": DISCOVERY_IDEA_SCOUT_TOOL,
     }
 )
+
+# ---------------------------------------------------------------------------
+# Foundation discovery-focus synthesis tool
+# ---------------------------------------------------------------------------
+
+FOUNDATION_DISCOVERY_FOCUS_SYNTHESIS_TOOL = ToolSpec(
+    name="submit_foundation_discovery_focus",
+    description=(
+        "Submit the synthesized DISCOVERY-FOCUS.md content derived from FOUNDATION.md. "
+        "Populate every field that can be inferred; leave placeholder_fields for sections "
+        "that require human input (e.g. success metrics, signal sources)."
+    ),
+    parameters_schema={
+        "type": "object",
+        "required": ["focus_content", "confidence", "placeholder_fields"],
+        "properties": {
+            "focus_content": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Full Markdown content for DISCOVERY-FOCUS.md.",
+            },
+            "confidence": {
+                "type": "string",
+                "enum": ["high", "medium", "low"],
+                "description": "Confidence level for the synthesized content.",
+            },
+            "placeholder_fields": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": (
+                    "Names of sections whose body is a TODO placeholder "
+                    "(i.e. contains <!-- TODO: fill in this section -->). "
+                    "Do NOT include sections that contain only '(inferred)' content."
+                ),
+            },
+        },
+    },
+)
+
+TASK_TOOL_MAP.update(
+    {
+        "foundation_discovery_focus_synthesis": FOUNDATION_DISCOVERY_FOCUS_SYNTHESIS_TOOL,
+    }
+)
