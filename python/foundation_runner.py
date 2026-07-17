@@ -69,6 +69,10 @@ logger = logging.getLogger(__name__)
 # threads never claim the same ADR sequence number.
 _ADR_WRITE_LOCK = threading.Lock()
 
+# Serialises read → patch → write for foundation-decision-pack.md so concurrent
+# research workers don't overwrite each other's section updates.
+_DECISION_PACK_WRITE_LOCK = threading.Lock()
+
 # Suppress noisy internals from the Copilot SDK — CLI lifecycle messages add no
 # diagnostic value and drown out orchestrator progress.
 logging.getLogger("copilot").setLevel(logging.WARNING)
@@ -499,6 +503,69 @@ def _generate_and_write_adr(
     return adr_path
 
 
+def _patch_decision_pack_section(
+    gateway,
+    section_heading: str,
+    new_content: str,
+    research_issue_number: int,
+) -> None:
+    """Replace the body of one sub-section in foundation-decision-pack.md.
+
+    Finds the line matching ``### <section_heading>`` (or ``## <section_heading>``),
+    then replaces everything up to (but not including) the next heading of equal or
+    higher level, or end-of-file. The lock must be held by the caller.
+
+    No-ops gracefully if the file doesn't exist or the heading isn't found.
+    """
+    _DECISION_PACK_PATH = "docs/foundation-decision-pack.md"
+    try:
+        content = gateway.read_repo_file(_DECISION_PACK_PATH)
+    except Exception:
+        logger.warning(
+            f"    Research #{research_issue_number}: decision pack not found — skipping section patch"
+        )
+        return
+
+    # Accept headings like "### 2.1 Architecture Topology" or "2.1 Architecture Topology"
+    heading_text = section_heading.lstrip("#").strip()
+    import re
+    # Match a heading line at any level (## or ###) containing the heading text
+    heading_pattern = re.compile(
+        r"^(#{2,})\s+" + re.escape(heading_text) + r"\s*$",
+        re.MULTILINE | re.IGNORECASE,
+    )
+    match = heading_pattern.search(content)
+    if not match:
+        logger.warning(
+            f"    Research #{research_issue_number}: heading '{heading_text}' not found "
+            f"in {_DECISION_PACK_PATH} — skipping section patch"
+        )
+        return
+
+    heading_level = len(match.group(1))  # number of # chars
+    section_start = match.end()
+
+    # Find the next heading at the same level or higher (fewer #'s)
+    next_heading_pattern = re.compile(
+        r"^#{1," + str(heading_level) + r"}\s",
+        re.MULTILINE,
+    )
+    next_match = next_heading_pattern.search(content, section_start)
+    section_end = next_match.start() if next_match else len(content)
+
+    new_body = f"\n\n{new_content.strip()}\n\n"
+    patched = content[: match.start()] + match.group(0) + new_body + content[section_end:]
+
+    gateway.write_repo_file(
+        _DECISION_PACK_PATH,
+        patched,
+        f"foundation: update {_DECISION_PACK_PATH} §{heading_text} from research #{research_issue_number}",
+    )
+    logger.info(
+        f"    Research #{research_issue_number}: patched decision pack §{heading_text}"
+    )
+
+
 def _process_research_issue(
     gateway,
     adapter: JudgmentLLMAdapter,
@@ -647,6 +714,23 @@ def _process_research_issue_inner(
                 adr_title=adr_title,
                 adr_summary=adr_summary,
                 foundation_markdown=foundation_markdown,
+            )
+
+        # Patch the corresponding section of foundation-decision-pack.md.
+        decision_pack_section = payload.get("decision_pack_section", "").strip()
+        decision_pack_content = payload.get("decision_pack_content", "").strip()
+        if decision_pack_section and decision_pack_content:
+            with _DECISION_PACK_WRITE_LOCK:
+                _patch_decision_pack_section(
+                    gateway=gateway,
+                    section_heading=decision_pack_section,
+                    new_content=decision_pack_content,
+                    research_issue_number=linked_issue.number,
+                )
+        else:
+            logger.info(
+                f"    Research #{linked_issue.number}: no decision_pack_section/content in payload — "
+                "decision pack not patched"
             )
 
         # Verify the required artifacts were actually written before closing the

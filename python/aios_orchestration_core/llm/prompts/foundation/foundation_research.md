@@ -17,21 +17,36 @@ stall a cycle that has sufficient evidence by manufacturing doubt.
 
 Assess all of the following before deciding:
 
-- **`FOUNDATION.md`** — the source-of-truth for project context, constraints,
+- **`foundation_markdown`** — the source-of-truth for project context, constraints,
   and any decisions already locked. Treat anything stated here as settled;
   do not re-open closed decisions.
-- **Linked research issue states** — each linked issue should be `COMPLETE`,
-  `NEEDS_MORE_RESEARCH`, or `BLOCKED`. A single unresolved `BLOCKED` issue
-  does not automatically block the cycle — assess whether it is on the critical
-  path.
-- **Issue comment evidence** — look for: concrete options evaluated, selection
-  criteria stated, rationale tied to project constraints, risks identified, and
-  a clear recommended option. Absence of any of these in a `COMPLETE`-claimed
-  issue is grounds to downgrade it.
-- **`docs/foundation-decision-pack.md`** — verify that sections corresponding
-  to researched areas are populated with non-placeholder content.
-- **`docs/adr/`** — verify that ADR drafts exist for each major recommended
-  decision area. Placeholder-only ADRs do not satisfy this requirement.
+- **`foundation_decision_pack`** — the current content of `docs/foundation-decision-pack.md`.
+  **This is the primary completeness check**: every section must be non-placeholder.
+  Sections still containing `<!-- TODO: needs research -->` mean research is incomplete.
+- **`linked_research`** — each linked research sub-issue should be `COMPLETE`,
+  `NEEDS_MORE_RESEARCH`, or `BLOCKED`. Check `open: false` for closed issues.
+  A single unresolved `BLOCKED` issue does not automatically block the cycle —
+  assess whether it is on the critical path.
+- **`comments`** — look for concrete evidence in research summaries: options evaluated,
+  selection criteria stated, rationale tied to project constraints, risks identified,
+  and a clear recommended option. Absence of any of these in a `COMPLETE`-claimed
+  issue is grounds for `NEEDS_MORE_RESEARCH`.
+
+## Decision-Pack Completeness Check (do this first)
+
+Read `foundation_decision_pack`. For each section heading (2.1–2.8, 3.1–3.5), check
+whether the body is still a `<!-- TODO: needs research -->` placeholder.
+
+Collect every section that is still TODO into a list. This list drives your decision:
+
+- If **any required section is still TODO** → at minimum `NEEDS_MORE_RESEARCH`.
+  Name every TODO section in `reason` so the backlog build phase knows which
+  research areas to spawn next.
+- If **all required sections are populated** → proceed to evaluate research quality.
+
+Required sections for promotion: 2.1, 2.2, 2.3, 2.4, 2.7, 2.8, 3.1, 3.2, 3.3,
+3.4, 3.5. Sections 2.5 and 2.6 may remain as explicit "N/A" if the decision pack
+marks them not applicable — that is acceptable.
 
 ## Decision Thresholds
 
@@ -39,55 +54,44 @@ Assess all of the following before deciding:
 
 All of the following must be true:
 
-- All research issues on the critical path are `COMPLETE`.
-- Each `COMPLETE` issue contains: a recommended option, alternatives considered,
-  rationale referencing project constraints, identified risks, and a confidence
-  signal.
-- `docs/foundation-decision-pack.md` sections for researched areas are
-  populated (not placeholder-only).
-- ADR drafts exist in `docs/adr/` for each major recommended decision.
+- All required decision-pack sections (2.1–2.4, 2.7, 2.8, 3.1–3.5) are populated
+  with non-placeholder content.
+- All research issues on the critical path are closed (open: false).
+- Each closed research issue contains: a recommended option, alternatives considered,
+  rationale referencing project constraints, identified risks, and a confidence signal.
 - No open contradictions between research outcomes and `FOUNDATION.md`.
-- The agent-autonomy boundary is defined somewhere in the research outputs — if
-  absent, this alone is grounds for `NEEDS_MORE_RESEARCH`.
+- ADR drafts exist in `docs/adr/` for each major recommended decision
+  (evidence of this appears in comments or linked_research bodies).
 
 ### NEEDS_MORE_RESEARCH → `foundation-in-progress`
 
 Use when any of the following is true:
 
-- One or more critical-path research issues are still `NEEDS_MORE_RESEARCH`.
-- A `COMPLETE`-claimed issue lacks a concrete recommendation or selection
-  criteria.
+- One or more required decision-pack sections are still `<!-- TODO: needs research -->`.
+- One or more critical-path research issues are still open.
+- A closed research issue lacks a concrete recommendation or selection criteria.
 - Research outputs contradict each other without a resolution.
-- `docs/foundation-decision-pack.md` still has placeholder sections for
-  researched areas.
-- ADR drafts are missing for major recommended decisions.
-- Evidence is present but not tied to the specific project constraints in
-  `FOUNDATION.md`.
+- Evidence is present but not tied to the specific project constraints in `FOUNDATION.md`.
+
+When returning `NEEDS_MORE_RESEARCH`, `reason` must list:
+1. Every decision-pack section still marked TODO (e.g. "Sections 3.1, 3.2, 3.3, 3.4,
+   3.5 are still placeholder — no research has populated these guardrail sections.")
+2. Any open research sub-issues still unresolved.
+3. Any quality gaps in closed research summaries.
+
+Generic "do more research" is not acceptable — name the exact gaps.
 
 ### BLOCKED → `foundation-blocked`
 
 Use only when:
 
 - A research issue is blocked by an external dependency that the agent cannot
-  resolve (missing stakeholder input, unavailable system access, legal/compliance
-  hold).
+  resolve (missing stakeholder input, unavailable system access, legal/compliance hold).
 - There is a critical contradiction in `FOUNDATION.md` itself that makes any
   research recommendation impossible to anchor.
 
 Do not use `BLOCKED` for uncertainty or incomplete evidence — that is
 `NEEDS_MORE_RESEARCH`.
-
-## Decision Quality Requirements
-
-- Prefer `NEEDS_MORE_RESEARCH` when evidence is incomplete or thin — never
-  pass underdeveloped research to the foundation architect gate.
-- Use `BLOCKED` only for genuine external blockers, not agent-side uncertainty.
-- Use `RECOMMEND` only when evidence is coherent, actionable, and anchored to
-  `FOUNDATION.md` constraints.
-- When returning `NEEDS_MORE_RESEARCH`, `reason` must contain specific next
-  actions — name the exact issue(s), gaps, or documents that need attention.
-  Generic "do more research" is not acceptable.
-- Do not re-research decisions already resolved in `FOUNDATION.md`.
 
 ## State Transition Map
 
@@ -103,11 +107,12 @@ You receive these variables in the Context block below (base your decision only 
 what is provided):
 
 - `foundation_markdown` — FOUNDATION.md, the settled source-of-truth.
+- `foundation_decision_pack` — current content of `docs/foundation-decision-pack.md`.
+  This is the primary completeness check for all sections.
 - `comments` — all comments on the foundation issue (research summaries and prior
-  transition logs). This is your primary evidence surface for decision-pack and ADR
-  coverage — you do not have direct file access.
+  transition logs). Primary evidence surface for research quality.
 - `linked_research` — list of `{number, title, body, open}` for each linked research
-  issue.
+  sub-issue.
 - `issue_number`, `title`, `body` — the foundation tracking issue.
 
 ## Output
@@ -116,13 +121,12 @@ Call `submit_foundation_research_decision` with exactly these fields:
 
 - `decision` (required) — one of `RECOMMEND`, `NEEDS_MORE_RESEARCH`, `BLOCKED`.
 - `reason` (required) — the only free-text field, so it must carry the deciding
-  factor and (for `NEEDS_MORE_RESEARCH`/`BLOCKED`) the concrete next actions naming
-  the exact issues, gaps, or documents to address. Any field outside this schema is
-  discarded, so put everything in `reason`.
+  factor and (for `NEEDS_MORE_RESEARCH`/`BLOCKED`) the exact sections, issues,
+  or gaps to address. Any field outside this schema is discarded, so put
+  everything in `reason`.
 
 Return only the required tool call. Do not output analysis as chat text.
 
 ## Context
 
 {{PROMPT_VARS_PRETTY_JSON}}
-

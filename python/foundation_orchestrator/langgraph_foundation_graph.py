@@ -159,11 +159,34 @@ class FoundationGraphOrchestrator:
                 prompt_vars["foundation_decision_pack"] = ""
         return self.gate_node.adapter.invoke_json(task_type, prompt_vars).payload or {}
 
-    def _plan_and_sync_research_areas(self, issue_number: int, issue, foundation_markdown: str) -> None:
-        """Plan research areas via LLM and create missing sub-issues. Idempotent."""
-        existing = self.gateway.list_linked_research_issues(issue_number)
-        if existing:
-            return  # backlog already initialised — don't re-plan
+    def _plan_and_sync_research_areas(
+        self, issue_number: int, issue, foundation_markdown: str, foundation_decision_pack: str
+    ) -> None:
+        """Plan research areas via LLM and create missing sub-issues.
+
+        Skips re-planning when:
+        - There are open linked research issues (research still in-flight), or
+        - All existing research issues are closed AND the decision pack has no TODO sections
+          (research is complete and the pack is fully populated).
+
+        Re-plans (gap-fill) when all existing issues are closed but the decision pack
+        still contains ``<!-- TODO: needs research -->`` markers. ``ensure_research_issue``
+        is idempotent by title so no duplicate issues are created.
+        """
+        all_research = self.gateway.list_linked_research_issues(issue_number)
+        open_count = sum(1 for r in all_research if r.open)
+        if open_count > 0:
+            self._logger.info(
+                f"  Issue #{issue_number}: backlog_build_create — "
+                f"{open_count} open research issue(s) still in flight; skipping re-plan"
+            )
+            return
+        if all_research and "<!-- TODO: needs research -->" not in foundation_decision_pack:
+            self._logger.info(
+                f"  Issue #{issue_number}: backlog_build_create — "
+                "all research closed and decision pack has no TODO sections; skipping re-plan"
+            )
+            return
         result = self.research_node.adapter.invoke_json(
             "foundation_research_plan",
             {
@@ -171,6 +194,7 @@ class FoundationGraphOrchestrator:
                 "title": issue.title,
                 "body": issue.body,
                 "foundation_markdown": foundation_markdown,
+                "foundation_decision_pack": foundation_decision_pack,
             },
         )
         raw = result.payload.get("research_areas")
@@ -428,7 +452,11 @@ class FoundationGraphOrchestrator:
         issue_number = state["source_issue_number"]
         issue = self.gateway.get_issue(issue_number)
         foundation_markdown = self.gateway.read_foundation_markdown()
-        self._plan_and_sync_research_areas(issue_number, issue, foundation_markdown)
+        try:
+            foundation_decision_pack = self.gateway.read_repo_file("docs/foundation-decision-pack.md")
+        except Exception:
+            foundation_decision_pack = ""
+        self._plan_and_sync_research_areas(issue_number, issue, foundation_markdown, foundation_decision_pack)
         self.gateway.post_comment(issue_number, "Backlog build create: research areas planned and sub-issues synced.")
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE, FoundationEvent.BACKLOG_BUILD_CREATED,

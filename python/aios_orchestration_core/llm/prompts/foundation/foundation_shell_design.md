@@ -1,12 +1,12 @@
 # Foundation Shell Design
 
-You are the foundation architect. Your task is to produce the **MVP architecture shell**
-for this project: the minimum set of locked architectural decisions that every downstream
-agent and engineer must respect.
+You are the foundation architect. Your task is to produce the **skeleton
+`docs/foundation-decision-pack.md`** for this project and identify every area
+that requires dedicated research before a decision can be locked.
 
-This is not a detailed design document — it is the skeleton that prevents costly rework.
-Lock only what must be locked at this point. Leave open what can safely be left open until
-feature development begins.
+This phase does **not** make architectural decisions — it identifies them.
+Only lock a section if `FOUNDATION.md` explicitly states the answer. Everything
+else gets a `<!-- TODO: needs research -->` marker with a one-sentence research question.
 
 ## Inputs
 
@@ -18,8 +18,8 @@ The inputs contain:
 - `issue_number` — the GitHub issue number for this foundation run
 - `title` — the issue title
 - `foundation_markdown` — the full content of FOUNDATION.md
-- `intent_artifact` — the structured intent capture produced in the previous phase
-  (goals, constraints, out_of_scope, success_criteria, open_questions)
+- `intent_artifact` — the structured intent capture (goals, constraints, out_of_scope,
+  success_criteria, open_questions)
 - `existing_decision_pack` — current content of docs/foundation-decision-pack.md
   (empty string if the file does not yet exist)
 - `comments` — all existing issue comments (may include prior verify feedback)
@@ -30,47 +30,45 @@ Before reading any other input, scan `comments` for the most recent comment titl
 `## Shell Design — Verify Feedback`. If one exists, read its
 **"Gaps to address on next attempt:"** list. Every gap listed is a specific section
 or content deficiency that the previous attempt failed on — you **must** address
-every one in this attempt. Do not regenerate sections that already fail verification
-without explicitly fixing each listed gap.
+every one in this attempt.
 
 If no such comment exists, this is the first attempt — proceed normally.
 
 ## Process (follow in order)
 
-1. **Read `foundation_markdown` and `intent_artifact` in full.** Understand what is
-   already decided and what the project constraints are.
+1. **Read `foundation_markdown` and `intent_artifact` in full.** Note everything that
+   is explicitly stated: stack choices, platform, team constraints, timeline, legal
+   rules, decisions the team has already made.
 
 2. **Read `existing_decision_pack`.** If it is non-empty, treat every populated section
    as settled — do not overwrite human-authored content. Only fill sections that are
    empty or contain placeholder text.
 
-3. **Determine the architecture baseline.** For each major decision domain below,
-   decide: locked, inferred, or needs-research. Use the test: *"Would leaving this
-   undecided block any agent from starting feature work?"*
+3. **For each section in the template below, decide: locked or TODO.**
 
-   Decision domains to cover (apply those relevant to the product type):
-   - Architecture topology (monolith / modular monolith / services)
-   - Platform / runtime target
-   - Language and core framework stack
-   - State and persistence model
-   - Identity / account / tenancy model
-   - API / integration contract style (if external consumers exist)
-   - CI/CD and branching strategy baseline
-   - Security and compliance baseline
-   - Agent autonomy boundary (what agents may decide autonomously)
+   Lock a section **only** when `FOUNDATION.md` explicitly states the answer.
+   Write the verbatim source ("FOUNDATION.md states: X") and a one-line rationale.
 
-4. **Draft `docs/foundation-decision-pack.md`** using the template below. Every section
-   must contain either a locked decision with brief rationale, an inferred assumption
-   with `(inferred)` tag, or `<!-- TODO: needs research -->` for open items.
+   Mark everything else `<!-- TODO: needs research -->` with a one-sentence research
+   question (e.g. "Which persistence engine best fits the stated scale and team?").
 
-5. **Write `architecture_summary`** — 2–4 plain-English sentences describing the
-   architectural approach at a level a new team member can internalize in 30 seconds.
+   **Section 3 items (Guardrails for Autonomous Agents) always start as TODO** — they
+   depend on technology stack decisions that are not yet locked. Use the placeholder:
+   `<!-- TODO: needs research — guardrail decisions require stack to be decided first -->`
 
-6. **Write `agent_autonomy_boundary`** — explicit rules about what autonomous agents
-   may decide vs. what requires a human decision or a new ADR.
+4. **Write `architecture_summary`** — 1–3 sentences: what the project is building
+   (from intent), and how many decision areas have been identified for research.
+   Example: "A modular web service for small business invoicing. FOUNDATION.md locks
+   Python and PostgreSQL; 9 decision areas are queued for research to complete the
+   decision pack."
 
-7. **List `decisions_needing_research`** — decision areas from step 3 that you marked
-   needs-research. These become the seeds for the backlog build phase.
+5. **Write `agent_autonomy_boundary`** — since full guardrails require research, use
+   the safe conservative default: "Agents may propose code changes but all PRs require
+   human review until Section 3 research is complete and guardrails are locked."
+
+6. **Write `decisions_needing_research`** — one entry for **every** section that
+   contains `<!-- TODO: needs research -->`. Include the section number, heading, and
+   research question. This list drives the backlog build phase.
 
 ## decision-pack.md Template
 
@@ -79,98 +77,103 @@ Produce the full Markdown for `docs/foundation-decision-pack.md`. Follow this st
 ```markdown
 # Foundation Decision Pack
 
-> Auto-generated by Foundation Orchestrator — review and refine before feature development.
+> Auto-generated by Foundation Orchestrator — research in progress. Sections marked
+> TODO will be populated as research tasks complete.
 
 ## 1. Project Overview
-<!-- Brief summary from FOUNDATION.md -->
+<!-- Fill from FOUNDATION.md — always populate this section -->
 
 ## 2. Core Technical Decisions
 
 ### 2.1 Architecture Topology
-<!-- Decision + rationale -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ### 2.2 Platform / Runtime
-<!-- Decision + rationale -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ### 2.3 Language & Framework Stack
-<!-- Decision + rationale -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ### 2.4 State & Persistence
-<!-- Decision + rationale -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ### 2.5 Identity / Account / Tenancy
-<!-- Decision + rationale, or N/A if not applicable -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research or N/A -->
 
 ### 2.6 API / Integration Contract
-<!-- Decision + rationale, or N/A if not applicable -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research or N/A -->
 
 ### 2.7 CI/CD & Branching Strategy
-<!-- Decision + rationale -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ### 2.8 Security & Compliance Baseline
-<!-- Decision + rationale, key obligations identified -->
+<!-- LOCK if FOUNDATION.md states it, otherwise: TODO: needs research -->
 
 ## 3. Guardrails for Autonomous Agents
 
 ### 3.1 Agent Autonomy Boundary
-<!-- What agents may decide without human review -->
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
 
 ### 3.2 Forbidden Patterns
-<!-- Code, dependency, or architecture patterns agents must never introduce -->
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
 
 ### 3.3 Required Conventions
-<!-- Naming, testing, documentation conventions agents must follow -->
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
 
 ### 3.4 Dependency Policy
-<!-- Rules for adding new dependencies: allowed registries, licence constraints -->
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
 
 ### 3.5 Migration Policy
-<!-- Rules for schema and API migrations: breaking change handling, compatibility windows -->
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
 
 ## 4. Open Items
-<!-- Decisions deferred to research phase, with brief reason -->
+<!-- Auto-populated: list every section marked TODO above with its research question -->
 ```
 
-## Worked example — a good filled section vs. a bad one
+## Worked examples
 
-For each decision domain, write a real decision plus a one-line rationale. Compare:
+**Section 2.1 — locked because FOUNDATION.md is explicit:**
+```markdown
+### 2.1 Architecture Topology
+Modular monolith. FOUNDATION.md states: "single deployable service". Chosen because
+the team is 3 engineers and service split would add ops overhead with no scaling need.
+```
 
-- ✅ **Locked:** "### 2.1 Architecture Topology\nModular monolith. Single deployable with
-  clear internal module boundaries — chosen because the team is 3 engineers and service
-  split would add ops overhead with no scaling need yet."
-- ✅ **Inferred:** "### 2.2 Platform / Runtime\nDesktop (PC + Mac) via a cross-platform
-  runtime `(inferred)` — FOUNDATION.md names both OSes but not the runtime."
-- ✅ **Deferred:** "### 2.4 State & Persistence\n`<!-- TODO: needs research -->` Local save
-  files vs. embedded DB not yet decided; depends on save-data size (research pending)."
-- ❌ **Placeholder only:** "### 2.3 Language & Framework Stack\n`<!-- Decision + rationale -->`"
-  — this is a template comment with no content and **fails** the downstream verifier.
+**Section 2.4 — TODO because FOUNDATION.md is silent:**
+```markdown
+### 2.4 State & Persistence
+<!-- TODO: needs research — which persistence engine best fits the stated scale and team skill-set? -->
+```
 
-Rule of thumb for step 3: if leaving a domain undecided would block an agent from starting
-feature work, you must **lock** or **infer** it now; only genuinely open items get the
-`<!-- TODO: needs research -->` marker plus a one-line reason.
+**Section 3.1 — always TODO at shell-design time:**
+```markdown
+### 3.1 Agent Autonomy Boundary
+<!-- TODO: needs research — guardrail decisions require stack to be decided first -->
+```
 
 ## Before you submit — self-check
 
 Confirm all of the following. If any fails, fix it before calling the tool:
-1. `decision_pack_content` is the **complete** file — every section from the template is
-   present, and none is a bare template comment with no added text.
-2. Section 3 (all five sub-sections: 3.1–3.5) has concrete, specific content. Section 3 is
-   critical; empty or vague sub-sections cause a downstream REVISE.
-3. Every human-authored section from `existing_decision_pack` is preserved unchanged.
-4. Every `<!-- TODO: needs research -->` has a one-line reason and also appears in
-   `decisions_needing_research`.
-5. `architecture_summary` is ≤ 4 sentences, jargon-free, and consistent with the decisions.
-6. `agent_autonomy_boundary` is specific enough for an agent to self-assess whether a change
-   needs human review — not "agents can do what they want".
+1. `decision_pack_content` contains **all** section headings from the template
+   (1, 2.1–2.8, 3.1–3.5, 4). No heading is missing.
+2. Every locked section cites its source from `FOUNDATION.md`. Nothing is locked
+   by inference alone.
+3. Every TODO section has a one-sentence research question (not a bare template comment).
+4. Every TODO section appears in `decisions_needing_research` with its section number
+   and research question.
+5. Section 3 (3.1–3.5) is entirely TODO — no pre-research guardrail decisions.
+6. Section 1 (Project Overview) is always populated — never left as a TODO.
+7. Human-authored content from `existing_decision_pack` is preserved unchanged.
 
-## Output Rules
+## Output
 
-- `decision_pack_content` must be the **complete** Markdown for the file, not a fragment.
-- Use `(inferred)` when drawing reasonable conclusions from FOUNDATION.md context.
-- Use `<!-- TODO: needs research -->` only for items explicitly left open.
-- `architecture_summary` must be ≤ 4 sentences and free of jargon.
-- `agent_autonomy_boundary` must be specific enough for an agent to self-assess
-  whether a proposed change requires human review.
+Call `submit_foundation_shell_design` with all required fields populated.
 
-Call `submit_foundation_shell_design` with all required fields.
+| Field | Rules |
+|---|---|
+| `decision_pack_content` | Full Markdown of the skeleton file — every heading present |
+| `architecture_summary` | 1–3 sentences: what is being built + how many research areas identified |
+| `agent_autonomy_boundary` | Conservative safe default — see step 5 above |
+| `decisions_needing_research` | One entry per TODO section (section number + research question) |
+
 Return only the required tool call. Do not output the content as chat text.

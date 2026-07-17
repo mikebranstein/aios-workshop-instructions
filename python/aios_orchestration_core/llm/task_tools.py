@@ -334,6 +334,23 @@ FOUNDATION_RESEARCH_WORKER_TOOL = ToolSpec(
                 "type": "array",
                 "items": {"type": "string", "minLength": 1},
             },
+            "decision_pack_section": {
+                "type": "string",
+                "minLength": 1,
+                "description": (
+                    "The exact sub-section heading (e.g. '2.1 Architecture Topology') from "
+                    "docs/foundation-decision-pack.md that this research resolves. Required "
+                    "when decision is COMPLETE."
+                ),
+            },
+            "decision_pack_content": {
+                "type": "string",
+                "minLength": 1,
+                "description": (
+                    "Full Markdown to write into that section — the decision, rationale, and "
+                    "any key constraints. Required when decision is COMPLETE."
+                ),
+            },
         },
     },
 )

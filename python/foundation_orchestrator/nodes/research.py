@@ -49,6 +49,12 @@ class FoundationResearchNode:
         linked_research = self.gateway.list_linked_research_issues(issue_number)
         foundation_markdown = self.gateway.read_foundation_markdown()
         comments = self.gateway.get_issue_comments(issue_number)
+
+        try:
+            foundation_decision_pack = self.gateway.read_repo_file("docs/foundation-decision-pack.md")
+        except Exception:
+            foundation_decision_pack = ""
+
         logger.info(
             f"  Issue #{issue_number}: FoundationResearchNode — invoking LLM (foundation_research), "
             f"{len(linked_research)} linked research item(s)"
@@ -61,6 +67,7 @@ class FoundationResearchNode:
                 "body": issue.body,
                 "comments": comments,
                 "foundation_markdown": foundation_markdown,
+                "foundation_decision_pack": foundation_decision_pack,
                 "linked_research": [
                     {
                         "number": r.number,
@@ -89,6 +96,17 @@ class FoundationResearchNode:
                 reason_detail = (
                     f"{reason_detail}\nContradiction check failed: " + "; ".join(contradictions)
                 ).strip()
+
+        # When more research is needed, post a structured feedback comment so that
+        # backlog_build_create can spawn targeted gap-filling sub-issues on the next pass.
+        if decision == "NEEDS_MORE_RESEARCH":
+            self.gateway.post_comment(
+                issue_number,
+                "## Backlog Build — Verify Feedback\n\n"
+                "The decision pack is not yet complete. Gaps to address on next attempt:\n\n"
+                + "\n".join(f"- {line.strip()}" for line in reason_detail.splitlines() if line.strip())
+                or "- (see reason above)",
+            )
 
         event = _DECISION_MAP[decision]
         next_state = get_next_foundation_state(FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY, event)

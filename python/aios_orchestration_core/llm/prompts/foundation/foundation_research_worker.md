@@ -67,12 +67,20 @@ Use `COMPLETE` when you can state a concrete recommendation with rationale. You
 do NOT need:
 
 - Prototype benchmarks or empirical measurements
-- Fully populated artifact files (ADR, decision pack) — note what should be
-  created as next actions instead
 - Stakeholder sign-off
 - Perfect information
 
 **If you have a defensible recommendation, mark it COMPLETE.**
+
+When `decision` is `COMPLETE` you **must** also populate:
+
+- `decision_pack_section` — the exact sub-section heading from
+  `docs/foundation-decision-pack.md` that this research area resolves
+  (e.g. `"2.1 Architecture Topology"`). Copy the heading text verbatim;
+  do not include `#` characters.
+- `decision_pack_content` — the full Markdown body to write into that
+  section: your recommendation, rationale, key constraints, and confidence
+  level. This replaces the placeholder text already in the file.
 
 Low confidence or acknowledged uncertainty is expected at foundation stage. The
 purpose of foundation research is to set a direction, not to guarantee it.
@@ -99,19 +107,35 @@ Use `BLOCKED` only when a hard external dependency prevents any progress
 (e.g. legal/compliance hold, third-party access required). State the specific
 blocker and who can unblock it.
 
-## Output Quality Requirements
+## Output
+
+Call `submit_foundation_research_worker` with these fields:
+
+| Field | Required | Rules |
+|---|---|---|
+| `decision` | Always | `COMPLETE`, `NEEDS_MORE_RESEARCH`, or `BLOCKED` |
+| `summary` | Always | States the recommendation and rationale — not a restatement of the issue title |
+| `next_actions` | Always | Follow-on actions regardless of outcome (e.g. verify time-sensitive pricing, revisit after MVP, re-check a conflict you found). May be empty list when COMPLETE and nothing follow-on. |
+| `wiki_page_title` | When COMPLETE | A short title for the wiki page to create (e.g. `"Architecture Topology Decision"`) |
+| `wiki_summary` | When COMPLETE | A paragraph summary suitable for a wiki page |
+| `adr_title` | When COMPLETE | A short title for the ADR (e.g. `"ADR-NN: Choose PostgreSQL as primary data store"`) |
+| `adr_summary` | When COMPLETE | A paragraph summary of the decision for the ADR body |
+| `decision_pack_section` | When COMPLETE | The exact sub-section heading text from `docs/foundation-decision-pack.md` (e.g. `"2.1 Architecture Topology"`). Do **not** include `#` characters. |
+| `decision_pack_content` | When COMPLETE | Full Markdown body to write into that section: recommendation, rationale, key constraints, confidence level |
+
+### Output quality notes
 
 - `summary` must state the recommendation and its rationale — not a restatement
   of the issue title.
-- `next_actions` should note follow-on actions regardless of decision outcome
-  (e.g. write the ADR, populate decision pack, revisit after MVP).
-- If the recommendation rests on information that can go stale — current
-  pricing, current library/engine/platform versions, current regulatory
-  status — say so explicitly in `next_actions` as something to verify before
-  implementation. Don't state time-sensitive specifics as settled fact.
+- `next_actions` should list anything that could go stale (current pricing, library
+  versions, regulatory status) as "verify before implementation" items. Do not
+  state time-sensitive specifics as settled fact.
+- `decision_pack_content` must be complete Markdown — write it as if a developer
+  reading the decision pack for the first time needs to understand the decision
+  without reading anything else.
 - Do not re-research decisions already resolved in `FOUNDATION.md`.
 
-Return only the required tool call arguments.
+Return only the required tool call. Do not output the artifact as chat text.
 
 ## Context
 
