@@ -17,7 +17,10 @@ class _S:
     def adapter_source(self):
         return "stub"
 
-    def invoke_json(self, *a, **kw):
+    def invoke_json(self, task_type: str, *a, **kw):
+        # handoff pack verify uses a different schema (passed/verdict) from other tasks
+        if task_type == "foundation_discovery_focus_verify":
+            return type("R", (), {"payload": {"passed": True, "verdict": "ok"}, "model": "smoke"})()
         return type("R", (), {"payload": self.payload, "model": "smoke"})()
 
 

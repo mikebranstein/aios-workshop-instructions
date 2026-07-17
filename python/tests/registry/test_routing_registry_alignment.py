@@ -86,18 +86,22 @@ _DEV_DECISION = {
     "APPROVE": DevEvent.POLICY_APPROVED,
 }
 
-# Foundation
+# Foundation — new 10-phase state machine
+# The registry only covers the key verification phases where LLM judgments fire.
 _FOUNDATION_STAGE = {
-    "foundation-in-progress": FoundationState.FOUNDATION_IN_PROGRESS,
-    "foundation-review": FoundationState.FOUNDATION_REVIEW,
+    "foundation-backlog-build-verify":   FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY,
+    "foundation-readiness-assess-verify": FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY,
+    "foundation-handoff-pack-verify":    FoundationState.FOUNDATION_HANDOFF_PACK_VERIFY,
+    "foundation-intent-capture-verify":  FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY,
+    "foundation-shell-design-verify":    FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY,
 }
 _FOUNDATION_DECISION = {
-    "RECOMMEND": FoundationEvent.RESEARCH_RECOMMEND,
-    "NEEDS_MORE_RESEARCH": FoundationEvent.RESEARCH_NEEDS_MORE,
-    "BLOCKED": FoundationEvent.RESEARCH_BLOCKED,
-    "APPROVE_FOUNDATION": FoundationEvent.APPROVE_FOUNDATION,
-    "REVISE_FOUNDATION": FoundationEvent.REVISE_FOUNDATION,
-    "BLOCK_FOUNDATION": FoundationEvent.BLOCK_FOUNDATION,
+    "RECOMMEND": FoundationEvent.BACKLOG_BUILD_VERIFIED,
+    "NEEDS_MORE_RESEARCH": FoundationEvent.BACKLOG_BUILD_REVISE,
+    "BLOCKED": FoundationEvent.BACKLOG_BUILD_BLOCK,
+    "APPROVE_FOUNDATION": FoundationEvent.READINESS_ASSESS_VERIFIED,
+    "REVISE_FOUNDATION": FoundationEvent.READINESS_ASSESS_REVISE,
+    "BLOCK_FOUNDATION": FoundationEvent.READINESS_ASSESS_BLOCK,
 }
 
 # Arch Review

@@ -15,9 +15,9 @@ from aios_orchestration_core.transitions.foundation import get_next_foundation_s
 logger = logging.getLogger(__name__)
 
 _DECISION_MAP = {
-    "RECOMMEND": FoundationEvent.RESEARCH_RECOMMEND,
-    "NEEDS_MORE_RESEARCH": FoundationEvent.RESEARCH_NEEDS_MORE,
-    "BLOCKED": FoundationEvent.RESEARCH_BLOCKED,
+    "RECOMMEND": FoundationEvent.BACKLOG_BUILD_VERIFIED,
+    "NEEDS_MORE_RESEARCH": FoundationEvent.BACKLOG_BUILD_REVISE,
+    "BLOCKED": FoundationEvent.BACKLOG_BUILD_BLOCK,
 }
 
 # Matches the "## Decision Area" section and captures text until the next heading or end of body.
@@ -91,7 +91,7 @@ class FoundationResearchNode:
                 ).strip()
 
         event = _DECISION_MAP[decision]
-        next_state = get_next_foundation_state(FoundationState.FOUNDATION_IN_PROGRESS, event)
+        next_state = get_next_foundation_state(FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY, event)
         logger.info(
             f"  Issue #{issue_number}: FoundationResearchNode — decision={decision}, "
             f"transitioning to {next_state.value}"
@@ -101,7 +101,7 @@ class FoundationResearchNode:
 
         entry = TransitionLogEntry(
             loop_id="foundation", run_id=run_id, issue_number=issue_number,
-            from_state=FoundationState.FOUNDATION_IN_PROGRESS.value, to_state=next_state.value,
+            from_state=FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY.value, to_state=next_state.value,
             trigger_event=event.value, reason_code=f"FOUNDATION_RESEARCH_{decision}",
             reason_detail=reason_detail, timestamp_utc=datetime.now(timezone.utc).isoformat(),
             adapter_source=self.adapter.adapter_source,

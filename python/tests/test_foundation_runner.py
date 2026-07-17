@@ -164,7 +164,7 @@ class FoundationRunnerTests(unittest.TestCase):
     def test_world_signature_reflects_state_and_research_counts(self) -> None:
         gateway = FoundationGitHubGateway(
             issues={
-                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:in-progress"}, open=True),
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:backlog-build-verify"}, open=True),
                 101: FoundationIssue(number=101, title="research", body="b", labels={"foundation:research"}, open=True),
             },
             sub_issues={1: [101]},
@@ -194,7 +194,7 @@ class FoundationRunnerTests(unittest.TestCase):
     def test_has_approved_foundation_issue_false_when_none_approved(self) -> None:
         gateway = FoundationGitHubGateway(
             issues={
-                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:in-progress"}, open=True),
+                1: FoundationIssue(number=1, title="Foundation Setup", body="b", labels={"foundation:backlog-build-verify"}, open=True),
             }
         )
         self.assertFalse(gateway.has_approved_foundation_issue())
@@ -204,7 +204,7 @@ class FoundationRunnerTests(unittest.TestCase):
             number=1,
             title="Research",
             body="body",
-            labels={"foundation:research", "foundation:in-progress"},
+            labels={"foundation:research", "foundation:backlog-build-verify"},
         )
         self.assertTrue(foundation_runner._is_supporting_research_issue(issue))
 
@@ -213,7 +213,7 @@ class FoundationRunnerTests(unittest.TestCase):
             number=2,
             title="Foundation Setup",
             body="body",
-            labels={"foundation:in-progress"},
+            labels={"foundation:backlog-build-verify"},
         )
         self.assertFalse(foundation_runner._is_supporting_research_issue(issue))
 
@@ -224,7 +224,7 @@ class FoundationRunnerTests(unittest.TestCase):
                     number=1,
                     title="Foundation Setup",
                     body="Foundation body",
-                    labels={"foundation:in-progress"},
+                    labels={"foundation:backlog-build-verify"},
                 ),
                 101: FoundationIssue(
                     number=101,
@@ -308,7 +308,7 @@ class FoundationRunnerTests(unittest.TestCase):
                     number=1,
                     title="Foundation Setup",
                     body="Foundation body",
-                    labels={"foundation:in-progress"},
+                    labels={"foundation:backlog-build-verify"},
                 ),
                 101: FoundationIssue(
                     number=101,
@@ -376,7 +376,7 @@ class FoundationRunnerTests(unittest.TestCase):
                     number=1,
                     title="Foundation Setup",
                     body="Foundation body",
-                    labels={"foundation:in-progress"},
+                    labels={"foundation:backlog-build-verify"},
                 ),
                 101: FoundationIssue(
                     number=101,
@@ -582,23 +582,23 @@ class NextActionsForStateTests(unittest.TestCase):
         return foundation_runner._next_actions_for_state(fs, blockers, open_research)
 
     def test_in_progress_open_research_says_complete_issues(self) -> None:
-        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=[], open_research=3)
+        actions = self._run("FOUNDATION_BACKLOG_BUILD_VERIFY", blockers=[], open_research=3)
         self.assertTrue(any("close" in a or "complete" in a for a in actions))
 
     def test_in_progress_all_closed_no_blockers_says_advancing(self) -> None:
         """When open_research==0 and no blockers the message should reflect readiness."""
-        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=[], open_research=0)
+        actions = self._run("FOUNDATION_BACKLOG_BUILD_VERIFY", blockers=[], open_research=0)
         joined = " ".join(actions).lower()
         # Must NOT say "close at least one" (the old misleading message)
         self.assertNotIn("close at least one", joined)
         # Must convey forward progress / advancing
         self.assertTrue(
-            any(word in joined for word in ("advancing", "evidence", "gate", "closed")),
+            any(word in joined for word in ("advancing", "evidence", "gate", "closed", "running", "verification")),
             f"Expected an advancing/ready message but got: {actions}",
         )
 
     def test_in_progress_all_closed_with_blockers_surfaces_blockers(self) -> None:
-        actions = self._run("FOUNDATION_IN_PROGRESS", blockers=["at least one ADR link is required"], open_research=0)
+        actions = self._run("FOUNDATION_BACKLOG_BUILD_VERIFY", blockers=["at least one ADR link is required"], open_research=0)
         joined = " ".join(actions).lower()
         self.assertIn("adr", joined)
 
@@ -623,7 +623,7 @@ class NextActionsForStateTests(unittest.TestCase):
         import threading
 
         gateway = FoundationGitHubGateway(
-            issues={1: FoundationIssue(number=1, title="Foundation", body="", labels={"foundation:in-progress"})},
+            issues={1: FoundationIssue(number=1, title="Foundation", body="", labels={"foundation:backlog-build-verify"})},
         )
 
         class _QuickAdapter:

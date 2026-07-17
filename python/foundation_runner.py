@@ -57,7 +57,7 @@ from aios_orchestration_core.policies.retry import RetryPolicy
 from aios_orchestration_core.repo_context import RepoContext
 from aios_orchestration_core.runlog.in_memory_store import TransitionLogStore
 from aios_orchestration_core.runlog.paths import default_runlog_dir
-from aios_orchestration_core.states.foundation import FoundationState
+from aios_orchestration_core.states.foundation import FoundationState, TERMINAL_FOUNDATION_STATES
 from aios_orchestration_core.wiki.llm_wiki_manager import LLMWikiManager, WikiManagerPolicy, slugify
 from foundation_orchestrator.evidence import EvidenceSnapshot, classify_adr_links, classify_wiki_links, extract_links
 from foundation_orchestrator.run_once import FoundationRunOnceOrchestrator, FoundationRunRegistry
@@ -193,10 +193,32 @@ def _has_progress(previous: EvidenceSnapshot, current: EvidenceSnapshot) -> bool
     return False
 
 
+_VERIFY_STATES = frozenset({
+    FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY,
+    FoundationState.FOUNDATION_HANDOFF_PACK_VERIFY,
+    FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY,
+    FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY,
+    FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY,
+})
+
+_CREATE_STATES = frozenset({
+    FoundationState.FOUNDATION_READINESS_ASSESS_CREATE,
+    FoundationState.FOUNDATION_HANDOFF_PACK_CREATE,
+    FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE,
+    FoundationState.FOUNDATION_SHELL_DESIGN_CREATE,
+    FoundationState.FOUNDATION_INTENT_CAPTURE_CREATE,
+})
+
+_BACKLOG_STATES = frozenset({
+    FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE,
+    FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY,
+})
+
+
 def _priority(state: FoundationState | None) -> int:
-    if state == FoundationState.FOUNDATION_REVIEW:
+    if state in _VERIFY_STATES:
         return 0
-    if state == FoundationState.FOUNDATION_IN_PROGRESS:
+    if state in _CREATE_STATES:
         return 1
     if state == FoundationState.FOUNDATION_NEEDS_HUMAN:
         return 2
@@ -234,21 +256,37 @@ def _approval_blockers(snapshot: EvidenceSnapshot, open_research: int) -> list[s
 
 def _next_actions_for_state(state: FoundationState | None, blockers: list[str], open_research: int) -> list[str]:
     if state == FoundationState.FOUNDATION_NEEDED:
-        return ["initialize foundation research backlog"]
-    if state == FoundationState.FOUNDATION_IN_PROGRESS:
+        return ["start foundation workflow (graph will advance automatically)"]
+    if state == FoundationState.FOUNDATION_INTENT_CAPTURE_CREATE:
+        return ["intent capture create in progress — awaiting auto-transition"]
+    if state == FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY:
+        return ["gate LLM verifying intent capture artifacts"]
+    if state == FoundationState.FOUNDATION_SHELL_DESIGN_CREATE:
+        return ["shell design create in progress — awaiting auto-transition"]
+    if state == FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY:
+        return ["gate LLM verifying shell design artifacts"]
+    if state == FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE:
+        return ["research areas being planned and sub-issues synced"]
+    if state == FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY:
         if open_research > 0:
-            return ["complete and close all linked foundation research issues"]
+            return [f"complete and close {open_research} linked foundation research issue(s)"]
         if blockers:
             return [f"address: {b}" for b in blockers]
-        return ["all research closed with evidence — advancing to gate review"]
-    if state == FoundationState.FOUNDATION_REVIEW:
+        return ["all research closed — running backlog build verification"]
+    if state == FoundationState.FOUNDATION_READINESS_ASSESS_CREATE:
+        return ["readiness assessment create in progress — awaiting auto-transition"]
+    if state == FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY:
         if blockers:
-            return ["address approval blockers listed below, then rerun gate review"]
-        return ["run architecture gate decision (approve/revise/block)"]
+            return ["address approval blockers listed below, then rerun readiness gate"]
+        return ["run readiness assessment gate (approve/revise/block)"]
+    if state == FoundationState.FOUNDATION_HANDOFF_PACK_CREATE:
+        return ["handoff pack (DISCOVERY-FOCUS.md) being synthesised"]
+    if state == FoundationState.FOUNDATION_HANDOFF_PACK_VERIFY:
+        return ["verifying DISCOVERY-FOCUS.md completeness"]
     if state == FoundationState.FOUNDATION_NEEDS_HUMAN:
         return ["satisfy unblock requirements and add fresh evidence links before rerun"]
     if state == FoundationState.FOUNDATION_BLOCKED:
-        return ["resolve contradictions, then move issue back to foundation:in-progress"]
+        return ["resolve contradictions, then re-apply a phase label to resume"]
     if state == FoundationState.FOUNDATION_APPROVED:
         return ["foundation complete; use ADR/wiki outputs as downstream design contract"]
     return ["review issue state and add clarifying context"]
@@ -874,8 +912,16 @@ def _cleanup_supporting_issue_state_labels(gateway, foundation_issue_number: int
 # fresh pass actually changed anything.
 _SIGNATURE_LABELS = [
     "foundation:needed",
-    "foundation:in-progress",
-    "foundation:review",
+    "foundation:intent-capture-create",
+    "foundation:intent-capture-verify",
+    "foundation:shell-design-create",
+    "foundation:shell-design-verify",
+    "foundation:backlog-build-create",
+    "foundation:backlog-build-verify",
+    "foundation:readiness-assess-create",
+    "foundation:readiness-assess-verify",
+    "foundation:handoff-pack-create",
+    "foundation:handoff-pack-verify",
     "foundation:needs-human",
     "foundation:research",
 ]
@@ -883,8 +929,16 @@ _SIGNATURE_LABELS = [
 # Primary foundation labels used when pulling actionable issues for a pass.
 _ACTIONABLE_LABELS = [
     "foundation:needed",
-    "foundation:in-progress",
-    "foundation:review",
+    "foundation:intent-capture-create",
+    "foundation:intent-capture-verify",
+    "foundation:shell-design-create",
+    "foundation:shell-design-verify",
+    "foundation:backlog-build-create",
+    "foundation:backlog-build-verify",
+    "foundation:readiness-assess-create",
+    "foundation:readiness-assess-verify",
+    "foundation:handoff-pack-create",
+    "foundation:handoff-pack-verify",
     "foundation:needs-human",
 ]
 
@@ -1109,11 +1163,10 @@ def _process_foundation_pass(
     Re-pulls open foundation issues fresh, processes each actionable issue, and
     persists progress. Returns ``(actionable, failed_issues)`` where
     ``failed_issues`` is a list of ``(issue_number, reason)`` tuples.
-    
-    Args:
-        max_research_workers: Number of parallel workers for research issue processing
-        metrics: Optional MetricsService for timing and LLM tracking
-        pass_index: Current pass number (used for span keys)
+
+    For BACKLOG_BUILD phases the runner runs research workers before invoking
+    the graph so backlog_build_verify has fresh closed-research counts.
+    All state transitions are owned by the graph; this loop only drives timing.
     """
     _metrics = metrics or MetricsService()
     open_foundation_issues = gateway.list_open_issues_with_any_label(_ACTIONABLE_LABELS)
@@ -1140,7 +1193,7 @@ def _process_foundation_pass(
         open_research_before = gateway.count_open_linked_research_issues(issue_number)
         with _metrics.span(issue_span_key, type="issue", issue_number=issue_number, pass_index=pass_index):
             try:
-                # needs-human is resumable if evidence changed since last run.
+                # NEEDS_HUMAN: resumable when evidence has changed since last run.
                 if current_state == FoundationState.FOUNDATION_NEEDS_HUMAN:
                     previous_payload = progress_tracker.get(issue_number).get("snapshot")
                     if previous_payload:
@@ -1151,10 +1204,12 @@ def _process_foundation_pass(
                                 issue_number,
                                 "Resuming from foundation:needs-human because new evidence was detected.",
                             )
+                            # Resume at backlog-build-verify (most common stuck point);
+                            # the graph will re-evaluate from there.
                             gateway.set_state_labels(
                                 issue_number,
                                 ["foundation:needs-human"],
-                                ["foundation:in-progress"],
+                                ["foundation:backlog-build-verify"],
                             )
                         else:
                             logger.info(f"  Issue #{issue_number}: no new evidence — still waiting on needs-human requirements")
@@ -1180,42 +1235,16 @@ def _process_foundation_pass(
                         gateway.set_state_labels(
                             issue_number,
                             ["foundation:needs-human"],
-                            ["foundation:in-progress"],
+                            ["foundation:backlog-build-verify"],
                         )
 
-                planning_issue = gateway.get_issue(issue_number)
-                # Only plan research areas when the issue is first picked up (NEEDED or
-                # resuming from NEEDS_HUMAN). Once IN_PROGRESS the backlog is fixed —
-                # re-planning every pass causes the LLM to generate slightly different
-                # titles each time, bypassing deduplication and creating duplicate issues.
-                if current_state in (FoundationState.FOUNDATION_NEEDED, FoundationState.FOUNDATION_NEEDS_HUMAN):
-                    planned_areas = _plan_research_areas(adapter, planning_issue, foundation_markdown)
-                    _sync_foundation_research_backlog(gateway, issue_number, planned_areas)
-                _cleanup_supporting_issue_state_labels(gateway, issue_number)
-
+                # BACKLOG_BUILD phases: run research workers before the graph
+                # verifies whether all research areas are closed.
                 normalized_current = normalize_foundation_state_from_labels(gateway.get_issue(issue_number).labels)
                 active_state = normalized_current.state or FoundationState.FOUNDATION_NEEDED
-
-                if active_state == FoundationState.FOUNDATION_NEEDED:
-                    logger.info(f"  Issue #{issue_number}: transitioning needed → in-progress (backlog initialized)")
-                    _set_primary_foundation_state(
-                        gateway,
-                        issue_number,
-                        FoundationState.FOUNDATION_IN_PROGRESS,
-                        "Initialized foundation workflow and created scoped research backlog.",
-                    )
-                    progress_tracker.set(
-                        issue_number,
-                        {
-                            "no_progress_count": 0,
-                            "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
-                        },
-                    )
-                    continue
-
-                if active_state == FoundationState.FOUNDATION_IN_PROGRESS:
-                    logger.info(f"  Issue #{issue_number}: state=in-progress — running research workers")
-                    worker_stats = _run_linked_research_workers(
+                if active_state in _BACKLOG_STATES:
+                    logger.info(f"  Issue #{issue_number}: state={active_state.value} — running research workers before graph")
+                    _run_linked_research_workers(
                         gateway=gateway,
                         adapter=adapter,
                         foundation_issue_number=issue_number,
@@ -1223,69 +1252,9 @@ def _process_foundation_pass(
                         max_workers=max_research_workers,
                         metrics=_metrics,
                     )
-                    open_research = gateway.count_open_linked_research_issues(issue_number)
-                    closed_research = gateway.count_closed_linked_research_issues(issue_number)
-                    if open_research > 0:
-                        logger.info(
-                            f"  Issue #{issue_number}: {open_research} research issue(s) still open, "
-                            f"{closed_research} closed — staying in-progress"
-                        )
-                        gateway.post_comment(
-                            issue_number,
-                            f"Foundation research in progress: waiting on {open_research} linked research issue(s) to close.",
-                        )
-                        progress_tracker.set(
-                            issue_number,
-                            {
-                                "no_progress_count": (
-                                    0 if worker_stats["completed"] > 0 else progress_tracker.get(issue_number).get("no_progress_count", 0) + 1
-                                ),
-                                "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
-                            },
-                        )
-                        if progress_tracker.get(issue_number).get("no_progress_count", 0) >= 3:
-                            logger.info(f"  Issue #{issue_number}: no-progress threshold reached — escalating to needs-human")
-                            gateway.set_state_labels(
-                                issue_number,
-                                ["foundation:in-progress", "foundation:review", "foundation:needed"],
-                                ["foundation:needs-human"],
-                            )
-                            gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, _snapshot_issue(gateway, issue_number)))
-                        continue
-                    if closed_research > 0:
-                        logger.info(
-                            f"  Issue #{issue_number}: all research closed ({closed_research} issue(s)) — "
-                            f"advancing to foundation:review"
-                        )
-                        _set_primary_foundation_state(
-                            gateway,
-                            issue_number,
-                            FoundationState.FOUNDATION_REVIEW,
-                            "All linked research issues are closed. Advancing to architecture review.",
-                        )
-                        progress_tracker.set(
-                            issue_number,
-                            {
-                                "no_progress_count": 0,
-                                "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
-                            },
-                        )
-                        continue
-                    logger.info(f"  Issue #{issue_number}: no research closed yet — staying in-progress")
-                    gateway.post_comment(
-                        issue_number,
-                        "No linked research is complete yet; remaining in foundation:in-progress.",
-                    )
-                    progress_tracker.set(
-                        issue_number,
-                        {
-                            "no_progress_count": 0,
-                            "snapshot": _snapshot_to_dict(_snapshot_issue(gateway, issue_number)),
-                        },
-                    )
-                    continue
 
-                logger.info(f"  Issue #{issue_number}: state={active_state.value if active_state else 'unknown'} — invoking orchestrator")
+                # Graph owns all phase transitions.
+                logger.info(f"  Issue #{issue_number}: invoking orchestrator")
                 try:
                     orchestrator.run_once(issue_number)
                 except Exception as ex:
@@ -1310,14 +1279,11 @@ def _process_foundation_pass(
                     f"  Issue #{issue_number}: orchestrator done — state now={after_state_label}, "
                     f"no_progress_count={no_progress_count}"
                 )
-                if (
-                    no_progress_count >= 3
-                    and normalized_after.state in {FoundationState.FOUNDATION_IN_PROGRESS, FoundationState.FOUNDATION_REVIEW}
-                ):
+                if no_progress_count >= 3 and normalized_after.state not in TERMINAL_FOUNDATION_STATES:
                     logger.info(f"  Issue #{issue_number}: no-progress threshold reached — escalating to needs-human")
                     gateway.set_state_labels(
                         issue_number,
-                        ["foundation:in-progress", "foundation:review", "foundation:needed"],
+                        list(FOUNDATION_CANONICAL_STATE_LABELS),
                         ["foundation:needs-human"],
                     )
                     gateway.post_comment(issue_number, _build_unblock_message(gateway, issue_number, after))
@@ -1333,14 +1299,12 @@ def _process_foundation_pass(
             finally:
                 logger.info(f"Issue #{issue_number}: pass complete")
                 _post_issue_run_summary(gateway, issue_number)
-                # Per-issue metrics summary; span is live but duration is accurate
                 _metrics.log_summary(
                     f"Issue #{issue_number} (pass {pass_index})",
                     span_keys=[issue_span_key],
                 )
 
     progress_tracker.save()
-    # Pass-level rollup across all issues processed this pass
     if issue_span_keys:
         _metrics.log_summary(
             f"Pass {pass_index} total",

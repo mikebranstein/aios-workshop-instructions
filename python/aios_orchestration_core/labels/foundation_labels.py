@@ -5,8 +5,16 @@ from aios_orchestration_core.states.foundation import FoundationState
 
 FOUNDATION_CANONICAL_LABEL_BY_STATE: Dict[FoundationState, str] = {
     FoundationState.FOUNDATION_NEEDED: "foundation:needed",
-    FoundationState.FOUNDATION_IN_PROGRESS: "foundation:in-progress",
-    FoundationState.FOUNDATION_REVIEW: "foundation:review",
+    FoundationState.FOUNDATION_INTENT_CAPTURE_CREATE: "foundation:intent-capture-create",
+    FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY: "foundation:intent-capture-verify",
+    FoundationState.FOUNDATION_SHELL_DESIGN_CREATE: "foundation:shell-design-create",
+    FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY: "foundation:shell-design-verify",
+    FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE: "foundation:backlog-build-create",
+    FoundationState.FOUNDATION_BACKLOG_BUILD_VERIFY: "foundation:backlog-build-verify",
+    FoundationState.FOUNDATION_READINESS_ASSESS_CREATE: "foundation:readiness-assess-create",
+    FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY: "foundation:readiness-assess-verify",
+    FoundationState.FOUNDATION_HANDOFF_PACK_CREATE: "foundation:handoff-pack-create",
+    FoundationState.FOUNDATION_HANDOFF_PACK_VERIFY: "foundation:handoff-pack-verify",
     FoundationState.FOUNDATION_APPROVED: "foundation:approved",
     FoundationState.FOUNDATION_BLOCKED: "foundation:blocked",
     FoundationState.FOUNDATION_NEEDS_HUMAN: "foundation:needs-human",
@@ -14,23 +22,14 @@ FOUNDATION_CANONICAL_LABEL_BY_STATE: Dict[FoundationState, str] = {
 
 FOUNDATION_CANONICAL_STATE_LABELS: FrozenSet[str] = frozenset(FOUNDATION_CANONICAL_LABEL_BY_STATE.values())
 
-FOUNDATION_LEGACY_LABEL_BY_STATE: Dict[FoundationState, str] = {
-    FoundationState.FOUNDATION_NEEDED: "foundation-needed",
-    FoundationState.FOUNDATION_IN_PROGRESS: "foundation-in-progress",
-    FoundationState.FOUNDATION_REVIEW: "foundation-review",
-    FoundationState.FOUNDATION_APPROVED: "foundation-approved",
-    FoundationState.FOUNDATION_BLOCKED: "foundation-blocked",
-}
-
 FOUNDATION_LABEL_REGISTRY: LabelRegistry[FoundationState] = LabelRegistry(
     canonical=FOUNDATION_CANONICAL_LABEL_BY_STATE,
-    legacy=FOUNDATION_LEGACY_LABEL_BY_STATE,
+    legacy={},
 )
 
-# Map all known labels (canonical + legacy) to states
+# Map all known labels (canonical only) to states
 _STATE_BY_KNOWN_LABEL: Dict[str, FoundationState] = {
     **{v: k for k, v in FOUNDATION_CANONICAL_LABEL_BY_STATE.items()},
-    **{v: k for k, v in FOUNDATION_LEGACY_LABEL_BY_STATE.items()},
 }
 
 
@@ -61,12 +60,9 @@ def normalize_foundation_state_from_labels(labels: Iterable[str]) -> FoundationN
     for label in observed_labels:
         if label in FOUNDATION_CANONICAL_LABEL_BY_STATE.values():
             saw_canonical = True
-        if label in FOUNDATION_LEGACY_LABEL_BY_STATE.values():
-            saw_legacy = True
-
         if label in _STATE_BY_KNOWN_LABEL:
             mapped_states.add(_STATE_BY_KNOWN_LABEL[label])
-        elif label.startswith("foundation:") or label.startswith("foundation-"):
+        elif label.startswith("foundation:"):
             unknown_foundation_labels.add(label)
 
     if not mapped_states:

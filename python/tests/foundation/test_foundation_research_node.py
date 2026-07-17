@@ -51,7 +51,7 @@ def _make_gateway_with_issues(
             number=1,
             title="Foundation",
             body=parent_body,
-            labels={"foundation:in-progress"},
+            labels={"foundation:backlog-build-verify"},
         )
     }
     sub_map: dict[int, list[int]] = {1: []}
@@ -177,7 +177,7 @@ class TestContradictionCheck(unittest.TestCase):
 
 class TestResearchNodeDowngradesOnConflict(unittest.TestCase):
     def test_recommend_downgraded_to_needs_more_research(self) -> None:
-        """LLM says RECOMMEND but two closed issues share an area → NEEDS_MORE_RESEARCH."""
+        """LLM says RECOMMEND but two closed issues share an area → NEEDS_MORE_RESEARCH → back to BACKLOG_BUILD_CREATE."""
         gateway = _make_gateway_with_issues(
             sub_issue_bodies=[
                 (2, "framework/engine", False),  # closed, UE5
@@ -193,13 +193,13 @@ class TestResearchNodeDowngradesOnConflict(unittest.TestCase):
             )
             result_state = node.run("test-run-id", 1)
 
-        self.assertEqual(result_state, FoundationState.FOUNDATION_IN_PROGRESS)
-        # Label should be in-progress, not review
+        self.assertEqual(result_state, FoundationState.FOUNDATION_BACKLOG_BUILD_CREATE)
+        # Label should be backlog-build-create, not readiness-assess-create
         labels = gateway.get_issue(1).labels
-        self.assertNotIn("foundation:review", labels)
+        self.assertNotIn("foundation:readiness-assess-create", labels)
 
     def test_recommend_passes_through_when_areas_differ(self) -> None:
-        """LLM says RECOMMEND and all research issues are in different areas → promote to review."""
+        """LLM says RECOMMEND and all research issues are in different areas → promote to READINESS_ASSESS_CREATE."""
         gateway = _make_gateway_with_issues(
             parent_body=(
                 "See docs/adr/0001.md and https://github.com/owner/repo/wiki/Foundation-Research"
@@ -218,7 +218,7 @@ class TestResearchNodeDowngradesOnConflict(unittest.TestCase):
             )
             result_state = node.run("test-run-id", 1)
 
-        self.assertEqual(result_state, FoundationState.FOUNDATION_REVIEW)
+        self.assertEqual(result_state, FoundationState.FOUNDATION_READINESS_ASSESS_CREATE)
 
     def test_recommend_passes_through_without_decision_area_field(self) -> None:
         """Old-style issues with no Decision Area field don't block promotion."""
@@ -240,7 +240,7 @@ class TestResearchNodeDowngradesOnConflict(unittest.TestCase):
             )
             result_state = node.run("test-run-id", 1)
 
-        self.assertEqual(result_state, FoundationState.FOUNDATION_REVIEW)
+        self.assertEqual(result_state, FoundationState.FOUNDATION_READINESS_ASSESS_CREATE)
 
     def test_downgrade_reason_logged_in_comment(self) -> None:
         """When downgraded, the posted comment must mention the contradiction."""

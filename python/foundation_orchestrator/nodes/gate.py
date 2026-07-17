@@ -19,9 +19,9 @@ from foundation_orchestrator.evidence import classify_adr_links, classify_wiki_l
 logger = logging.getLogger(__name__)
 
 _DECISION_MAP = {
-    "APPROVE_FOUNDATION": FoundationEvent.APPROVE_FOUNDATION,
-    "REVISE_FOUNDATION": FoundationEvent.REVISE_FOUNDATION,
-    "BLOCK_FOUNDATION": FoundationEvent.BLOCK_FOUNDATION,
+    "APPROVE_FOUNDATION": FoundationEvent.READINESS_ASSESS_VERIFIED,
+    "REVISE_FOUNDATION": FoundationEvent.READINESS_ASSESS_REVISE,
+    "BLOCK_FOUNDATION": FoundationEvent.READINESS_ASSESS_BLOCK,
 }
 
 
@@ -32,14 +32,14 @@ class FoundationGateNode:
     def run(self, run_id: str, issue_number: int) -> FoundationState:
         issue = self.gateway.get_issue(issue_number)
         normalized = normalize_foundation_state_from_labels(issue.labels)
-        if normalized.state != FoundationState.FOUNDATION_REVIEW:
+        if normalized.state != FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY:
             logger.warning(
                 f"  Issue #{issue_number}: FoundationGateNode — unexpected state "
-                f"{normalized.state!r} (expected foundation:review); aborting gate"
+                f"{normalized.state!r} (expected foundation:readiness-assess-verify); aborting gate"
             )
             self.gateway.post_comment(
                 issue_number,
-                "Transition validation failed: G1 source state invalid for foundation gate (expected foundation:review).",
+                "Transition validation failed: G1 source state invalid for foundation gate (expected foundation:readiness-assess-verify).",
             )
             self.gateway.add_labels(issue_number, ["transition-validation-failed"])
             return normalized.state or FoundationState.FOUNDATION_NEEDED
@@ -84,7 +84,7 @@ class FoundationGateNode:
                     f"{reason_detail}\nApproval preconditions not met: " + "; ".join(evidence_failures)
                 ).strip()
         event = _DECISION_MAP[decision]
-        next_state = get_next_foundation_state(FoundationState.FOUNDATION_REVIEW, event)
+        next_state = get_next_foundation_state(FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY, event)
         logger.info(
             f"  Issue #{issue_number}: FoundationGateNode — decision={decision}, "
             f"transitioning to {next_state.value}"
@@ -92,12 +92,9 @@ class FoundationGateNode:
 
         self.gateway.set_state_labels(issue_number, list(FOUNDATION_CANONICAL_STATE_LABELS), [FOUNDATION_CANONICAL_LABEL_BY_STATE[next_state]])
 
-        if next_state == FoundationState.FOUNDATION_APPROVED:
-            self.gateway.close_issue(issue_number, "completed")
-
         entry = TransitionLogEntry(
             loop_id="foundation", run_id=run_id, issue_number=issue_number,
-            from_state=FoundationState.FOUNDATION_REVIEW.value, to_state=next_state.value,
+            from_state=FoundationState.FOUNDATION_READINESS_ASSESS_VERIFY.value, to_state=next_state.value,
             trigger_event=event.value, reason_code=f"FOUNDATION_GATE_{decision}",
             reason_detail=reason_detail, timestamp_utc=datetime.now(timezone.utc).isoformat(),
             adapter_source=self.adapter.adapter_source,
