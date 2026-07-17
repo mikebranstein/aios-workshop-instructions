@@ -369,8 +369,133 @@ TASK_TOOL_MAP.update(
 )
 
 # ---------------------------------------------------------------------------
-# Architecture Review tools
+# Foundation phase create tools
 # ---------------------------------------------------------------------------
+
+FOUNDATION_INTENT_CAPTURE_TOOL = ToolSpec(
+    name="submit_foundation_intent_capture",
+    description="Submit the intent capture artifact for the foundation workflow.",
+    parameters_schema={
+        "type": "object",
+        "required": ["intent_summary", "goals", "constraints", "out_of_scope", "success_criteria"],
+        "properties": {
+            "intent_summary": {
+                "type": "string",
+                "minLength": 1,
+                "description": "One-paragraph plain-English summary of the project intent.",
+            },
+            "goals": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": "Primary goals the project must achieve.",
+            },
+            "constraints": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": "Hard constraints: technical, team, time, legal, or platform.",
+            },
+            "out_of_scope": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Explicit list of things that are out of scope for this project.",
+            },
+            "success_criteria": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1},
+                "description": "Measurable criteria for when foundation phase is done.",
+            },
+            "open_questions": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Questions that cannot be answered from FOUNDATION.md alone and need research.",
+            },
+        },
+    },
+)
+
+FOUNDATION_SHELL_DESIGN_TOOL = ToolSpec(
+    name="submit_foundation_shell_design",
+    description="Submit the shell design artifact: the MVP architecture baseline for this project.",
+    parameters_schema={
+        "type": "object",
+        "required": ["decision_pack_content", "architecture_summary", "agent_autonomy_boundary"],
+        "properties": {
+            "decision_pack_content": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Full Markdown content for docs/foundation-decision-pack.md.",
+            },
+            "architecture_summary": {
+                "type": "string",
+                "minLength": 1,
+                "description": "2–4 sentence plain-English description of the architectural approach.",
+            },
+            "agent_autonomy_boundary": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What agents may decide autonomously vs. what requires human or ADR review.",
+            },
+            "decisions_needing_research": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Architectural decisions that cannot be locked yet and require a research pass.",
+            },
+        },
+    },
+)
+
+FOUNDATION_READINESS_ASSESSMENT_TOOL = ToolSpec(
+    name="submit_foundation_readiness_assessment",
+    description="Submit a pre-gate readiness assessment summarising research outputs and identifying gaps.",
+    parameters_schema={
+        "type": "object",
+        "required": ["readiness_summary", "adr_coverage", "decision_pack_coverage", "readiness_gaps", "gate_recommendation"],
+        "properties": {
+            "readiness_summary": {
+                "type": "string",
+                "minLength": 1,
+                "description": "2–4 sentence summary of the current readiness state.",
+            },
+            "adr_coverage": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "List of ADR files that exist in docs/adr/.",
+            },
+            "missing_adrs": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Architectural decisions that need ADRs but don't have them yet.",
+            },
+            "decision_pack_coverage": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Sections of foundation-decision-pack.md that are substantively populated.",
+            },
+            "readiness_gaps": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "description": "Specific gaps that must be closed before the gate can approve.",
+            },
+            "gate_recommendation": {
+                "type": "string",
+                "enum": ["READY_FOR_GATE", "GAPS_IDENTIFIED"],
+                "description": "Whether the project looks ready to proceed to the readiness gate.",
+            },
+        },
+    },
+)
+
+TASK_TOOL_MAP.update(
+    {
+        "foundation_intent_capture": FOUNDATION_INTENT_CAPTURE_TOOL,
+        "foundation_shell_design": FOUNDATION_SHELL_DESIGN_TOOL,
+        "foundation_readiness_assessment": FOUNDATION_READINESS_ASSESSMENT_TOOL,
+    }
+)
+
 
 ARCH_REVIEW_TOOL = ToolSpec(
     name="submit_arch_review_decision",

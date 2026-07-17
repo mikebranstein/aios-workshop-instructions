@@ -221,10 +221,47 @@ class FoundationGraphOrchestrator:
     # -------------------------------------------- INTENT CAPTURE CREATE/VERIFY
 
     def _node_intent_capture_create(self, state: FoundationRunState) -> FoundationRunState:
-        self.gateway.post_comment(state["source_issue_number"], "Intent capture create: drafting context and constraints.")
+        issue_number = state["source_issue_number"]
+        issue = self.gateway.get_issue(issue_number)
+        foundation_markdown = self.gateway.read_foundation_markdown()
+        self._logger.info(f"  Issue #{issue_number}: intent_capture_create — invoking LLM (foundation_intent_capture)")
+        result = self.gate_node.adapter.invoke_json(
+            "foundation_intent_capture",
+            {
+                "issue_number": issue.number,
+                "title": issue.title,
+                "body": issue.body,
+                "foundation_markdown": foundation_markdown,
+            },
+        )
+        payload = result.payload or {}
+        lines = [
+            "## Intent Capture Artifact",
+            "",
+            f"**Summary:** {payload.get('intent_summary', '')}",
+            "",
+            "**Goals:**",
+        ]
+        for g in payload.get("goals", []):
+            lines.append(f"- {g}")
+        lines += ["", "**Constraints:**"]
+        for c in payload.get("constraints", []):
+            lines.append(f"- {c}")
+        if payload.get("out_of_scope"):
+            lines += ["", "**Out of Scope:**"]
+            for o in payload.get("out_of_scope", []):
+                lines.append(f"- {o}")
+        lines += ["", "**Success Criteria (Foundation Phase):**"]
+        for s in payload.get("success_criteria", []):
+            lines.append(f"- {s}")
+        if payload.get("open_questions"):
+            lines += ["", "**Open Questions Needing Research:**"]
+            for q in payload.get("open_questions", []):
+                lines.append(f"- {q}")
+        self.gateway.post_comment(issue_number, "\n".join(lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_INTENT_CAPTURE_CREATE, FoundationEvent.INTENT_CAPTURE_CREATED,
-            "INTENT_CAPTURE_CREATED", "Intent artifacts created", "system",
+            "INTENT_CAPTURE_CREATED", "Intent capture artifact drafted", self.gate_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}
 
@@ -256,10 +293,58 @@ class FoundationGraphOrchestrator:
     # ------------------------------------------------ SHELL DESIGN CREATE/VERIFY
 
     def _node_shell_design_create(self, state: FoundationRunState) -> FoundationRunState:
-        self.gateway.post_comment(state["source_issue_number"], "Shell design create: drafting architecture baseline.")
+        issue_number = state["source_issue_number"]
+        issue = self.gateway.get_issue(issue_number)
+        foundation_markdown = self.gateway.read_foundation_markdown()
+        comments = self.gateway.get_issue_comments(issue_number)
+        # Extract intent artifact from comments (posted by intent_capture_create)
+        intent_artifact = next(
+            (c for c in reversed(comments) if "Intent Capture Artifact" in c),
+            "",
+        )
+        # Read existing decision pack if already present
+        try:
+            existing_decision_pack = self.gateway.read_repo_file("docs/foundation-decision-pack.md")
+        except Exception:
+            existing_decision_pack = ""
+        self._logger.info(f"  Issue #{issue_number}: shell_design_create — invoking LLM (foundation_shell_design)")
+        result = self.gate_node.adapter.invoke_json(
+            "foundation_shell_design",
+            {
+                "issue_number": issue.number,
+                "title": issue.title,
+                "foundation_markdown": foundation_markdown,
+                "intent_artifact": intent_artifact,
+                "existing_decision_pack": existing_decision_pack,
+            },
+        )
+        payload = result.payload or {}
+        decision_pack_content = payload.get("decision_pack_content", "")
+        architecture_summary = payload.get("architecture_summary", "")
+        agent_autonomy_boundary = payload.get("agent_autonomy_boundary", "")
+        decisions_needing_research = payload.get("decisions_needing_research", [])
+        if decision_pack_content:
+            self.gateway.write_repo_file(
+                "docs/foundation-decision-pack.md",
+                decision_pack_content,
+                f"foundation: initial shell design decision pack for issue #{issue_number}",
+            )
+        comment_lines = [
+            "## Shell Design Artifact",
+            "",
+            f"**Architecture Summary:** {architecture_summary}",
+            "",
+            f"**Agent Autonomy Boundary:** {agent_autonomy_boundary}",
+        ]
+        if decisions_needing_research:
+            comment_lines += ["", "**Decisions Queued for Research:**"]
+            for d in decisions_needing_research:
+                comment_lines.append(f"- {d}")
+        comment_lines += ["", f"Written `docs/foundation-decision-pack.md` to repository."]
+        self.gateway.post_comment(issue_number, "\n".join(comment_lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_SHELL_DESIGN_CREATE, FoundationEvent.SHELL_DESIGN_CREATED,
-            "SHELL_DESIGN_CREATED", "Shell design artifacts created", "system",
+            "SHELL_DESIGN_CREATED", "Shell design and decision pack drafted", self.gate_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}
 
@@ -322,14 +407,79 @@ class FoundationGraphOrchestrator:
 
     def _node_readiness_assess_create(self, state: FoundationRunState) -> FoundationRunState:
         issue_number = state["source_issue_number"]
-        self.gateway.post_comment(
-            issue_number,
-            f"Readiness assess create: open_research={self.gateway.count_open_linked_research_issues(issue_number)}, "
-            f"closed_research={self.gateway.count_closed_linked_research_issues(issue_number)}.",
+        issue = self.gateway.get_issue(issue_number)
+        foundation_markdown = self.gateway.read_foundation_markdown()
+        comments = self.gateway.get_issue_comments(issue_number)
+        linked_research = self.gateway.list_linked_research_issues(issue_number)
+        try:
+            decision_pack_content = self.gateway.read_repo_file("docs/foundation-decision-pack.md")
+        except Exception:
+            decision_pack_content = ""
+        adr_paths = self.gateway.list_adr_files()
+        adr_files = {}
+        for path in adr_paths:
+            try:
+                adr_files[path] = self.gateway.read_repo_file(path)
+            except Exception:
+                adr_files[path] = ""
+        self._logger.info(
+            f"  Issue #{issue_number}: readiness_assess_create — invoking LLM (foundation_readiness_assessment), "
+            f"{len(adr_files)} ADR(s), {len(linked_research)} linked research issue(s)"
         )
+        result = self.research_node.adapter.invoke_json(
+            "foundation_readiness_assessment",
+            {
+                "issue_number": issue.number,
+                "title": issue.title,
+                "foundation_markdown": foundation_markdown,
+                "decision_pack_content": decision_pack_content,
+                "adr_files": adr_files,
+                "linked_research": [
+                    {"number": r.number, "title": r.title, "body": r.body, "open": r.open}
+                    for r in linked_research
+                ],
+                "comments": comments,
+            },
+        )
+        payload = result.payload or {}
+        readiness_summary = payload.get("readiness_summary", "")
+        adr_coverage = payload.get("adr_coverage", [])
+        missing_adrs = payload.get("missing_adrs", [])
+        decision_pack_coverage = payload.get("decision_pack_coverage", [])
+        readiness_gaps = payload.get("readiness_gaps", [])
+        gate_recommendation = payload.get("gate_recommendation", "GAPS_IDENTIFIED")
+        open_count = self.gateway.count_open_linked_research_issues(issue_number)
+        closed_count = self.gateway.count_closed_linked_research_issues(issue_number)
+        comment_lines = [
+            "## Readiness Assessment",
+            "",
+            f"**Summary:** {readiness_summary}",
+            f"**Research:** {closed_count} closed, {open_count} open",
+            f"**Gate Recommendation:** {gate_recommendation}",
+            "",
+            f"**ADR Coverage ({len(adr_coverage)}):**",
+        ]
+        for a in adr_coverage:
+            comment_lines.append(f"- {a}")
+        if missing_adrs:
+            comment_lines += ["", "**Missing ADRs:**"]
+            for m in missing_adrs:
+                comment_lines.append(f"- {m}")
+        if decision_pack_coverage:
+            comment_lines += ["", "**Decision Pack — Populated Sections:**"]
+            for s in decision_pack_coverage:
+                comment_lines.append(f"- {s}")
+        if readiness_gaps:
+            comment_lines += ["", "**Blocking Gaps:**"]
+            for g in readiness_gaps:
+                comment_lines.append(f"- {g}")
+        else:
+            comment_lines += ["", "**Blocking Gaps:** none identified"]
+        self.gateway.post_comment(issue_number, "\n".join(comment_lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_READINESS_ASSESS_CREATE, FoundationEvent.READINESS_ASSESS_CREATED,
-            "READINESS_ASSESS_CREATED", "Readiness artifacts created", "system",
+            "READINESS_ASSESS_CREATED", f"Readiness assessment complete — {gate_recommendation}",
+            self.research_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}
 
@@ -352,10 +502,53 @@ class FoundationGraphOrchestrator:
     # ---------------------------------------------- HANDOFF PACK CREATE/VERIFY
 
     def _node_handoff_pack_create(self, state: FoundationRunState) -> FoundationRunState:
-        self.gateway.post_comment(state["source_issue_number"], "Handoff pack create: synthesising DISCOVERY-FOCUS.md.")
+        issue_number = state["source_issue_number"]
+        foundation_markdown = self.gateway.read_foundation_markdown()
+        adr_paths = self.gateway.list_adr_files()
+        adrs = {}
+        for path in adr_paths:
+            try:
+                adrs[path] = self.gateway.read_repo_file(path)
+            except Exception:
+                adrs[path] = ""
+        wiki_snapshot = self.gateway.get_wiki_snapshot() if hasattr(self.gateway, "get_wiki_snapshot") else []
+        existing_focus = self.gateway.read_discovery_focus() if self.gateway.discovery_focus_exists() else ""
+        self._logger.info(
+            f"  Issue #{issue_number}: handoff_pack_create — invoking LLM (foundation_discovery_focus_synthesis), "
+            f"{len(adrs)} ADR(s)"
+        )
+        result = self.research_node.adapter.invoke_json(
+            "foundation_discovery_focus_synthesis",
+            {
+                "foundation_markdown": foundation_markdown,
+                "existing_discovery_focus": existing_focus,
+                "existing_adrs": adrs,
+                "wiki_snapshot": wiki_snapshot,
+            },
+        )
+        payload = result.payload or {}
+        focus_content = payload.get("focus_content", "")
+        confidence = payload.get("confidence", "low")
+        placeholder_fields = payload.get("placeholder_fields", [])
+        if focus_content:
+            self.gateway.write_discovery_focus(
+                focus_content,
+                f"foundation: synthesize DISCOVERY-FOCUS.md for issue #{issue_number}",
+            )
+        comment_lines = [
+            "## Handoff Pack — DISCOVERY-FOCUS.md Synthesized",
+            "",
+            f"**Confidence:** {confidence}",
+        ]
+        if placeholder_fields:
+            comment_lines += ["", f"**Sections needing human input:** {', '.join(placeholder_fields)}"]
+        else:
+            comment_lines += ["", "All sections populated from FOUNDATION.md and ADRs."]
+        self.gateway.post_comment(issue_number, "\n".join(comment_lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_HANDOFF_PACK_CREATE, FoundationEvent.HANDOFF_PACK_CREATED,
-            "HANDOFF_PACK_CREATED", "Handoff artifacts created", "system",
+            "HANDOFF_PACK_CREATED", f"DISCOVERY-FOCUS.md synthesized (confidence={confidence})",
+            self.research_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}
 

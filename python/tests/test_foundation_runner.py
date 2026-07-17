@@ -782,11 +782,17 @@ class EnsureDiscoveryFocusTests(unittest.TestCase):
         self.assertNotIn("discovery-focus:needs-revision", issue.labels)
 
     def test_returns_missing_review_when_file_exists_no_issue(self) -> None:
+        """When DISCOVERY-FOCUS.md exists but no tracking issue was created (e.g. by
+        handoff_pack_create graph node), _ensure_discovery_focus should create the
+        tracking issue and run verification automatically."""
         gw = FoundationGitHubGateway()
         gw.write_discovery_focus("# Content", "test: create")
         adapter = self._StubLLMAdapter()
         status = foundation_runner._ensure_discovery_focus(gw, adapter, "# FOUNDATION", adrs={}, wiki_snapshot=[])
-        self.assertEqual(status, "missing-review")
+        # Now creates tracking issue + verifies; stub LLM returns passed=True so result is "approved"
+        self.assertIn(status, ("approved", "just-created"))
+        issue = gw.get_discovery_focus_issue()
+        self.assertIsNotNone(issue)
 
     def test_reuses_existing_issue_when_file_missing_but_issue_exists(self) -> None:
         """Re-run after file deleted should reuse the existing tracking issue, not create a new one."""

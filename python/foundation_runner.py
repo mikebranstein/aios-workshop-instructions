@@ -1090,12 +1090,19 @@ def _ensure_discovery_focus(
         return verify_status if verify_status == "approved" else "just-created"
 
     if focus_issue is None:
-        # File exists but no tracking issue — likely manually created; leave it alone
+        # File was written (e.g. by handoff_pack_create graph node) but no tracking issue
+        # exists yet — create one now and run verification so the discovery orchestrator
+        # has a proper approval gate.
         logger.info(
-            "DISCOVERY-FOCUS.md exists at repo root but no tracking issue found. "
-            "Create a tracking issue and apply discovery-focus:approved when ready."
+            "DISCOVERY-FOCUS.md exists but no tracking issue found — "
+            "creating tracking issue and running verification."
         )
-        return "missing-review"
+        existing_focus = gateway.read_discovery_focus()
+        issue_body = _build_discovery_focus_issue_body(existing_focus, "unknown", [])
+        issue_number = gateway.create_discovery_focus_issue(issue_body)
+        logger.info(f"Created discovery-focus tracking issue #{issue_number}.")
+        verify_status = _verify_and_approve(issue_number, existing_focus)
+        return verify_status if verify_status == "approved" else "just-created"
 
     if "discovery-focus:needs-revision" in focus_issue.labels:
         logger.info(
