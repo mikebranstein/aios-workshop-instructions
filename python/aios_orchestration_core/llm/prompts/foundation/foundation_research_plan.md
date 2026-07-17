@@ -71,7 +71,23 @@ category is in play — do not spawn them otherwise.
   above, keep the ones with the highest reversal cost.
 - Always include the agent-autonomy boundary if it is not already defined.
 
-Return only the required tool call arguments.
+## Inputs
+
+You receive these variables in the Context block below:
+
+- `foundation_markdown` — FOUNDATION.md (project type, constraints, locked decisions).
+- `issue_number`, `title`, `body` — the foundation tracking issue.
+
+## Output
+
+Call `submit_foundation_research_plan` with:
+
+- `research_areas` (required) — an array of 1–10 strings, each a concrete decision
+  **question** (not a topic), following the rules above. The list is deduplicated and
+  capped at 10 downstream, so keep it minimal and high-value.
+- `reason` (optional) — a one-line note on why these areas and not others.
+
+Return only the required tool call. Do not output the plan as chat text.
 
 ## Context
 

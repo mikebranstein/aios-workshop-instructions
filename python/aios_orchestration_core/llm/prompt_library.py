@@ -17,8 +17,11 @@ _TASK_PROMPT_FILE_MAP = {
     "discovery_idea_scout": _PROMPTS_ROOT / "discovery" / "discovery_idea_scout.md",
     "foundation_discovery_focus_synthesis": _PROMPTS_ROOT / "foundation" / "foundation_discovery_focus_synthesis.md",
     "foundation_discovery_focus_verify": _PROMPTS_ROOT / "foundation" / "foundation_discovery_focus_verify.md",
+    "foundation_intent_capture": _PROMPTS_ROOT / "foundation" / "foundation_intent_capture.md",
     "foundation_intent_capture_verify": _PROMPTS_ROOT / "foundation" / "foundation_intent_capture_verify.md",
+    "foundation_shell_design": _PROMPTS_ROOT / "foundation" / "foundation_shell_design.md",
     "foundation_shell_design_verify": _PROMPTS_ROOT / "foundation" / "foundation_shell_design_verify.md",
+    "foundation_readiness_assessment": _PROMPTS_ROOT / "foundation" / "foundation_readiness_assessment.md",
 }
 
 

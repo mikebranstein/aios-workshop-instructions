@@ -84,9 +84,9 @@ Do not use `BLOCKED` for uncertainty or incomplete evidence — that is
 - Use `BLOCKED` only for genuine external blockers, not agent-side uncertainty.
 - Use `RECOMMEND` only when evidence is coherent, actionable, and anchored to
   `FOUNDATION.md` constraints.
-- When returning `NEEDS_MORE_RESEARCH`, your output must include specific
-  `next_actions` — name the exact issue(s), gaps, or documents that need
-  attention. Generic "do more research" is not acceptable.
+- When returning `NEEDS_MORE_RESEARCH`, `reason` must contain specific next
+  actions — name the exact issue(s), gaps, or documents that need attention.
+  Generic "do more research" is not acceptable.
 - Do not re-research decisions already resolved in `FOUNDATION.md`.
 
 ## State Transition Map
@@ -97,7 +97,30 @@ Do not use `BLOCKED` for uncertainty or incomplete evidence — that is
 | `NEEDS_MORE_RESEARCH` | `foundation-in-progress` |
 | `BLOCKED` | `foundation-blocked` |
 
-Return only the required tool call arguments.
+## Inputs
+
+You receive these variables in the Context block below (base your decision only on
+what is provided):
+
+- `foundation_markdown` — FOUNDATION.md, the settled source-of-truth.
+- `comments` — all comments on the foundation issue (research summaries and prior
+  transition logs). This is your primary evidence surface for decision-pack and ADR
+  coverage — you do not have direct file access.
+- `linked_research` — list of `{number, title, body, open}` for each linked research
+  issue.
+- `issue_number`, `title`, `body` — the foundation tracking issue.
+
+## Output
+
+Call `submit_foundation_research_decision` with exactly these fields:
+
+- `decision` (required) — one of `RECOMMEND`, `NEEDS_MORE_RESEARCH`, `BLOCKED`.
+- `reason` (required) — the only free-text field, so it must carry the deciding
+  factor and (for `NEEDS_MORE_RESEARCH`/`BLOCKED`) the concrete next actions naming
+  the exact issues, gaps, or documents to address. Any field outside this schema is
+  discarded, so put everything in `reason`.
+
+Return only the required tool call. Do not output analysis as chat text.
 
 ## Context
 

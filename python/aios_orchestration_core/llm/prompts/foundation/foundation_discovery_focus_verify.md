@@ -24,8 +24,8 @@ A conforming DISCOVERY-FOCUS.md must contain all 7 of these sections with substa
 6. **Strategic Pillars**
 7. **Definition of a Useful Idea**
 
-Sections 7 (Success Metrics) and 8 (Signal Sources) are optional — do not fail verification
-if they are absent.
+The optional **Success Metrics** and **Signal Sources** sections are not part of the
+7 required sections — do not fail verification if they are absent.
 
 ## Verification Rules
 

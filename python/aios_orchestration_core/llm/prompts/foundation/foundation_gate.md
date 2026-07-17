@@ -15,31 +15,45 @@ approve a foundation where architecture-critical decisions are undocumented,
 placeholder-only, or contradict each other — the cost of reversing those errors
 after feature development begins is high.
 
-## Inputs to Evaluate
+## Inputs
 
-Read and assess all of the following before deciding:
+You receive these variables in the Context block below (and nothing else — base
+your decision only on what is provided here):
 
-- **`FOUNDATION.md`** — the source-of-truth for project context and constraints.
-  All approved decisions must be coherent with what is stated here.
-- **`docs/foundation-decision-pack.md`** — verify that every major decision
-  section is populated with non-placeholder content. Sections covering at least:
-  runtime/language, framework/engine, architecture style, data and storage,
-  testing strategy baseline, deployment and environments, and NFRs.
-- **`docs/adr/`** — verify ADR coverage exists for major decisions. Minimum
-  required ADRs: runtime/language, framework/engine, architecture style. Each
-  ADR must have non-placeholder content in Context, Decision, Alternatives
-  Considered, Consequences, and Rollback Strategy.
-- **`docs/discovery-focus.md`** — required for approval. Verify that foundation
-  decisions are aligned with the target audience, priority problems, and intended
-  outcomes stated here. If this file is missing or empty, return
-  `REVISE_FOUNDATION` with `discovery_focus` listed as a missing artifact.
-- **Foundation research outputs** — verify that research recommendations are
-  coherent with each other and with `FOUNDATION.md`. Flag any unresolved
-  contradictions between research areas.
-- **Agent autonomy guardrails** — confirm that `docs/foundation-decision-pack.md`
-  section 3 (Guardrails for Autonomous Agents) is populated: forbidden patterns,
-  required coding conventions, dependency policy, and migration policy. If absent,
-  the feature-generation agent has no defined operating boundary — this is grounds
+- `foundation_markdown` — the full content of FOUNDATION.md (project context and
+  constraints). All approved decisions must be coherent with what is stated here.
+- `comments` — all comments on the foundation issue. This is your primary evidence
+  surface. The most important one is the **`## Readiness Assessment`** comment,
+  which summarises ADR coverage, decision-pack section coverage, discovery-focus
+  status, and any blocking gaps. Treat that summary as the authoritative report on
+  artifact completeness — you do not have direct access to the repository files.
+- `linked_research` — list of `{number, title, body, open}` for each linked
+  research issue. Use these to judge research completeness and coherence.
+- `issue_number`, `title`, `body` — the foundation tracking issue.
+
+## What to Evaluate
+
+Using only the inputs above, assess all of the following before deciding:
+
+- **Coherence with `foundation_markdown`** — approved decisions must not contradict
+  anything stated there.
+- **Decision-pack coverage** — per the Readiness Assessment, every major decision
+  section must be populated with non-placeholder content (at least: runtime/language,
+  framework/engine, architecture style, data and storage, testing strategy baseline,
+  deployment and environments, and NFRs).
+- **ADR coverage** — per the Readiness Assessment, ADRs must exist for at minimum
+  runtime/language, framework/engine, and architecture style, with non-placeholder
+  content. Placeholder-only ADRs do not count.
+- **`discovery-focus` status** — the Readiness Assessment must report discovery-focus
+  as present and non-empty. If it reports it missing or empty, return
+  `REVISE_FOUNDATION` and name it in `reason`.
+- **Research coherence** — research recommendations (from `linked_research` and the
+  comments) must be coherent with each other and with `foundation_markdown`. Flag any
+  unresolved contradictions.
+- **Agent autonomy guardrails** — the Readiness Assessment / decision-pack coverage
+  must confirm section 3 (Guardrails for Autonomous Agents) is populated: forbidden
+  patterns, required coding conventions, dependency policy, and migration policy.
+  If absent, the feature-generation agent has no operating boundary — this is grounds
   for `REVISE_FOUNDATION`.
 
 ## Decision Thresholds
@@ -58,9 +72,9 @@ All of the following must be true:
 - Agent autonomy guardrails (forbidden patterns, dependency policy, etc.) are
   documented in the decision pack.
 - No open contradictions between research outputs and `FOUNDATION.md`.
-- `critical_risks` in the output is populated — approval does not require zero
-  risk, but risks must be named and acknowledged.
-- `missing_artifacts` is empty.
+- `reason` names the critical risks you are accepting — approval does not require
+  zero risk, but the risks must be named and acknowledged in `reason`.
+- The Readiness Assessment reports no blocking gaps (no missing required artifacts).
 
 ### REVISE_FOUNDATION → `foundation-in-progress`
 
@@ -73,8 +87,9 @@ Use when information is incomplete but recoverable. Default to this over
 - Agent autonomy guardrails section is missing or incomplete.
 - Research outputs contain unresolved contradictions that do not rise to the
   level of a critical foundational conflict.
-- Foundation issue must remain open. Output must include explicit `next_actions`
-  naming the exact artifacts, sections, or decisions that need attention.
+- Foundation issue must remain open. `reason` must name the exact artifacts,
+  sections, or decisions that need attention (the concrete next actions) — generic
+  "needs more work" is not acceptable.
 
 ### BLOCK_FOUNDATION → `foundation-blocked`
 
@@ -94,8 +109,9 @@ that is `REVISE_FOUNDATION`.
 
 - **Approval requires strong architectural coherence** — decisions must fit
   together, not just exist individually.
-- **Rationale must be traceable** — `gate_rationale` must reference specific
-  artifacts and explain the decision, not restate the outcome.
+- **Rationale must be traceable** — `reason` must reference specific artifacts
+  (name the ADR, decision-pack section, or research issue) and explain the
+  decision, not restate the outcome.
 - **REVISE is the default for incomplete work** — do not elevate uncertainty
   to `BLOCK_FOUNDATION`.
 - **Artifact corrections must use an isolated branch workflow** — never write
@@ -113,7 +129,19 @@ that is `REVISE_FOUNDATION`.
 | `REVISE_FOUNDATION` | `foundation-in-progress` |
 | `BLOCK_FOUNDATION` | `foundation-blocked` |
 
-Return only the required tool call arguments.
+## Output
+
+Call `submit_foundation_gate_decision` with exactly these fields:
+
+- `decision` (required) — one of `APPROVE_FOUNDATION`, `REVISE_FOUNDATION`,
+  `BLOCK_FOUNDATION`.
+- `reason` (required) — a concise, traceable rationale. This is the **only** free-text
+  field, so it must carry everything: the deciding factor, the specific artifacts
+  referenced, the critical risks being accepted (for APPROVE), and the exact next
+  actions naming the artifacts/sections/decisions to fix (for REVISE/BLOCK). Do not
+  invent other output fields — any field outside this schema is discarded.
+
+Return only the required tool call. Do not output analysis as chat text.
 
 ## Context
 
