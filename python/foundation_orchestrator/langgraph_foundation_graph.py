@@ -132,8 +132,8 @@ class FoundationGraphOrchestrator:
         "shell_design_verify": "foundation_shell_design_verify",
     }
 
-    def _llm_verify_phase(self, state: FoundationRunState, phase: str) -> str:
-        """Invoke the appropriate verify LLM for a phase. Returns APPROVE/REVISE/BLOCK."""
+    def _llm_verify_phase(self, state: FoundationRunState, phase: str) -> dict:
+        """Invoke the appropriate verify LLM for a phase. Returns the full payload dict."""
         task_type = self._PHASE_TASK_TYPE.get(phase, "foundation_gate")
         issue_number = state["source_issue_number"]
         issue = self.gateway.get_issue(issue_number)
@@ -157,8 +157,7 @@ class FoundationGraphOrchestrator:
                 )
             except Exception:
                 prompt_vars["foundation_decision_pack"] = ""
-        payload = self.gate_node.adapter.invoke_json(task_type, prompt_vars).payload or {}
-        return payload.get("decision", "REVISE_FOUNDATION")
+        return self.gate_node.adapter.invoke_json(task_type, prompt_vars).payload or {}
 
     def _plan_and_sync_research_areas(self, issue_number: int, issue, foundation_markdown: str) -> None:
         """Plan research areas via LLM and create missing sub-issues. Idempotent."""
@@ -239,6 +238,7 @@ class FoundationGraphOrchestrator:
         issue_number = state["source_issue_number"]
         issue = self.gateway.get_issue(issue_number)
         foundation_markdown = self.gateway.read_foundation_markdown()
+        comments = self.gateway.get_issue_comments(issue_number)
         self._logger.info(f"  Issue #{issue_number}: intent_capture_create — invoking LLM (foundation_intent_capture)")
         result = self.gate_node.adapter.invoke_json(
             "foundation_intent_capture",
@@ -247,6 +247,7 @@ class FoundationGraphOrchestrator:
                 "title": issue.title,
                 "body": issue.body,
                 "foundation_markdown": foundation_markdown,
+                "comments": comments,
             },
         )
         payload = result.payload or {}
@@ -284,15 +285,31 @@ class FoundationGraphOrchestrator:
         return "intent_capture_verify" if state.get("current_state") == FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY else END
 
     def _node_intent_capture_verify(self, state: FoundationRunState) -> FoundationRunState:
-        decision = self._llm_verify_phase(state, "intent_capture_verify")
+        issue_number = state["source_issue_number"]
+        payload = self._llm_verify_phase(state, "intent_capture_verify")
+        decision = payload.get("decision", "REVISE_FOUNDATION")
+        reason = payload.get("reason", "Intent capture verification")
+        gaps = payload.get("gaps") or []
         event = (
             FoundationEvent.INTENT_CAPTURE_VERIFIED if decision == "APPROVE_FOUNDATION"
             else FoundationEvent.INTENT_CAPTURE_BLOCK if decision == "BLOCK_FOUNDATION"
             else FoundationEvent.INTENT_CAPTURE_REVISE
         )
+        if decision != "APPROVE_FOUNDATION" and gaps:
+            feedback_lines = [
+                "## Intent Capture — Verify Feedback",
+                "",
+                f"**Decision:** {decision}",
+                f"**Reason:** {reason}",
+                "",
+                "**Gaps to address on next attempt:**",
+            ]
+            for g in gaps:
+                feedback_lines.append(f"- {g}")
+            self.gateway.post_comment(issue_number, "\n".join(feedback_lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_INTENT_CAPTURE_VERIFY, event,
-            f"INTENT_CAPTURE_VERIFY_{decision}", "Intent capture verification",
+            f"INTENT_CAPTURE_VERIFY_{decision}", reason,
             self.gate_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}
@@ -331,6 +348,7 @@ class FoundationGraphOrchestrator:
                 "foundation_markdown": foundation_markdown,
                 "intent_artifact": intent_artifact,
                 "existing_decision_pack": existing_decision_pack,
+                "comments": comments,
             },
         )
         payload = result.payload or {}
@@ -367,15 +385,31 @@ class FoundationGraphOrchestrator:
         return "shell_design_verify" if state.get("current_state") == FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY else END
 
     def _node_shell_design_verify(self, state: FoundationRunState) -> FoundationRunState:
-        decision = self._llm_verify_phase(state, "shell_design_verify")
+        issue_number = state["source_issue_number"]
+        payload = self._llm_verify_phase(state, "shell_design_verify")
+        decision = payload.get("decision", "REVISE_FOUNDATION")
+        reason = payload.get("reason", "Shell design verification")
+        gaps = payload.get("gaps") or []
         event = (
             FoundationEvent.SHELL_DESIGN_VERIFIED if decision == "APPROVE_FOUNDATION"
             else FoundationEvent.SHELL_DESIGN_BLOCK if decision == "BLOCK_FOUNDATION"
             else FoundationEvent.SHELL_DESIGN_REVISE
         )
+        if decision != "APPROVE_FOUNDATION" and gaps:
+            feedback_lines = [
+                "## Shell Design — Verify Feedback",
+                "",
+                f"**Decision:** {decision}",
+                f"**Reason:** {reason}",
+                "",
+                "**Gaps to address on next attempt:**",
+            ]
+            for g in gaps:
+                feedback_lines.append(f"- {g}")
+            self.gateway.post_comment(issue_number, "\n".join(feedback_lines))
         next_state = self._apply_event(
             state, FoundationState.FOUNDATION_SHELL_DESIGN_VERIFY, event,
-            f"SHELL_DESIGN_VERIFY_{decision}", "Shell design verification",
+            f"SHELL_DESIGN_VERIFY_{decision}", reason,
             self.gate_node.adapter.adapter_source,
         )
         return {**state, "current_state": next_state}

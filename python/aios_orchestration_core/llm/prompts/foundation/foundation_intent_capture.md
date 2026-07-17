@@ -17,6 +17,17 @@ The inputs contain:
 - `title` — the issue title
 - `body` — the issue body
 - `foundation_markdown` — the full content of FOUNDATION.md
+- `comments` — all existing issue comments (may include prior verify feedback)
+
+## Revision feedback (check before writing anything)
+
+Before reading `foundation_markdown`, scan `comments` for the most recent comment
+titled `## Intent Capture — Verify Feedback`. If one exists, read its
+**"Gaps to address on next attempt:"** list. Every gap listed there is a specific
+deficiency the previous attempt failed on — you **must** address every one of them
+in this attempt. Do not regenerate the same artifact without fixing each gap.
+
+If no such comment exists, this is the first attempt — proceed normally.
 
 ## Process (follow in order)
 

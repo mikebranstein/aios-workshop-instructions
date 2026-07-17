@@ -22,6 +22,18 @@ The inputs contain:
   (goals, constraints, out_of_scope, success_criteria, open_questions)
 - `existing_decision_pack` — current content of docs/foundation-decision-pack.md
   (empty string if the file does not yet exist)
+- `comments` — all existing issue comments (may include prior verify feedback)
+
+## Revision feedback (check before writing anything)
+
+Before reading any other input, scan `comments` for the most recent comment titled
+`## Shell Design — Verify Feedback`. If one exists, read its
+**"Gaps to address on next attempt:"** list. Every gap listed is a specific section
+or content deficiency that the previous attempt failed on — you **must** address
+every one in this attempt. Do not regenerate sections that already fail verification
+without explicitly fixing each listed gap.
+
+If no such comment exists, this is the first attempt — proceed normally.
 
 ## Process (follow in order)
 
