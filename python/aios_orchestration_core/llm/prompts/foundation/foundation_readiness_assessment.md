@@ -65,5 +65,24 @@ The inputs contain:
   "ADR for runtime/language selection is missing from docs/adr/".
 - `gate_recommendation` reflects the evidence, not optimism.
 
+## Worked example — good vs. bad gaps
+
+- ✅ "ADR for runtime/language selection is missing from docs/adr/ — no file covers it."
+- ✅ "docs/foundation-decision-pack.md Section 2.4 (State & Persistence) is still a `<!-- TODO -->`."
+- ✅ "Research issue #42 (auth model) is still open with no recommendation in its body."
+- ❌ "More ADRs needed." (not actionable — names no decision, file, or issue)
+- ❌ "Looks mostly ready." (a judgment, not an evidence-based gap)
+
+## Before you submit — self-check
+
+Confirm all of the following before calling the tool:
+1. Every `readiness_gaps` item names a specific file, section, or issue — none is vague.
+2. `adr_coverage` lists actual paths found in `adr_files` (not domains).
+3. `missing_adrs` lists the three minimum required domains (runtime/language, framework/
+   engine, architecture style) that lack an ADR, plus any other clearly missing domain.
+4. `gate_recommendation` is `GAPS_IDENTIFIED` if **any** blocking gap exists, otherwise
+   `READY_FOR_GATE`. Do not report `READY_FOR_GATE` while blocking gaps remain.
+5. `readiness_summary` is 2–4 sentences and states the main gap (or "no blocking gaps").
+
 Call `submit_foundation_readiness_assessment` with all required fields.
 Return only the required tool call. Do not output the assessment as chat text.

@@ -124,25 +124,40 @@ class FoundationGraphOrchestrator:
         self.gateway.post_comment(issue_number, entry.to_comment())
         return next_state
 
+    # Maps verify phase names to their dedicated task types. Each phase has scoped
+    # criteria — using the full foundation_gate for early phases would fail because
+    # artifacts (ADRs, decision pack) don't exist yet.
+    _PHASE_TASK_TYPE: dict = {
+        "intent_capture_verify": "foundation_intent_capture_verify",
+        "shell_design_verify": "foundation_shell_design_verify",
+    }
+
     def _llm_verify_phase(self, state: FoundationRunState, phase: str) -> str:
-        """Invoke the gate LLM for a phase-specific verification. Returns APPROVE/REVISE/BLOCK."""
+        """Invoke the appropriate verify LLM for a phase. Returns APPROVE/REVISE/BLOCK."""
+        task_type = self._PHASE_TASK_TYPE.get(phase, "foundation_gate")
         issue_number = state["source_issue_number"]
         issue = self.gateway.get_issue(issue_number)
-        payload = self.gate_node.adapter.invoke_json(
-            "foundation_gate",
-            {
-                "phase": phase,
-                "issue_number": issue.number,
-                "title": issue.title,
-                "body": issue.body,
-                "comments": self.gateway.get_issue_comments(issue_number),
-                "foundation_markdown": self.gateway.read_foundation_markdown(),
-                "linked_research": [
-                    {"number": r.number, "title": r.title, "body": r.body, "open": r.open}
-                    for r in self.gateway.list_linked_research_issues(issue_number)
-                ],
-            },
-        ).payload or {}
+        prompt_vars: dict = {
+            "phase": phase,
+            "issue_number": issue.number,
+            "title": issue.title,
+            "body": issue.body,
+            "comments": self.gateway.get_issue_comments(issue_number),
+            "foundation_markdown": self.gateway.read_foundation_markdown(),
+            "linked_research": [
+                {"number": r.number, "title": r.title, "body": r.body, "open": r.open}
+                for r in self.gateway.list_linked_research_issues(issue_number)
+            ],
+        }
+        # Shell design verify needs the decision pack content so it can check sections.
+        if phase == "shell_design_verify":
+            try:
+                prompt_vars["foundation_decision_pack"] = self.gateway.read_repo_file(
+                    "docs/foundation-decision-pack.md"
+                )
+            except Exception:
+                prompt_vars["foundation_decision_pack"] = ""
+        payload = self.gate_node.adapter.invoke_json(task_type, prompt_vars).payload or {}
         return payload.get("decision", "REVISE_FOUNDATION")
 
     def _plan_and_sync_research_areas(self, issue_number: int, issue, foundation_markdown: str) -> None:

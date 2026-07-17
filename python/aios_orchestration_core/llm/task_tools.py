@@ -254,6 +254,48 @@ FOUNDATION_GATE_TOOL = ToolSpec(
     },
 )
 
+FOUNDATION_INTENT_CAPTURE_VERIFY_TOOL = ToolSpec(
+    name="submit_foundation_intent_capture_verify",
+    description="Submit verify decision for the foundation intent capture phase.",
+    parameters_schema={
+        "type": "object",
+        "required": ["decision", "reason"],
+        "properties": {
+            "decision": {
+                "type": "string",
+                "enum": ["APPROVE_FOUNDATION", "REVISE_FOUNDATION", "BLOCK_FOUNDATION"],
+            },
+            "reason": {"type": "string", "minLength": 1},
+            "gaps": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Specific fields or criteria that are missing or insufficient. Required when decision is REVISE_FOUNDATION.",
+            },
+        },
+    },
+)
+
+FOUNDATION_SHELL_DESIGN_VERIFY_TOOL = ToolSpec(
+    name="submit_foundation_shell_design_verify",
+    description="Submit verify decision for the foundation shell design phase.",
+    parameters_schema={
+        "type": "object",
+        "required": ["decision", "reason"],
+        "properties": {
+            "decision": {
+                "type": "string",
+                "enum": ["APPROVE_FOUNDATION", "REVISE_FOUNDATION", "BLOCK_FOUNDATION"],
+            },
+            "reason": {"type": "string", "minLength": 1},
+            "gaps": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Decision pack sections that are missing or placeholder-only. Required when decision is REVISE_FOUNDATION.",
+            },
+        },
+    },
+)
+
 FOUNDATION_RESEARCH_PLAN_TOOL = ToolSpec(
     name="submit_foundation_research_plan",
     description="Submit foundation research plan (decision areas to spawn as issues).",
@@ -493,6 +535,8 @@ TASK_TOOL_MAP.update(
         "foundation_intent_capture": FOUNDATION_INTENT_CAPTURE_TOOL,
         "foundation_shell_design": FOUNDATION_SHELL_DESIGN_TOOL,
         "foundation_readiness_assessment": FOUNDATION_READINESS_ASSESSMENT_TOOL,
+        "foundation_intent_capture_verify": FOUNDATION_INTENT_CAPTURE_VERIFY_TOOL,
+        "foundation_shell_design_verify": FOUNDATION_SHELL_DESIGN_VERIFY_TOOL,
     }
 )
 

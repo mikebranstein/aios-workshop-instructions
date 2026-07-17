@@ -119,6 +119,38 @@ Produce the full Markdown for `docs/foundation-decision-pack.md`. Follow this st
 <!-- Decisions deferred to research phase, with brief reason -->
 ```
 
+## Worked example — a good filled section vs. a bad one
+
+For each decision domain, write a real decision plus a one-line rationale. Compare:
+
+- ✅ **Locked:** "### 2.1 Architecture Topology\nModular monolith. Single deployable with
+  clear internal module boundaries — chosen because the team is 3 engineers and service
+  split would add ops overhead with no scaling need yet."
+- ✅ **Inferred:** "### 2.2 Platform / Runtime\nDesktop (PC + Mac) via a cross-platform
+  runtime `(inferred)` — FOUNDATION.md names both OSes but not the runtime."
+- ✅ **Deferred:** "### 2.4 State & Persistence\n`<!-- TODO: needs research -->` Local save
+  files vs. embedded DB not yet decided; depends on save-data size (research pending)."
+- ❌ **Placeholder only:** "### 2.3 Language & Framework Stack\n`<!-- Decision + rationale -->`"
+  — this is a template comment with no content and **fails** the downstream verifier.
+
+Rule of thumb for step 3: if leaving a domain undecided would block an agent from starting
+feature work, you must **lock** or **infer** it now; only genuinely open items get the
+`<!-- TODO: needs research -->` marker plus a one-line reason.
+
+## Before you submit — self-check
+
+Confirm all of the following. If any fails, fix it before calling the tool:
+1. `decision_pack_content` is the **complete** file — every section from the template is
+   present, and none is a bare template comment with no added text.
+2. Section 3 (all five sub-sections: 3.1–3.5) has concrete, specific content. Section 3 is
+   critical; empty or vague sub-sections cause a downstream REVISE.
+3. Every human-authored section from `existing_decision_pack` is preserved unchanged.
+4. Every `<!-- TODO: needs research -->` has a one-line reason and also appears in
+   `decisions_needing_research`.
+5. `architecture_summary` is ≤ 4 sentences, jargon-free, and consistent with the decisions.
+6. `agent_autonomy_boundary` is specific enough for an agent to self-assess whether a change
+   needs human review — not "agents can do what they want".
+
 ## Output Rules
 
 - `decision_pack_content` must be the **complete** Markdown for the file, not a fragment.
